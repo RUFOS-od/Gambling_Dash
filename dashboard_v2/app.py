@@ -79,93 +79,107 @@ with st.sidebar:
 
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
 
-    # ── Global filters ──
-    st.markdown("**FILTRES GLOBAUX**")
-
     all_vagues = sorted(data["Vague"].unique().tolist())
-    selected_vagues = st.multiselect(
-        "Vagues", all_vagues, default=all_vagues,
-        help="Sélectionnez les vagues à analyser"
-    )
 
-    selected_villes = st.multiselect(
-        "Villes", CITIES, default=[],
-        help="Laisser vide = toutes les villes"
-    )
+    if module == "Brand Health Tracker":
+        # ── Global filters (tracker only) ──
+        st.markdown("**FILTRES GLOBAUX**")
 
-    all_genres = sorted(data["Genre"].unique().tolist())
-    selected_genres = st.multiselect(
-        "Genre", all_genres, default=[],
-        help="Laisser vide = tous les genres"
-    )
-
-    all_segments = sorted(data["Segment_Parieur"].dropna().unique().tolist())
-    selected_segments = st.multiselect(
-        "Segment Parieur", all_segments, default=[],
-        help="Laisser vide = tous les segments"
-    )
-
-    # ── Filtre par marque utilisée ──
-    all_marques = sorted(data["Marque_Principale_Utilisee"].dropna().unique().tolist())
-    selected_marques = st.multiselect(
-        "Marque Utilisée",
-        all_marques,
-        default=[],
-        help="Filtrer par marque principale utilisée par les parieurs. Vide = toutes."
-    )
-
-    st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
-
-    # ── Export Reporting ──
-    st.markdown("**EXPORT REPORTING**")
-
-    # Compute filtered data for export
-    _vagues = selected_vagues if selected_vagues else all_vagues
-    _df_export = apply_filters(data, _vagues,
-                               selected_villes if selected_villes else [],
-                               selected_genres if selected_genres else [],
-                               selected_segments if selected_segments else [])
-    if selected_marques:
-        _df_export = _df_export[_df_export["Marque_Principale_Utilisee"].isin(selected_marques)]
-
-    # Lazy import of export engine
-    from components.export_engine import generate_pptx, generate_pdf, generate_excel
-
-    col_e1, col_e2, col_e3 = st.columns(3)
-    with col_e1:
-        pptx_data = generate_pptx(_df_export, _vagues)
-        st.download_button(
-            "PPTX",
-            pptx_data,
-            "Betclic_BrandPulse_Report.pptx",
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            width='stretch',
-        )
-    with col_e2:
-        pdf_data = generate_pdf(_df_export, _vagues)
-        st.download_button(
-            "PDF",
-            pdf_data,
-            "Betclic_BrandPulse_Report.pdf",
-            "application/pdf",
-            width='stretch',
-        )
-    with col_e3:
-        xlsx_data = generate_excel(_df_export, _vagues)
-        st.download_button(
-            "Excel",
-            xlsx_data,
-            "Betclic_BrandPulse_Report.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            width='stretch',
+        selected_vagues = st.multiselect(
+            "Vagues", all_vagues, default=all_vagues,
+            help="Sélectionnez les vagues à analyser"
         )
 
-    st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
+        selected_villes = st.multiselect(
+            "Villes", CITIES, default=[],
+            help="Laisser vide = toutes les villes"
+        )
 
-    # Sample info
-    filtered_count = len(_df_export)
-    st.caption(f"Base totale : {len(data):,} répondants")
-    st.caption(f"Filtré : {filtered_count:,} répondants")
+        all_genres = sorted(data["Genre"].unique().tolist())
+        selected_genres = st.multiselect(
+            "Genre", all_genres, default=[],
+            help="Laisser vide = tous les genres"
+        )
+
+        all_segments = sorted(data["Segment_Parieur"].dropna().unique().tolist())
+        selected_segments = st.multiselect(
+            "Segment Parieur", all_segments, default=[],
+            help="Laisser vide = tous les segments"
+        )
+
+        # ── Filtre par marque utilisée ──
+        all_marques = sorted(data["Marque_Principale_Utilisee"].dropna().unique().tolist())
+        selected_marques = st.multiselect(
+            "Marque Utilisée",
+            all_marques,
+            default=[],
+            help="Filtrer par marque principale utilisée par les parieurs. Vide = toutes."
+        )
+
+        st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
+
+        # ── Export Reporting ──
+        st.markdown("**EXPORT REPORTING**")
+
+        # Compute filtered data for export
+        _vagues = selected_vagues if selected_vagues else all_vagues
+        _df_export = apply_filters(data, _vagues,
+                                   selected_villes if selected_villes else [],
+                                   selected_genres if selected_genres else [],
+                                   selected_segments if selected_segments else [])
+        if selected_marques:
+            _df_export = _df_export[_df_export["Marque_Principale_Utilisee"].isin(selected_marques)]
+
+        # Lazy import of export engine
+        from components.export_engine import generate_pptx, generate_pdf, generate_excel
+
+        col_e1, col_e2, col_e3 = st.columns(3)
+        with col_e1:
+            pptx_data = generate_pptx(_df_export, _vagues)
+            st.download_button(
+                "PPTX",
+                pptx_data,
+                "Betclic_BrandPulse_Report.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                width='stretch',
+            )
+        with col_e2:
+            pdf_data = generate_pdf(_df_export, _vagues)
+            st.download_button(
+                "PDF",
+                pdf_data,
+                "Betclic_BrandPulse_Report.pdf",
+                "application/pdf",
+                width='stretch',
+            )
+        with col_e3:
+            xlsx_data = generate_excel(_df_export, _vagues)
+            st.download_button(
+                "Excel",
+                xlsx_data,
+                "Betclic_BrandPulse_Report.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                width='stretch',
+            )
+
+        st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
+
+        # Sample info
+        filtered_count = len(_df_export)
+        st.caption(f"Base totale : {len(data):,} répondants")
+        st.caption(f"Filtré : {filtered_count:,} répondants")
+    else:
+        # ── AI Market Radar : filtres et export désactivés ──
+        selected_vagues = all_vagues
+        selected_villes = []
+        selected_genres = []
+        selected_segments = []
+        selected_marques = []
+        st.info(
+            "ℹ️ Les filtres globaux ne s'appliquent pas au module **AI Market Radar**. "
+            "La veille concurrentielle agrège des données externes (web, social, ads) "
+            "et n'est pas filtrable par caractéristiques d'enquêtés."
+        )
 
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
     st.caption("© 2026 OpinionWay Africa × Betclic CI")
