@@ -426,8 +426,9 @@ def inject_css():
     """Inject custom CSS and tab navigation JS into the Streamlit app."""
     import streamlit as st
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
-    # Inject JS via iframe to access parent DOM
-    st.iframe(TAB_NAV_JS, height=0, width=0)
+    # Inject JS via components to access parent DOM (invisible iframe)
+    import streamlit.components.v1 as components
+    components.html(TAB_NAV_JS, height=0, width=0)
 
 
 def kpi_card(label: str, value: str, delta: str = None, delta_direction: str = "up") -> str:
