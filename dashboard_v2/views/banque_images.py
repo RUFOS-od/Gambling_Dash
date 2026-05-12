@@ -2,9 +2,8 @@
 
 import streamlit as st
 import base64
-import random
 from pathlib import Path
-from components.styles import section_header, insight_box, styled_divider
+from components.styles import section_header, insight_box
 
 APP_DIR = Path(__file__).resolve().parent.parent
 PHOTO_DIR = APP_DIR / "assets" / "field_photos"
@@ -26,53 +25,6 @@ CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo",
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 
-# ─────────────────────────────────────────
-# DEMO PLACEHOLDERS (fallback if no local photos)
-# ─────────────────────────────────────────
-# 12 placeholder records per wave — realistic CAPI field context
-def _build_demo_photos(vague: str) -> list:
-    """Generate realistic demo placeholder photos when no local files exist."""
-    random.seed(hash(vague))
-    contexts = [
-        "Entretien CAPI devant un kiosque",
-        "Parieur en boutique de pari sportif",
-        "Interview face-à-face au marché",
-        "Enquêteur avec tablette CAPI",
-        "Point de collecte en zone résidentielle",
-        "Parieuse dans une agence",
-        "Interview au Grand Marché",
-        "Jeune parieur à la terrasse d'un maquis",
-        "Zone de collecte en périphérie",
-        "Répondant devant affichage publicitaire",
-        "Session CAPI à la gare routière",
-        "Parieur multi-marques interviewé",
-    ]
-
-    enqueteurs = [
-        "K. Kouassi", "M. Diallo", "A. Koné", "S. Traoré",
-        "L. Ouattara", "J. Bamba", "R. Yao", "F. Soro",
-    ]
-
-    vague_seed = {"Vague 1": 100, "Vague 2": 300, "Vague 3": 500}[vague]
-
-    photos = []
-    for i in range(12):
-        city = CITIES[i % len(CITIES)]
-        ctx = contexts[i % len(contexts)]
-        enq = enqueteurs[i % len(enqueteurs)]
-        # Picsum with seed for deterministic images
-        url = f"https://picsum.photos/seed/betclic{vague_seed + i}/600/400"
-        photos.append({
-            "url": url,
-            "caption": ctx,
-            "city": city,
-            "enqueteur": enq,
-            "date": VAGUE_META[vague]["mois"],
-            "is_local": False,
-        })
-    return photos
-
-
 def _scan_local_photos(vague: str) -> list:
     """Scan local field_photos/Vague_X folder for real images."""
     folder = PHOTO_DIR / VAGUE_FOLDERS[vague]
@@ -82,7 +34,6 @@ def _scan_local_photos(vague: str) -> list:
     photos = []
     for f in sorted(folder.iterdir()):
         if f.suffix.lower() in IMAGE_EXTS:
-            # Try to infer city from filename (e.g., "Abidjan_001.jpg")
             stem = f.stem
             city = "—"
             for c in CITIES:
@@ -91,13 +42,10 @@ def _scan_local_photos(vague: str) -> list:
                     break
 
             photos.append({
-                "url": None,
                 "local_path": f,
                 "caption": stem.replace("_", " ").title(),
                 "city": city,
-                "enqueteur": "Équipe terrain",
                 "date": VAGUE_META[vague]["mois"],
-                "is_local": True,
             })
     return photos
 
@@ -113,10 +61,7 @@ def _img_to_b64(path: Path) -> str:
 
 def _render_photo_card(photo: dict, idx: int, vague_color: str):
     """Render a single photo card with caption."""
-    if photo["is_local"]:
-        img_src = _img_to_b64(photo["local_path"])
-    else:
-        img_src = photo["url"]
+    img_src = _img_to_b64(photo["local_path"])
 
     html = f"""
     <div class="photo-card">
@@ -128,7 +73,6 @@ def _render_photo_card(photo: dict, idx: int, vague_color: str):
             <div class="photo-caption">{photo['caption']}</div>
             <div class="photo-meta">
                 <span class="photo-meta-item">📍 {photo['city']}</span>
-                <span class="photo-meta-item">👤 {photo['enqueteur']}</span>
             </div>
             <div class="photo-date">{photo['date']}</div>
         </div>
@@ -137,19 +81,39 @@ def _render_photo_card(photo: dict, idx: int, vague_color: str):
     return html
 
 
+def _render_empty_state(vague: str, vague_color: str):
+    """Show a clean message when no photos are available yet for a wave."""
+    folder = VAGUE_FOLDERS[vague]
+    st.markdown(f"""
+    <div style="
+        background: #FFFFFF;
+        border: 2px dashed #E2E4E8;
+        border-radius: 14px;
+        padding: 3rem 2rem;
+        text-align: center;
+        margin-top: 1rem;
+    ">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">📷</div>
+        <div style="font-size: 1.1rem; font-weight: 700; color: {vague_color}; margin-bottom: 0.5rem;">
+            Photos terrain non encore disponibles
+        </div>
+        <div style="color: #4A5568; font-size: 0.9rem; line-height: 1.5;">
+            Les photos de cette vague seront affichées ici dès leur réception.<br>
+            Dossier attendu&nbsp;: <code>assets/field_photos/{folder}/</code>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def _render_wave_gallery(vague: str):
     """Render the photo gallery for a single wave."""
     meta = VAGUE_META[vague]
     vague_color = meta["color"]
 
-    # Priority: local photos, else demo placeholders
     photos = _scan_local_photos(vague)
-    demo_mode = len(photos) == 0
-    if demo_mode:
-        photos = _build_demo_photos(vague)
 
     # ── Header stats ──
-    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+    col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
         st.markdown(f"""
         <div class="wave-header" style="border-left:4px solid {vague_color};">
@@ -172,22 +136,10 @@ def _render_wave_gallery(vague: str):
             <div class="wave-stat-value" style="color:{vague_color};">{cities_count}</div>
         </div>
         """, unsafe_allow_html=True)
-    with col4:
-        enq_count = len(set(p["enqueteur"] for p in photos))
-        st.markdown(f"""
-        <div class="wave-stat">
-            <div class="wave-stat-label">Enquêteurs</div>
-            <div class="wave-stat-value" style="color:{vague_color};">{enq_count}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
-    if demo_mode:
-        st.markdown(insight_box(
-            f"<strong>Mode démo :</strong> aucune photo locale trouvée dans "
-            f"<code>assets/field_photos/{VAGUE_FOLDERS[vague]}/</code>. "
-            f"Déposez vos photos JPG/PNG dans ce dossier (nommage suggéré : <code>Abidjan_001.jpg</code>) "
-            f"pour remplacer les placeholders."
-        ), unsafe_allow_html=True)
+    if not photos:
+        _render_empty_state(vague, vague_color)
+        return
 
     # ── Filters ──
     fc1, fc2 = st.columns([2, 2])
@@ -200,7 +152,7 @@ def _render_wave_gallery(vague: str):
         )
     with fc2:
         search = st.text_input(
-            "Rechercher (légende, enquêteur...)",
+            "Rechercher (légende, ville...)",
             "",
             key=f"photo_search_{vague}",
         )
@@ -213,7 +165,7 @@ def _render_wave_gallery(vague: str):
         s = search.lower()
         filtered = [
             p for p in filtered
-            if s in p["caption"].lower() or s in p["enqueteur"].lower() or s in p["city"].lower()
+            if s in p["caption"].lower() or s in p["city"].lower()
         ]
 
     if not filtered:
@@ -360,7 +312,7 @@ def render():
     st.markdown(PHOTO_CSS, unsafe_allow_html=True)
     st.markdown(section_header(
         "Banque des Images",
-        "Photos prises par les enquêteurs sur le terrain, organisées par vague de collecte"
+        "Photos prises sur le terrain, organisées par vague de collecte"
     ), unsafe_allow_html=True)
 
     # Sub-tabs per vague
