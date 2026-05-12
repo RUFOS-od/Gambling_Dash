@@ -1,0 +1,117 @@
+"""Brand Health Tracker — Image de Marque."""
+
+import streamlit as st
+import pandas as pd
+from data.loader import (
+    apply_filters, calc_image_scores, calc_kpi_by_vague,
+    calc_delta, get_latest_vague, get_previous_vague,
+    IMAGE_ATTRIBUTES
+)
+from components.styles import kpi_card, section_header, insight_box, styled_divider
+from components.charts import radar_chart, bar_chart_brands, multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_VAGUES
+import plotly.graph_objects as go
+
+
+def render():
+    data = st.session_state["data"]
+    vagues = st.session_state["selected_vagues"]
+    villes = st.session_state["selected_villes"]
+    genres = st.session_state["selected_genres"]
+    segments = st.session_state["selected_segments"]
+
+    df = apply_filters(data, vagues, villes or None, genres or None, segments or None)
+
+    st.markdown(section_header(
+        "Image de Marque Betclic",
+        "12 attributs d'image mesurés sur une échelle de 1 à 5 | Évolution inter-vagues"
+    ), unsafe_allow_html=True)
+
+    # ── Radar chart by vague ──
+    image_by_vague = {}
+    for v in ["Vague 1", "Vague 2", "Vague 3"]:
+        sub = df[df["Vague"] == v]
+        if len(sub) > 0:
+            image_by_vague[v] = calc_image_scores(sub)
+
+    if image_by_vague:
+        fig = radar_chart(image_by_vague, "Profil d'Image Betclic — Comparaison 3 Vagues", height=520)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # ── Top / Bottom attributes ──
+    latest_v = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in image_by_vague]
+    if latest_v:
+        latest_scores = image_by_vague[latest_v[0]]
+        sorted_attrs = sorted(latest_scores.items(), key=lambda x: x[1], reverse=True)
+
+        col_left, col_right = st.columns(2)
+
+        with col_left:
+            st.markdown(section_header("Points Forts", "Top attributs d'image"), unsafe_allow_html=True)
+            for attr, score in sorted_attrs[:4]:
+                # Get delta vs V1
+                v1_score = image_by_vague.get("Vague 1", {}).get(attr, score)
+                d, direction = calc_delta(score, v1_score)
+                st.markdown(kpi_card(attr, f"{score}/5", f"{d} vs V1" if d else None, direction), unsafe_allow_html=True)
+                st.markdown("", unsafe_allow_html=True)
+
+        with col_right:
+            st.markdown(section_header("Axes d'Amélioration", "Attributs à renforcer"), unsafe_allow_html=True)
+            for attr, score in sorted_attrs[-4:]:
+                v1_score = image_by_vague.get("Vague 1", {}).get(attr, score)
+                d, direction = calc_delta(score, v1_score)
+                st.markdown(kpi_card(attr, f"{score}/5", f"{d} vs V1" if d else None, direction), unsafe_allow_html=True)
+                st.markdown("", unsafe_allow_html=True)
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # ── Detailed evolution per attribute ──
+    st.markdown(section_header("Évolution détaillée par attribut"), unsafe_allow_html=True)
+
+    # Build evolution data
+    evol_data = {}
+    for attr_col, attr_label in IMAGE_ATTRIBUTES.items():
+        evol_data[attr_label] = {}
+        for v in ["Vague 1", "Vague 2", "Vague 3"]:
+            scores = image_by_vague.get(v, {})
+            if attr_label in scores:
+                evol_data[attr_label][v] = scores[attr_label]
+
+    # Show as a grouped bar chart
+    if evol_data:
+        attrs = list(evol_data.keys())
+        fig = go.Figure()
+        for v in ["Vague 1", "Vague 2", "Vague 3"]:
+            vals = [evol_data[a].get(v, 0) for a in attrs]
+            fig.add_trace(go.Bar(
+                name=v, x=attrs, y=vals,
+                marker_color=COLORS_VAGUES.get(v, "#2C3E50"),
+                text=[f"{val:.2f}" for val in vals],
+                textposition="outside",
+                textfont=dict(size=10),
+            ))
+        fig.update_layout(
+            barmode="group",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#FAFAFA", size=12),
+            margin=dict(l=40, r=40, t=50, b=80),
+            height=450,
+            title=dict(text="Scores d'Image par Attribut — Évolution V1→V3", font=dict(size=16)),
+            yaxis=dict(range=[0, 5.2], gridcolor="rgba(255,255,255,0.05)"),
+            xaxis=dict(tickangle=-45),
+            legend=dict(bgcolor="rgba(0,0,0,0)"),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Insight ──
+    if latest_v and "Vague 1" in image_by_vague:
+        best = sorted_attrs[0]
+        worst = sorted_attrs[-1]
+        st.markdown(insight_box(
+            f"<strong>{best[0]}</strong> reste le point fort de Betclic ({best[1]}/5). "
+            f"<strong>{worst[0]}</strong> ({worst[1]}/5) représente le principal axe d'amélioration. "
+            f"Globalement, tous les attributs progressent entre V1 et V3, signe d'un renforcement "
+            f"cohérent de l'image de marque."
+        ), unsafe_allow_html=True)
