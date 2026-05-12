@@ -340,34 +340,10 @@ html, body, [class*="css"] {
     overflow: hidden;
 }
 
-/* ── Hide Streamlit defaults (but keep sidebar toggle visible) ── */
+/* ── Hide Streamlit defaults (header kept visible so sidebar toggle works) ── */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-
-/* Hide everything in the header EXCEPT the sidebar toggle button */
-header [data-testid="stToolbar"],
-header [data-testid="stDecoration"],
-header [data-testid="stStatusWidget"],
-header [data-testid="stMainMenu"] {
-    visibility: hidden !important;
-    display: none !important;
-}
 header {background: transparent !important;}
-
-/* Force sidebar toggle button to stay visible — covers all Streamlit variants */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"],
-button[kind="header"],
-button[kind="headerNoPadding"],
-header button[aria-label*="sidebar" i],
-header button[title*="sidebar" i] {
-    visibility: visible !important;
-    display: flex !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    z-index: 999999 !important;
-}
 </style>
 """
 
