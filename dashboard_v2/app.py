@@ -4,6 +4,7 @@ Main application entry point with sidebar navigation and global filters.
 """
 
 import streamlit as st
+import os
 import sys
 import base64
 from pathlib import Path
@@ -11,6 +12,12 @@ from pathlib import Path
 # Add project root to path
 APP_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(APP_DIR))
+
+# Bridge st.secrets -> os.environ so collectors/llm_analyst pick up keys
+# whether running locally (via .streamlit/secrets.toml) or on Streamlit Cloud.
+for _key in ("ANTHROPIC_API_KEY", "YOUTUBE_API_KEY", "META_ACCESS_TOKEN"):
+    if _key not in os.environ and _key in st.secrets:
+        os.environ[_key] = st.secrets[_key]
 
 from components.styles import inject_css
 from data.loader import load_raw_data, apply_filters, VAGUE_LABELS, CITIES, COMPETITORS

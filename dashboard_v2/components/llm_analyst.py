@@ -17,7 +17,7 @@ from typing import Optional
 import pandas as pd
 
 
-ANTHROPIC_MODEL = "claude-opus-4-5"  # best for reasoning
+ANTHROPIC_MODEL = "claude-opus-4-7"  # best for reasoning
 MAX_BATCH_SIZE = 30
 
 
