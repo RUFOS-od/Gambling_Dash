@@ -129,9 +129,19 @@ def _is_raw_format(df: pd.DataFrame) -> bool:
 
 
 def _str_yes_no(series: pd.Series) -> pd.Series:
-    """Convert a raw A_QxX_Y column (string brand label or '0') to 1/0."""
+    """Convert a raw A_QxX_Y column (string brand label or '0') to 1/0.
+
+    Rule: 1 if the cell contains the actual brand label (e.g. "Betclic"),
+          0 if the cell is "0", NaN, empty, or any zero-like sentinel.
+
+    We must check `notna` BEFORE astype(str) because pandas ArrowStringArray
+    converts NaN to a representation that won't match "nan" after lowercase.
+    """
+    not_null = series.notna()
     s = series.astype(str).str.strip()
-    return ((s != "0") & (s != "") & (s.str.lower() != "nan")).astype(int)
+    # zero-like sentinels seen in real data: "0", "0.0", "", "nan", "<NA>"
+    zero_like = s.isin(["0", "0.0", "", "nan", "NaN", "<NA>", "None"])
+    return (not_null & ~zero_like).astype(int)
 
 
 def _nps_category(score) -> str:
@@ -221,15 +231,23 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     tom_raw = df_raw["Q1A"].astype(str).str.strip()
     df["TOM_Marque_Citee"] = tom_raw.where(tom_raw.isin(COMPETITORS), None)
 
-    # ── Awareness per brand (spontaneous + aided + total) ──
+    # ── Awareness per brand (TOM + spontaneous + aided + total) ──
+    # User-validated formula:
+    #   Notoriete Totale  = Q1A=brand OR A_Q1B_idx OR A_Q1C_idx   (Q1A + Q1B + Q1C)
+    #   Notoriete Spont.  = Q1A=brand OR A_Q1B_idx                (Q1A + Q1B)
+    #   Notoriete Aidee   = A_Q1C_idx only                        (Q1C alone)
+    q1a = df_raw["Q1A"].astype(str).str.strip()
     for idx, brand in RAW_BRAND_BY_INDEX.items():
         col_b = f"A_Q1B_{idx}"
         col_c = f"A_Q1C_{idx}"
-        spont = _str_yes_no(df_raw[col_b]) if col_b in df_raw.columns else pd.Series([0] * n, index=df_raw.index)
-        aided = _str_yes_no(df_raw[col_c]) if col_c in df_raw.columns else pd.Series([0] * n, index=df_raw.index)
-        df[f"Notoriete_Spontanee_{brand}"] = spont.values
-        df[f"Notoriete_Aidee_{brand}"] = aided.values
-        df[f"Notoriete_Totale_{brand}"] = ((spont.values == 1) | (aided.values == 1)).astype(int)
+        is_tom = (q1a == brand).astype(int).values
+        spont_b = _str_yes_no(df_raw[col_b]).values if col_b in df_raw.columns else np.zeros(n, dtype=int)
+        aided_c = _str_yes_no(df_raw[col_c]).values if col_c in df_raw.columns else np.zeros(n, dtype=int)
+        df[f"Notoriete_Spontanee_{brand}"] = ((is_tom == 1) | (spont_b == 1)).astype(int)
+        df[f"Notoriete_Aidee_{brand}"] = aided_c
+        df[f"Notoriete_Totale_{brand}"] = (
+            (is_tom == 1) | (spont_b == 1) | (aided_c == 1)
+        ).astype(int)
 
     # ── Usage ──
     q6 = df_raw.get("Q6", pd.Series([None] * n))
@@ -266,13 +284,27 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     # ── Type pari préféré : not asked in V1 ──
     df["Type_Pari_Prefere"] = None
 
-    # ── Considération / préférence / wallet share (derived) ──
-    intent = df_raw.get("Q13", pd.Series([None] * n))
-    df["Consideration_Betclic"] = intent.astype(str).str.startswith(
-        ("Très probablement", "Probablement")
+    # ── Intention recommandation (Q13) per-row flag : Très probablement OU Probablement ──
+    # Q13 = "Probabilité de recommander Q6 (NPS)" — asked to parieurs only.
+    # For non-parieurs Q13 is NaN, so the flag = 0.
+    intent_raw = df_raw.get("Q13", pd.Series([None] * n)).astype(str).str.strip()
+    intent_strong = (
+        (intent_raw == "Très probablement") | (intent_raw == "Probablement")
     ).astype(int)
+    df["Intention_Recommande_Forte"] = intent_strong.values
+
+    # ── Considération (user-validated): Q5 (a déjà parié) OU Q13 ∈ {Très/Probablement} ──
+    # Per-row flag. A_Deja_Parie_Betclic was set above.
+    for brand in RAW_BRAND_BY_INDEX.values():
+        col = f"A_Deja_Parie_{brand}"
+        if col in df.columns:
+            df[f"Consideration_{brand}"] = (
+                (df[col] == 1) | (df["Intention_Recommande_Forte"] == 1)
+            ).astype(int)
+        else:
+            df[f"Consideration_{brand}"] = df["Intention_Recommande_Forte"]
+    # ── Préférence (user-validated): Q6 == "Betclic" ──
     df["Preference_Betclic"] = df["Utilise_Betclic"]
-    df["Part_Portefeuille_Betclic"] = df["Utilise_Betclic"].astype(float)
 
     # ── Image attributes for Betclic (Q12A) ──
     for idx, attr_col in RAW_IMAGE_ATTRS.items():
@@ -300,8 +332,8 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["NPS_Categorie"] = df["NPS_Score"].apply(_nps_category)
 
     # ── Churn risk & intention (derived from Q13) ──
-    df["Risque_Churn"] = intent.apply(_churn_from_intention)
-    df["Intention_Reutilisation"] = intent.apply(_map_intention)
+    df["Risque_Churn"] = intent_raw.apply(_churn_from_intention)
+    df["Intention_Reutilisation"] = intent_raw.apply(_map_intention)
 
     # ── Principal_Irritant : Q16 verbatim (the "why" of NPS score) ──
     df["Principal_Irritant"] = df_raw.get("Q16", None)
@@ -382,7 +414,7 @@ def load_raw_data() -> pd.DataFrame:
     # Coerce numeric columns
     numeric_cols = [
         "Frequence_Paris_Mois", "Rappel_Campagne_Betclic", "Utilise_Betclic",
-        "Multi_Application", "Nb_Apps_Utilisees", "Part_Portefeuille_Betclic",
+        "Multi_Application", "Nb_Apps_Utilisees",
         "Consideration_Betclic", "Preference_Betclic",
         "Satisfaction_Globale_Betclic", "NPS_Score",
     ]
@@ -529,18 +561,27 @@ def calc_canal_decouverte(df: pd.DataFrame) -> dict:
     return valid["Canal_Decouverte"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
 
 
-def calc_penetration(df: pd.DataFrame) -> float:
+def calc_penetration(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Pénétration: % de l'échantillon total qui a déjà parié sur la marque (Q5).
+
+    Base = tout l'échantillon (parieurs + non-parieurs).
+    """
+    col = f"A_Deja_Parie_{brand}"
+    if col not in df.columns or len(df) == 0:
+        return 0.0
+    return round(df[col].sum() / len(df) * 100, 1)
+
+
+def calc_penetration_all_brands(df: pd.DataFrame) -> dict:
+    return {b: calc_penetration(df, b) for b in COMPETITORS}
+
+
+def calc_marque_principale(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Préférence / Marque principale : Q6 == brand. Base = parieurs."""
     parieurs = get_parieurs(df)
     if len(parieurs) == 0:
         return 0.0
-    return round(parieurs["Utilise_Betclic"].sum() / len(parieurs) * 100, 1)
-
-
-def calc_marque_principale(df: pd.DataFrame) -> float:
-    parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
-        return 0.0
-    return round((parieurs["Marque_Principale_Utilisee"] == "Betclic").sum() / len(parieurs) * 100, 1)
+    return round((parieurs["Marque_Principale_Utilisee"] == brand).sum() / len(parieurs) * 100, 1)
 
 
 def calc_marque_principale_all(df: pd.DataFrame) -> dict:
@@ -561,25 +602,63 @@ def calc_multi_app(df: pd.DataFrame) -> float:
     return round(parieurs["Multi_Application"].sum() / len(parieurs) * 100, 1)
 
 
-def calc_consideration(df: pd.DataFrame) -> float:
+def calc_consideration(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Considération: (Usage Q5 = a déjà parié sur la marque) OU
+    (Q13 ∈ {"Très probablement", "Probablement"}). Base = parieurs.
+    """
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0 or "Consideration_Betclic" not in parieurs.columns:
+    col = f"Consideration_{brand}"
+    if len(parieurs) == 0 or col not in parieurs.columns:
         return 0.0
-    return round(parieurs["Consideration_Betclic"].sum() / len(parieurs) * 100, 1)
+    return round(parieurs[col].sum() / len(parieurs) * 100, 1)
 
 
-def calc_preference(df: pd.DataFrame) -> float:
+def calc_preference(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Préférence : Q6 == brand. Base = parieurs."""
+    return calc_marque_principale(df, brand)
+
+
+# ── Wallet share (montant misé mensuel) ───────────────────────────────
+# Q10 stocke des tranches textuelles. On utilise les milieux pour calculer une moyenne.
+Q10_MIDPOINTS_FCFA = {
+    "Moins de 5 000 FCFA": 2500,
+    "De 5 000 à 10 000 FCFA": 7500,
+    "De 10 001 à 25 000 FCFA": 17500,
+    "De 25 001 à 50 000 FCFA": 37500,
+    "De 50 001 à 100 000 FCFA": 75000,
+    "De 100 001 à 200 000 FCFA": 150000,
+    "Plus de 200 000 FCFA": 250000,
+}
+
+
+def calc_wallet_share(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Wallet share : montant mensuel moyen misé (Q10) chez les parieurs Q6==brand.
+
+    Retourne la moyenne en FCFA (via les milieux de tranches).
+    "Ne sait pas / Refuse de répondre" est exclu du calcul.
+    """
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0 or "Preference_Betclic" not in parieurs.columns:
+    if len(parieurs) == 0 or "Montant_Mise_Mensuel" not in parieurs.columns:
         return 0.0
-    return round(parieurs["Preference_Betclic"].sum() / len(parieurs) * 100, 1)
+    target = parieurs[parieurs["Marque_Principale_Utilisee"] == brand]
+    if len(target) == 0:
+        return 0.0
+    amounts = target["Montant_Mise_Mensuel"].map(Q10_MIDPOINTS_FCFA).dropna()
+    if len(amounts) == 0:
+        return 0.0
+    return round(float(amounts.mean()), 0)
 
 
-def calc_wallet_share(df: pd.DataFrame) -> float:
-    users = get_utilisateurs_betclic(df)
-    if len(users) == 0 or "Part_Portefeuille_Betclic" not in users.columns:
-        return 0.0
-    return round(users["Part_Portefeuille_Betclic"].mean() * 100, 1)
+def calc_wallet_share_distribution(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """Distribution des tranches de mise mensuelle Q10 chez les parieurs Q6==brand."""
+    parieurs = get_parieurs(df)
+    if len(parieurs) == 0 or "Montant_Mise_Mensuel" not in parieurs.columns:
+        return {}
+    target = parieurs[parieurs["Marque_Principale_Utilisee"] == brand]
+    valid = target["Montant_Mise_Mensuel"].dropna()
+    if len(valid) == 0:
+        return {}
+    return valid.value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
 
 
 def calc_sport_distribution(df: pd.DataFrame) -> dict:
@@ -763,13 +842,47 @@ def calc_kpi_by_city(df: pd.DataFrame, calc_func, **kwargs) -> dict:
 # FUNNEL DATA
 # ──────────────────────────────────────────────
 
-def calc_funnel(df: pd.DataFrame) -> dict:
-    """Brand funnel for Betclic."""
+def calc_funnel(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """Funnel de conversion **monotonique décroissant** pour la marque.
+
+    Base unique = échantillon total (pour que la décroissance soit garantie).
+    Inclusion stricte :
+        Notoriété Totale  ⊇  Notoriété Spontanée  ⊇  Considération
+                          ⊇  Pénétration / Essai  ⊇  Préférence
+
+    Note métier :
+      - Q13 (intention d'essayer Betclic) est posée UNIQUEMENT aux parieurs
+        non-Betclic (Q6≠Betclic). La Considération unit Q5=oui et Q13 fort.
+      - TOM (Q1A) est volontairement hors funnel car non-emboîté avec
+        Pénétration : un répondant peut citer Betclic en 1er sans avoir essayé,
+        ou avoir essayé sans le citer en 1er.
+    """
+    n = len(df)
+    if n == 0:
+        return {}
+
+    notor_total = df.get(f"Notoriete_Totale_{brand}", pd.Series([0]*n)).astype(int)
+    notor_spont = df.get(f"Notoriete_Spontanee_{brand}", pd.Series([0]*n)).astype(int)
+    consid = df.get(f"Consideration_{brand}", pd.Series([0]*n)).astype(int)
+    essai = df.get(f"A_Deja_Parie_{brand}", pd.Series([0]*n)).astype(int)
+    marque_principale = (
+        df.get("Marque_Principale_Utilisee").astype(str) == brand
+    ).astype(int) if "Marque_Principale_Utilisee" in df.columns else pd.Series([0]*n)
+
     return {
-        "Notoriété Totale": calc_notoriete_totale(df),
-        "Notoriété Aidée": calc_notoriete_aidee(df),
-        "Considération": calc_consideration(df),
-        "Pénétration": calc_penetration(df),
-        "Préférence": calc_preference(df),
-        "Marque Principale": calc_marque_principale(df),
+        "Notoriété Totale (Q1A+Q1B+Q1C)": round(notor_total.sum() / n * 100, 1),
+        "Notoriété Spontanée (Q1A+Q1B)": round(notor_spont.sum() / n * 100, 1),
+        "Considération (Q5 ∪ Q13 fort)": round(consid.sum() / n * 100, 1),
+        "Pénétration / Essai (Q5)": round(essai.sum() / n * 100, 1),
+        "Préférence (Q6 = marque principale)": round(marque_principale.sum() / n * 100, 1),
     }
+
+
+def calc_funnel_with_counts(df: pd.DataFrame, brand: str = "Betclic") -> list:
+    """Funnel structure with explicit counts and base for display (returns list of dicts)."""
+    pct = calc_funnel(df, brand)
+    n = len(df)
+    return [
+        {"step": step, "pct": value, "count": int(round(value / 100 * n)), "base": n}
+        for step, value in pct.items()
+    ]
