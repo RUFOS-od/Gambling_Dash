@@ -341,12 +341,56 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     # ── Campaign recall ──
     q17 = df_raw.get("Q17", pd.Series([None] * n)).astype(str)
     df["Rappel_Pub_Generale"] = q17.str.startswith("Oui").astype(int)
-    df["Rappel_Campagne_Betclic"] = (
-        _str_yes_no(df_raw["A_Q18_1"]).values if "A_Q18_1" in df_raw.columns else 0
-    )
+
+    # Per-brand spontaneous ad recall (A_Q18_X)
+    for idx, brand in RAW_BRAND_BY_INDEX.items():
+        col = f"A_Q18_{idx}"
+        df[f"Rappel_Campagne_{brand}"] = (
+            _str_yes_no(df_raw[col]).values if col in df_raw.columns else 0
+        )
+
     # Q21 = recall World Cup campaign
     q21 = df_raw.get("Q21", pd.Series([None] * n)).astype(str)
     df["Rappel_CDM_Betclic"] = q21.str.startswith("Oui").astype(int)
+
+    # ── Canal de découverte Betclic (Q19_O1..O10 multi-réponse) ──
+    # Each Q19_OX stores the support label (Télévision, Facebook, etc.) if the
+    # respondent cited it, else "0"/empty. A respondent can cite multiple supports.
+    # We expose ONE boolean column per canonical support so the aggregate
+    # `calc_canal_decouverte` is correct (no first-cited bias).
+    CANAL_LABELS = {
+        "Television": "Télévision",
+        "Radio": "Radio",
+        "Affichage_Fixe": "Affichage extérieur fixe : panneaux, bâches, façades murales, écrands LED",
+        "Affichage_Mobile": "Affichage extérieur mobile : taxis, bus, poussettes à café, cars de transports...",
+        "Facebook_Instagram": "Facebook / Instagram",
+        "TikTok": "TikTok",
+        "YouTube": "YouTube",
+        "SMS_WhatsApp": "SMS / WhatsApp",
+        "Sponsoring_Sportif": "Sponsoring sportif (maillot, stade…)",
+        "Bouche_A_Oreille": "Bouche à oreille / ami",
+    }
+    q19_cols = [f"Q19_O{i}" for i in range(1, 11) if f"Q19_O{i}" in df_raw.columns]
+    if q19_cols:
+        q19_concat = df_raw[q19_cols].astype(str)
+        for col_key, label in CANAL_LABELS.items():
+            df[f"Canal_{col_key}"] = q19_concat.apply(
+                lambda row: int(any(row[c] == label for c in q19_cols)), axis=1
+            ).values
+
+        # Also keep a "first canal cited" string column (backward compat) and
+        # a list of all canals per row (for future drill-down).
+        def first_canal(row):
+            for c in q19_cols:
+                v = row.get(c)
+                if pd.notna(v) and str(v).strip() not in ("", "0"):
+                    return str(v).strip()
+            return None
+        df["Canal_Decouverte"] = df_raw.apply(first_canal, axis=1)
+    else:
+        for col_key in CANAL_LABELS:
+            df[f"Canal_{col_key}"] = 0
+        df["Canal_Decouverte"] = None
 
     # ── Ambassadeur : not asked this wave ──
     df["Ambassadeur_Rappele"] = None
@@ -535,11 +579,22 @@ def calc_notoriete_aidee(df: pd.DataFrame, brand: str = "Betclic") -> float:
     return round(df[col].sum() / total * 100, 1)
 
 
-def calc_rappel_campagne(df: pd.DataFrame) -> float:
+def calc_rappel_campagne(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Rappel pub spontané: % parieurs ayant cité la marque sur A_Q18_X.
+
+    Base = parieurs (165). La question Q18 est gated par Q17 = "Oui",
+    donc ceux qui n'ont vu aucune pub contribuent 0 (effet "portée").
+    """
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0 or "Rappel_Campagne_Betclic" not in parieurs.columns:
+    col = f"Rappel_Campagne_{brand}"
+    if len(parieurs) == 0 or col not in parieurs.columns:
         return 0.0
-    return round(parieurs["Rappel_Campagne_Betclic"].sum() / len(parieurs) * 100, 1)
+    return round(parieurs[col].sum() / len(parieurs) * 100, 1)
+
+
+def calc_rappel_campagne_all_brands(df: pd.DataFrame) -> dict:
+    """Rappel pub par marque (toutes les marques A_Q18_1..14). Base = parieurs."""
+    return {b: calc_rappel_campagne(df, b) for b in COMPETITORS}
 
 
 def calc_ambassadeur_distribution(df: pd.DataFrame) -> dict:
@@ -553,12 +608,37 @@ def calc_ambassadeur_distribution(df: pd.DataFrame) -> dict:
 
 
 def calc_canal_decouverte(df: pd.DataFrame) -> dict:
-    if "Canal_Decouverte" not in df.columns:
+    """Distribution des supports via lesquels Betclic a été découvert/vu.
+
+    Question Q19 = multi-réponse : chaque répondant peut citer plusieurs
+    canaux. Cette fonction retourne le % de l'échantillon (base totale)
+    ayant cité chaque support au moins une fois.
+    La somme peut excéder 100% (multi-réponse).
+    """
+    if len(df) == 0:
         return {}
-    valid = df[df["Canal_Decouverte"].notna()]
-    if len(valid) == 0:
-        return {}
-    return valid["Canal_Decouverte"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
+    canal_columns = {
+        "Television": "Télévision",
+        "Affichage_Mobile": "Affichage extérieur mobile",
+        "Affichage_Fixe": "Affichage extérieur fixe",
+        "Facebook_Instagram": "Facebook / Instagram",
+        "TikTok": "TikTok",
+        "YouTube": "YouTube",
+        "SMS_WhatsApp": "SMS / WhatsApp",
+        "Sponsoring_Sportif": "Sponsoring sportif",
+        "Bouche_A_Oreille": "Bouche à oreille",
+        "Radio": "Radio",
+    }
+    n = len(df)
+    out = {}
+    for raw_col, label in canal_columns.items():
+        col = f"Canal_{raw_col}"
+        if col in df.columns:
+            pct = round(df[col].sum() / n * 100, 1)
+            if pct > 0:
+                out[label] = pct
+    # Sort descending
+    return dict(sorted(out.items(), key=lambda x: -x[1]))
 
 
 def calc_penetration(df: pd.DataFrame, brand: str = "Betclic") -> float:
