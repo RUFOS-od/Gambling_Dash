@@ -21,7 +21,7 @@ def render():
     trends_df = storage.latest("trends")
 
     if len(news_df) == 0:
-        st.warning("Aucune news disponible. Lancez une collecte depuis la sidebar.")
+        st.warning("Aucune actualité disponible. Lancez une collecte depuis le menu latéral.")
         return
 
     # ── Sentiment via LLM ──
@@ -32,12 +32,12 @@ def render():
         sent_df["published"] = news_df["published"].values[:len(sent_df)]
         sent_df["link"] = news_df["link"].values[:len(sent_df)]
 
-    # Indicateur de source (claude / heuristic)
+    # Indicateur de source (analyse IA / fallback lexical)
     src = sent_df["source"].iloc[0] if len(sent_df) else "heuristic"
     if src.startswith("claude"):
-        st.caption("Sentiment classifie par Claude (ANTHROPIC_API_KEY detectee).")
+        st.caption("Analyse de sentiment alimentée par IA.")
     else:
-        st.caption("Sentiment calcule via heuristique francaise (definir `ANTHROPIC_API_KEY` pour passer a Claude).")
+        st.caption("Analyse de sentiment via lexique français (mode dégradé).")
 
     # ── Distribution globale ──
     dist = sent_df["sentiment"].value_counts().to_dict()

@@ -39,7 +39,7 @@ def _signal_card(s: dict) -> str:
 def render():
     st.markdown(section_header(
         "Alertes & Signaux Faibles",
-        "Detection automatique : pics Google Trends, mots-cles regulateurs, brief executif IA"
+        "Détection automatique : pics de recherche, mots-clés réglementaires, brief exécutif IA"
     ), unsafe_allow_html=True)
 
     storage = Storage()
@@ -47,7 +47,7 @@ def render():
     trends_df = storage.latest("trends")
 
     if len(news_df) == 0 and len(trends_df) == 0:
-        st.warning("Aucune donnee de veille. Lancez une collecte depuis la sidebar.")
+        st.warning("Aucune donnée de veille. Lancez une collecte depuis le menu latéral.")
         return
 
     signals = detect_weak_signals(news_df=news_df, trends_df=trends_df)
@@ -75,7 +75,7 @@ def render():
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Brief executif IA ──
-    st.markdown("### Brief executif — Claude")
+    st.markdown("### Brief exécutif — Analyse IA")
     with st.spinner("Generation du brief..."):
         # Pre-calcul du sentiment agrege
         sent_summary = {"positif": 0, "neutre": 0, "negatif": 0}
@@ -102,12 +102,9 @@ def render():
         })
 
     if brief.get("source", "").startswith("claude"):
-        st.caption(f"Brief genere par Claude · {brief.get('generated_at','')[:16].replace('T',' ')}")
+        st.caption(f"Brief généré par IA · {brief.get('generated_at','')[:16].replace('T',' ')}")
     else:
-        st.caption(
-            f"Brief genere par heuristique ({brief.get('source','heuristic')}) · "
-            f"definir `ANTHROPIC_API_KEY` pour passer a Claude"
-        )
+        st.caption("Brief généré en mode dégradé (analyse lexicale).")
 
     # Rendu
     st.markdown(f"**Resume executif.** {brief.get('summary','')}")

@@ -13,7 +13,7 @@ from components.charts import BETCLIC_RED, OPINIONWAY_PURPLE, SLATE
 def render():
     st.markdown(section_header(
         "Fiches Concurrents",
-        "Detail par marque : news, tendances Google, publicites, presence YouTube"
+        "Détail par marque : actualités, tendances de recherche, publicités et présence vidéo"
     ), unsafe_allow_html=True)
 
     storage = Storage()
@@ -99,4 +99,4 @@ def render():
             else:
                 st.caption("Aucune video pour cette marque.")
         else:
-            st.caption("Base YouTube vide. Definir `YOUTUBE_API_KEY` pour activer.")
+            st.caption("Veille vidéo : aucune donnée disponible pour le moment.")

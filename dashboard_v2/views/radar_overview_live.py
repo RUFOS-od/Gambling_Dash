@@ -14,15 +14,15 @@ from components.llm_analyst import classify_sentiment, detect_weak_signals
 
 def _empty_state():
     st.warning(
-        "Aucune donnee de veille disponible. Cliquez sur **Rafraichir la veille** "
-        "dans la sidebar pour lancer la premiere collecte."
+        "Aucune donnée de veille disponible. Cliquez sur **Rafraîchir la veille** "
+        "dans le menu latéral pour lancer la première collecte."
     )
 
 
 def render():
     st.markdown(section_header(
         "AI Market Radar — Vue d'ensemble",
-        "Veille concurrentielle sur donnees reelles : Google Trends, News, Meta Ads, YouTube"
+        "Veille concurrentielle multi-sources : tendances de recherche, actualités, médias sociaux et publicités"
     ), unsafe_allow_html=True)
 
     storage = Storage()
@@ -110,8 +110,8 @@ def render():
                 ads_counts[b] = int(n)
         if sum(ads_counts.values()) == 0:
             st.info(
-                "Meta Ad Library : aucune donnee. Definir la variable "
-                "d'environnement `META_ACCESS_TOKEN` pour activer la collecte."
+                "Veille publicitaire Meta : source non encore activée. "
+                "Cette donnée sera disponible prochainement."
             )
         else:
             fig = bar_chart_brands(ads_counts, "Intensite Publicitaire (nb pubs actives)", height=400)
