@@ -32,9 +32,13 @@ def _load_image_b64(path: Path) -> str:
         data = base64.b64encode(f.read()).decode()
     return f"data:{mime_type};base64,{data}"
 
+# Favicon : utilise le vrai logo Betclic (fallback "B" si fichier absent)
+_favicon_path = APP_DIR / "betclic-logo.png"
+_favicon = str(_favicon_path) if _favicon_path.exists() else "B"
+
 st.set_page_config(
     page_title="Betclic Brand Pulse — BI Dashboard 2026",
-    page_icon="B",
+    page_icon=_favicon,
     layout="wide",
     initial_sidebar_state="expanded",
 )
