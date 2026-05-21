@@ -12,10 +12,11 @@ import traceback
 import pandas as pd
 
 
-# Concurrents suivis (9 marques partageant l'ecosysteme des paris en Cote d'Ivoire)
+# Concurrents suivis : aligne sur la liste questionnaire V1 (14 marques)
 COMPETITORS = [
-    "Betclic", "1XBET", "Sportcash", "PremierBet", "Chopbet",
-    "Melbet", "Betmomo", "AkwaBet", "Paripesa",
+    "Betclic", "Chopbet", "1XBET", "Sportcash", "BetPawa",
+    "Melbet", "Premier Bet", "BetMomo", "AkwaBet", "YellowBet",
+    "Betway", "Afropari", "Paripesa", "Bet365",
 ]
 
 # Marche cible

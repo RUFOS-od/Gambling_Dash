@@ -7,45 +7,56 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# Structure attendue des fichiers
-EXPECTED_COLUMNS = [
-    "ID_Repondant", "Vague", "Mois_Collecte", "Ville", "Tranche_Age", "Genre",
-    "Type_Repondant", "Segment_Parieur", "Frequence_Paris_Mois", "TOM_Marque_Citee",
-    "Notoriete_Totale_Betclic", "Notoriete_Aidee_Betclic",
-    "Notoriete_Totale_1XBET", "Notoriete_Totale_Sportcash", "Notoriete_Totale_PremierBet",
-    "Notoriete_Totale_Chopbet", "Notoriete_Totale_Melbet", "Notoriete_Totale_Betmomo",
-    "Notoriete_Totale_AkwaBet", "Notoriete_Totale_Paripesa",
-    "Rappel_Campagne_Betclic", "Ambassadeur_Rappele", "Canal_Decouverte",
-    "Utilise_Betclic", "Marque_Principale_Utilisee", "Multi_Application",
-    "Nb_Apps_Utilisees", "Sport_Prefere", "Type_Pari_Prefere",
-    "Moyen_Paiement_Principal", "Part_Portefeuille_Betclic",
-    "Consideration_Betclic", "Preference_Betclic",
-    "Image_Modernite", "Image_Fiabilite", "Image_Securite",
-    "Image_Rapidite_Paiements", "Image_Proximite", "Image_Innovation",
-    "Image_Qualite_App", "Image_Simplicite", "Image_Variete_Paris",
-    "Image_Jeu_Responsable", "Image_Rapport_Qualite_Bonus", "Image_Transparence",
-    "Satisfaction_Globale_Betclic", "NPS_Score", "NPS_Categorie",
-    "Risque_Churn", "Principal_Irritant", "Intention_Reutilisation",
+# Liste des marques alignee sur le questionnaire V1 (14 marques)
+_BRANDS = [
+    "Betclic", "Chopbet", "1XBET", "Sportcash", "BetPawa",
+    "Melbet", "Premier Bet", "BetMomo", "AkwaBet", "YellowBet",
+    "Betway", "Afropari", "Paripesa", "Bet365",
 ]
+
+# Colonnes attendues apres normalisation par loader._transform_raw_to_normalized
+EXPECTED_COLUMNS = (
+    [
+        "ID_Repondant", "Vague", "Mois_Collecte", "Ville", "Tranche_Age", "Genre",
+        "Type_Repondant", "Segment_Parieur", "Frequence_Paris_Mois", "TOM_Marque_Citee",
+        "Rappel_Campagne_Betclic", "Ambassadeur_Rappele", "Canal_Decouverte",
+        "Utilise_Betclic", "Marque_Principale_Utilisee", "Multi_Application",
+        "Nb_Apps_Utilisees", "Sport_Prefere", "Type_Pari_Prefere",
+        "Moyen_Paiement_Principal", "Part_Portefeuille_Betclic",
+        "Consideration_Betclic", "Preference_Betclic",
+        "Satisfaction_Globale_Betclic", "NPS_Score", "NPS_Categorie",
+        "Risque_Churn", "Principal_Irritant", "Intention_Reutilisation",
+    ]
+    + [f"Notoriete_Totale_{b}" for b in _BRANDS]
+    + [f"Notoriete_Aidee_{b}" for b in _BRANDS]
+    + [
+        "Image_Fiabilite_Paiement", "Image_Securite", "Image_Bonus",
+        "Image_Variete_Paris", "Image_Qualite_App", "Image_Simplicite",
+        "Image_Service_Client", "Image_Depot_Retrait", "Image_Live_Betting",
+        "Image_Transparence", "Image_Jeu_Responsable", "Image_Proximite",
+        "Image_Cotes_Elevees",
+    ]
+)
 
 EXPECTED_VILLES = ["Abidjan", "Bouake", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
 EXPECTED_GENRES = ["Homme", "Femme"]
 EXPECTED_TYPES = ["Parieur", "Non-parieur"]
 
-BINARY_COLS = [
-    "Notoriete_Totale_Betclic", "Notoriete_Aidee_Betclic",
-    "Notoriete_Totale_1XBET", "Notoriete_Totale_Sportcash", "Notoriete_Totale_PremierBet",
-    "Notoriete_Totale_Chopbet", "Notoriete_Totale_Melbet", "Notoriete_Totale_Betmomo",
-    "Notoriete_Totale_AkwaBet", "Notoriete_Totale_Paripesa",
-    "Rappel_Campagne_Betclic", "Utilise_Betclic", "Multi_Application",
-    "Consideration_Betclic", "Preference_Betclic",
-]
+BINARY_COLS = (
+    [f"Notoriete_Totale_{b}" for b in _BRANDS]
+    + [f"Notoriete_Aidee_{b}" for b in _BRANDS]
+    + [
+        "Rappel_Campagne_Betclic", "Utilise_Betclic", "Multi_Application",
+        "Consideration_Betclic", "Preference_Betclic",
+    ]
+)
 
 IMAGE_COLS = [
-    "Image_Modernite", "Image_Fiabilite", "Image_Securite",
-    "Image_Rapidite_Paiements", "Image_Proximite", "Image_Innovation",
-    "Image_Qualite_App", "Image_Simplicite", "Image_Variete_Paris",
-    "Image_Jeu_Responsable", "Image_Rapport_Qualite_Bonus", "Image_Transparence",
+    "Image_Fiabilite_Paiement", "Image_Securite", "Image_Bonus",
+    "Image_Variete_Paris", "Image_Qualite_App", "Image_Simplicite",
+    "Image_Service_Client", "Image_Depot_Retrait", "Image_Live_Betting",
+    "Image_Transparence", "Image_Jeu_Responsable", "Image_Proximite",
+    "Image_Cotes_Elevees",
 ]
 
 

@@ -175,10 +175,18 @@ with st.sidebar:
         selected_genres = []
         selected_segments = []
         selected_marques = []
-        st.info(
-            "ℹ️ Les filtres globaux ne s'appliquent pas au module **AI Market Radar**. "
-            "La veille concurrentielle agrège des données externes (web, social, ads) "
-            "et n'est pas filtrable par caractéristiques d'enquêtés."
+
+        # Veille concurrentielle (collecteurs live)
+        try:
+            from components.sidebar_intel import render_sidebar_block
+            render_sidebar_block()
+        except Exception as _e:
+            st.caption(f"Veille indisponible : {_e}")
+
+        st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
+        st.caption(
+            "ℹ️ Les filtres globaux Tracker ne s'appliquent pas au module AI Market Radar : "
+            "la veille agrège des données externes (web, social, ads)."
         )
 
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
@@ -227,7 +235,19 @@ if module == "Brand Health Tracker":
         banque_images.render()
 
 else:
-    from views import radar_overview, radar_competitors, radar_social, radar_alerts
+    # Live mode : utilise les collecteurs réels (Google Trends/News, YouTube, Meta Ads)
+    # avec analyse de sentiment Claude. Bascule possible via toggle ci-dessous.
+    use_live = st.session_state.get("radar_live_mode", True)
+
+    if use_live:
+        from views import (
+            radar_overview_live as radar_overview,
+            radar_competitors_live as radar_competitors,
+            radar_social_live as radar_social,
+            radar_alerts_live as radar_alerts,
+        )
+    else:
+        from views import radar_overview, radar_competitors, radar_social, radar_alerts
 
     tab1, tab2, tab3, tab4 = st.tabs([
         "Vue d'ensemble",

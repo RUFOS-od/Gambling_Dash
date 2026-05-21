@@ -12,9 +12,23 @@ np.random.seed(42)
 
 
 def _base_strength():
-    """Get base brand strength from real data for coherent simulation."""
+    """Get base brand strength from real data for coherent simulation.
+
+    Uses the latest available wave (dynamic), not a hardcoded one.
+    """
     data = load_raw_data()
-    latest = data[data["Vague"] == "Vague 3"]
+    if len(data) == 0 or "Vague" not in data.columns:
+        # No real data yet : assume Betclic = leader, others = uniform
+        return {b: 50 if b == "Betclic" else 20 for b in COMPETITORS}
+
+    # Pick latest wave dynamically
+    vagues = sorted(
+        data["Vague"].dropna().unique().tolist(),
+        key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
+    )
+    latest_wave = vagues[-1] if vagues else None
+    latest = data[data["Vague"] == latest_wave] if latest_wave else data
+
     tom = calc_tom_all_brands(latest)
     notoriete = calc_notoriete_all_brands(latest)
 

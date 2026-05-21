@@ -20,7 +20,16 @@ def render():
 
     # Load real + simulated data
     data = load_raw_data()
-    latest = data[data["Vague"] == "Vague 3"]
+    # Use latest available wave dynamically (handles V1 only, V1+V2, etc.)
+    if "Vague" in data.columns and len(data) > 0:
+        vagues_sorted = sorted(
+            data["Vague"].dropna().unique().tolist(),
+            key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
+        )
+        latest_v = vagues_sorted[-1] if vagues_sorted else None
+        latest = data[data["Vague"] == latest_v] if latest_v else data
+    else:
+        latest = data
     tom_all = calc_tom_all_brands(latest)
     not_all = calc_notoriete_all_brands(latest)
 

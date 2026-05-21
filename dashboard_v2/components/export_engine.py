@@ -53,8 +53,15 @@ def _compute_all_kpis(df, vagues_list):
         return calc_nps(d)["nps"]
     kpis["nps_vagues"] = calc_kpi_by_vague(df, _nps_score)
 
-    # Latest vague
-    latest_v = max([v for v in vagues_list if v in df["Vague"].unique()], default="Vague 3")
+    # Latest vague (dynamic: handles V1 only, V1+V2, etc.)
+    _candidates = [v for v in vagues_list if v in df["Vague"].unique()]
+    if _candidates:
+        latest_v = sorted(
+            _candidates,
+            key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
+        )[-1]
+    else:
+        latest_v = "Vague 1"
     df_latest = df[df["Vague"] == latest_v]
     kpis["latest_vague"] = latest_v
 
@@ -587,7 +594,9 @@ def generate_excel(df, vagues_list) -> bytes:
     ws2.write(0, 0, "Evolution inter-vagues", title_fmt)
     row = 2
     ws2.write(row, 0, "Indicateur", header_fmt)
-    for i, v in enumerate(["Vague 1", "Vague 2", "Vague 3"]):
+    _all_vagues = sorted([str(v) for v in df["Vague"].dropna().unique()],
+                          key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999)
+    for i, v in enumerate(_all_vagues):
         ws2.write(row, 1 + i, VAGUE_SHORT.get(v, v), header_fmt)
 
     evol_kpis = [
@@ -608,7 +617,7 @@ def generate_excel(df, vagues_list) -> bytes:
         fmt_l = alt_row_left_fmt if i % 2 == 0 else cell_left_fmt
         fmt_c = alt_row_fmt if i % 2 == 0 else cell_fmt
         ws2.write(r, 0, label, fmt_l)
-        for j, v in enumerate(["Vague 1", "Vague 2", "Vague 3"]):
+        for j, v in enumerate(_all_vagues):
             val = vague_data.get(v)
             ws2.write(r, 1 + j, val if val is not None else "", fmt_c)
 

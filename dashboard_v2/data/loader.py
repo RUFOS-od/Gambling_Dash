@@ -1,6 +1,12 @@
 """
 Data loader and KPI calculation engine for Betclic Brand Pulse Tracker.
-All KPIs are computed dynamically from the raw Excel bases (V1, V2, V3).
+
+Handles two file formats automatically:
+  - RAW CAPI export (new): columns like QF1, Q1A, A_Q1B_1, T_Q12A_1, etc.
+  - LEGACY normalized (fictional/old): columns like Vague, TOM_Marque_Citee, etc.
+
+The raw format is transformed into the normalized schema on load, so all
+downstream views/KPI functions keep using the same column names.
 """
 
 import pandas as pd
@@ -10,19 +16,24 @@ import streamlit as st
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent
 
+# ──────────────────────────────────────────────
+# REFERENCE LISTS — updated to match real V1 questionnaire
+# ──────────────────────────────────────────────
+
+# 14 competing sports betting brands tracked in the questionnaire
 COMPETITORS = [
-    "Betclic", "1XBET", "Sportcash", "PremierBet", "Chopbet",
-    "Melbet", "Betmomo", "AkwaBet", "Paripesa"
+    "Betclic", "Chopbet", "1XBET", "Sportcash", "BetPawa",
+    "Melbet", "Premier Bet", "BetMomo", "AkwaBet", "YellowBet",
+    "Betway", "Afropari", "Paripesa", "Bet365",
 ]
 
-VAGUE_LABELS = {"Vague 1": "V1 — Jan 2026", "Vague 2": "V2 — Fév 2026", "Vague 3": "V3 — Mar 2026"}
-VAGUE_SHORT = {"Vague 1": "V1", "Vague 2": "V2", "Vague 3": "V3"}
-VAGUE_MONTHS = {"Vague 1": "Janvier 2026", "Vague 2": "Février 2026", "Vague 3": "Mars 2026"}
+VAGUE_LABELS = {"Vague 1": "V1 — Mai 2026"}
+VAGUE_SHORT = {"Vague 1": "V1"}
+VAGUE_MONTHS = {"Vague 1": "Mai 2026"}
 
 
 def _build_dynamic_vague_labels(vagues_list):
     """Build VAGUE_SHORT and VAGUE_MONTHS for any wave number (future-proof)."""
-    from datetime import datetime
     months_fr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
                  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     for v_name in vagues_list:
@@ -31,9 +42,9 @@ def _build_dynamic_vague_labels(vagues_list):
         try:
             num = int(v_name.replace("Vague ", ""))
             VAGUE_SHORT[v_name] = f"V{num}"
-            # Estimate month: V1=Jan 2026, V2=Feb 2026, ...
-            month_idx = (num - 1) % 12
-            year = 2026 + (num - 1) // 12
+            # V1 starts in May 2026 ; next waves every ~1-2 months
+            month_idx = (4 + (num - 1)) % 12
+            year = 2026 + (4 + (num - 1)) // 12
             VAGUE_MONTHS[v_name] = f"{months_fr[month_idx]} {year}"
             VAGUE_LABELS[v_name] = f"V{num} — {months_fr[month_idx][:3]} {year}"
         except (ValueError, TypeError):
@@ -41,23 +52,292 @@ def _build_dynamic_vague_labels(vagues_list):
             VAGUE_MONTHS[v_name] = ""
             VAGUE_LABELS[v_name] = v_name
 
+
+# 13 image attributes (Q12) — matches the real questionnaire
 IMAGE_ATTRIBUTES = {
-    "Image_Modernite": "Modernité",
-    "Image_Fiabilite": "Fiabilité",
+    "Image_Fiabilite_Paiement": "Fiabilité paiements",
     "Image_Securite": "Sécurité",
-    "Image_Rapidite_Paiements": "Rapidité Paiements",
-    "Image_Proximite": "Proximité",
-    "Image_Innovation": "Innovation",
-    "Image_Qualite_App": "Qualité App",
+    "Image_Bonus": "Bonus & promotions",
+    "Image_Variete_Paris": "Variété sports/marchés",
+    "Image_Qualite_App": "Qualité app mobile",
     "Image_Simplicite": "Simplicité",
-    "Image_Variete_Paris": "Variété Paris",
-    "Image_Jeu_Responsable": "Jeu Responsable",
-    "Image_Rapport_Qualite_Bonus": "Qualité/Bonus",
+    "Image_Service_Client": "Service client",
+    "Image_Depot_Retrait": "Dépôt / retrait",
+    "Image_Live_Betting": "Live betting",
     "Image_Transparence": "Transparence",
+    "Image_Jeu_Responsable": "Jeu responsable",
+    "Image_Proximite": "Proximité locale CI",
+    "Image_Cotes_Elevees": "Cotes élevées",
 }
 
 CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
 
+
+# ──────────────────────────────────────────────
+# RAW → NORMALIZED ADAPTER
+# ──────────────────────────────────────────────
+
+# Map raw index suffix (_1.._14) to brand name (as in COMPETITORS)
+RAW_BRAND_BY_INDEX = {
+    1: "Betclic", 2: "Chopbet", 3: "1XBET", 4: "Sportcash",
+    5: "BetPawa", 6: "Melbet", 7: "Premier Bet", 8: "BetMomo",
+    9: "AkwaBet", 10: "YellowBet", 11: "Betway", 12: "Afropari",
+    13: "Paripesa", 14: "Bet365",
+}
+# Map Q12 letter (A..N) to brand
+RAW_BRAND_BY_LETTER = {
+    "A": "Betclic", "B": "Chopbet", "C": "1XBET", "D": "Sportcash",
+    "E": "BetPawa", "F": "Melbet", "G": "Premier Bet", "H": "BetMomo",
+    "I": "AkwaBet", "J": "YellowBet", "K": "Betway", "L": "Afropari",
+    "M": "Paripesa", "N": "Bet365",
+}
+# Map Q12 attribute suffix (_1.._13) to normalized image column
+RAW_IMAGE_ATTRS = {
+    1: "Image_Fiabilite_Paiement",
+    2: "Image_Securite",
+    3: "Image_Bonus",
+    4: "Image_Variete_Paris",
+    5: "Image_Qualite_App",
+    6: "Image_Simplicite",
+    7: "Image_Service_Client",
+    8: "Image_Depot_Retrait",
+    9: "Image_Live_Betting",
+    10: "Image_Transparence",
+    11: "Image_Jeu_Responsable",
+    12: "Image_Proximite",
+    13: "Image_Cotes_Elevees",
+}
+
+SPORT_MAP = {
+    "A_Q11_1": "Football",
+    "A_Q11_2": "Basketball",
+    "A_Q11_3": "Tennis",
+    "A_Q11_4": "Rugby",
+    "A_Q11_5": "Hockey sur glace",
+    "A_Q11_6": "Sports ivoiriens / africains",
+    "A_Q11_7": "Autres",
+}
+
+
+def _is_raw_format(df: pd.DataFrame) -> bool:
+    """Detect if the dataframe is in raw CAPI export format."""
+    return (
+        "QF1" in df.columns
+        and "Q1A" in df.columns
+        and "TOM_Marque_Citee" not in df.columns
+    )
+
+
+def _str_yes_no(series: pd.Series) -> pd.Series:
+    """Convert a raw A_QxX_Y column (string brand label or '0') to 1/0."""
+    s = series.astype(str).str.strip()
+    return ((s != "0") & (s != "") & (s.str.lower() != "nan")).astype(int)
+
+
+def _nps_category(score) -> str:
+    """0-6 = Détracteur, 7-8 = Passif, 9-10 = Promoteur."""
+    if pd.isna(score):
+        return None
+    score = float(score)
+    if score >= 9:
+        return "Promoteur"
+    elif score >= 7:
+        return "Passif"
+    else:
+        return "Détracteur"
+
+
+def _churn_from_intention(intent) -> str:
+    """Map Q13 reuse intention to a churn risk label."""
+    if pd.isna(intent):
+        return None
+    v = str(intent).strip()
+    if v.startswith("Très probablement"):
+        return "Faible"
+    if v.startswith("Probablement") and "pas" not in v.lower():
+        return "Faible"
+    if "Peut-être" in v or "peut-être" in v:
+        return "Modéré"
+    if "Peu probable" in v:
+        return "Élevé"
+    if "Pas du tout" in v.lower() or v.startswith("Pas du tout"):
+        return "Élevé"
+    return "Modéré"
+
+
+def _map_intention(v) -> str:
+    """Map raw Q13 wording to standardized intention buckets."""
+    if pd.isna(v):
+        return None
+    v = str(v).strip()
+    if v.startswith("Très probablement"):
+        return "Certainement"
+    if v.startswith("Probablement") and "pas" not in v.lower():
+        return "Probablement"
+    if "Peut-être" in v:
+        return "Incertain"
+    if "Peu probable" in v or "Pas du tout" in v:
+        return "Probablement pas"
+    return None
+
+
+def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1") -> pd.DataFrame:
+    """
+    Transform raw CAPI V1 export into the normalized schema expected by views.
+
+    The raw format has 447 columns with codes (QF1, Q1A, A_Q1B_1, T_Q12A_1...).
+    The normalized format has columns like Vague, Genre, Ville, TOM_Marque_Citee,
+    Notoriete_Totale_{Brand}, Image_{Attr}, NPS_Score, etc.
+    """
+    df = pd.DataFrame()
+    n = len(df_raw)
+
+    # ── Identifiers & wave ──
+    df["ID_Repondant"] = df_raw["SbjNum"]
+    df["Vague"] = wave_name
+    df["Mois_Collecte"] = pd.to_datetime(
+        df_raw.get("Date_Inter", df_raw.get("Date")), errors="coerce"
+    ).dt.strftime("%B %Y")
+
+    # ── Profile ──
+    df["Tranche_Age"] = df_raw["QF1"]
+    df["Genre"] = df_raw["Q27"]
+    df["Ville"] = df_raw["Q29"]
+    df["Profession"] = df_raw.get("Q28", "")
+
+    # ── Type respondant ──
+    type_rep = df_raw["Type_Rep"].astype(str).str.strip()
+    df["Type_Repondant"] = type_rep.map({
+        "PARIEUR": "Parieur",
+        "NON  PARIEUR": "Non-parieur",
+        "NON PARIEUR": "Non-parieur",
+    }).fillna(type_rep)
+    df["Segment_Parieur"] = df["Type_Repondant"]
+    df["Frequence_Paris"] = df_raw.get("Q8", None)
+    df["Frequence_Paris_Mois"] = df["Frequence_Paris"]
+    df["Montant_Mise_Mensuel"] = df_raw.get("Q10", None)
+
+    # ── TOM (Top of Mind) ──
+    tom_raw = df_raw["Q1A"].astype(str).str.strip()
+    df["TOM_Marque_Citee"] = tom_raw.where(tom_raw.isin(COMPETITORS), None)
+
+    # ── Awareness per brand (spontaneous + aided + total) ──
+    for idx, brand in RAW_BRAND_BY_INDEX.items():
+        col_b = f"A_Q1B_{idx}"
+        col_c = f"A_Q1C_{idx}"
+        spont = _str_yes_no(df_raw[col_b]) if col_b in df_raw.columns else pd.Series([0] * n, index=df_raw.index)
+        aided = _str_yes_no(df_raw[col_c]) if col_c in df_raw.columns else pd.Series([0] * n, index=df_raw.index)
+        df[f"Notoriete_Spontanee_{brand}"] = spont.values
+        df[f"Notoriete_Aidee_{brand}"] = aided.values
+        df[f"Notoriete_Totale_{brand}"] = ((spont.values == 1) | (aided.values == 1)).astype(int)
+
+    # ── Usage ──
+    q6 = df_raw.get("Q6", pd.Series([None] * n))
+    df["Marque_Principale_Utilisee"] = q6
+    df["Utilise_Betclic"] = (q6.astype(str) == "Betclic").astype(int)
+
+    # Multi-app: count how many A_Q5_X are non-"0"
+    a_q5_cols = [f"A_Q5_{i}" for i in range(1, 15) if f"A_Q5_{i}" in df_raw.columns]
+    if a_q5_cols:
+        nb_apps = sum(_str_yes_no(df_raw[c]) for c in a_q5_cols)
+        df["Nb_Apps_Utilisees"] = nb_apps.values
+        df["Multi_Application"] = (nb_apps.values >= 2).astype(int)
+    else:
+        df["Nb_Apps_Utilisees"] = 0
+        df["Multi_Application"] = 0
+
+    # Per-brand "has bet on" flag (from A_Q5_X)
+    for idx, brand in RAW_BRAND_BY_INDEX.items():
+        col = f"A_Q5_{idx}"
+        df[f"A_Deja_Parie_{brand}"] = _str_yes_no(df_raw[col]).values if col in df_raw.columns else 0
+
+    # ── Sport préféré : first non-"0" A_Q11_X ──
+    def first_sport(row):
+        for col, sport in SPORT_MAP.items():
+            v = row.get(col)
+            if pd.notna(v) and str(v).strip() != "0":
+                return sport
+        return None
+    df["Sport_Prefere"] = df_raw.apply(first_sport, axis=1) if any(c in df_raw.columns for c in SPORT_MAP) else None
+
+    # ── Moyen de paiement ──
+    df["Moyen_Paiement_Principal"] = df_raw.get("Q9", None)
+
+    # ── Type pari préféré : not asked in V1 ──
+    df["Type_Pari_Prefere"] = None
+
+    # ── Considération / préférence / wallet share (derived) ──
+    intent = df_raw.get("Q13", pd.Series([None] * n))
+    df["Consideration_Betclic"] = intent.astype(str).str.startswith(
+        ("Très probablement", "Probablement")
+    ).astype(int)
+    df["Preference_Betclic"] = df["Utilise_Betclic"]
+    df["Part_Portefeuille_Betclic"] = df["Utilise_Betclic"].astype(float)
+
+    # ── Image attributes for Betclic (Q12A) ──
+    for idx, attr_col in RAW_IMAGE_ATTRS.items():
+        raw_col = f"T_Q12A_{idx}"
+        df[attr_col] = pd.to_numeric(df_raw[raw_col], errors="coerce") if raw_col in df_raw.columns else None
+
+    # ── Image attributes per competitor (for radar/positioning views) ──
+    for letter, brand in RAW_BRAND_BY_LETTER.items():
+        for idx, attr_col in RAW_IMAGE_ATTRS.items():
+            raw_col = f"T_Q12{letter}_{idx}"
+            if raw_col in df_raw.columns:
+                df[f"{attr_col}_{brand}"] = pd.to_numeric(df_raw[raw_col], errors="coerce")
+
+    # ── Importance (Q4) — used by some views ──
+    importance_labels = list(RAW_IMAGE_ATTRS.values())
+    for idx, attr_col in RAW_IMAGE_ATTRS.items():
+        raw_col = f"T_Q4_{idx}"
+        df[f"Importance_{attr_col.replace('Image_', '')}"] = (
+            pd.to_numeric(df_raw[raw_col], errors="coerce") if raw_col in df_raw.columns else None
+        )
+
+    # ── Satisfaction & NPS ──
+    df["Satisfaction_Globale_Betclic"] = pd.to_numeric(df_raw.get("T_Q14_1"), errors="coerce")
+    df["NPS_Score"] = pd.to_numeric(df_raw.get("Q15"), errors="coerce")
+    df["NPS_Categorie"] = df["NPS_Score"].apply(_nps_category)
+
+    # ── Churn risk & intention (derived from Q13) ──
+    df["Risque_Churn"] = intent.apply(_churn_from_intention)
+    df["Intention_Reutilisation"] = intent.apply(_map_intention)
+
+    # ── Principal_Irritant : Q16 verbatim (the "why" of NPS score) ──
+    df["Principal_Irritant"] = df_raw.get("Q16", None)
+
+    # ── Campaign recall ──
+    q17 = df_raw.get("Q17", pd.Series([None] * n)).astype(str)
+    df["Rappel_Pub_Generale"] = q17.str.startswith("Oui").astype(int)
+    df["Rappel_Campagne_Betclic"] = (
+        _str_yes_no(df_raw["A_Q18_1"]).values if "A_Q18_1" in df_raw.columns else 0
+    )
+    # Q21 = recall World Cup campaign
+    q21 = df_raw.get("Q21", pd.Series([None] * n)).astype(str)
+    df["Rappel_CDM_Betclic"] = q21.str.startswith("Oui").astype(int)
+
+    # ── Ambassadeur : not asked this wave ──
+    df["Ambassadeur_Rappele"] = None
+
+    # ── Canal_Decouverte : first non-empty Q19_OX (Betclic-specific supports) ──
+    q19_cols = [f"Q19_O{i}" for i in range(1, 11) if f"Q19_O{i}" in df_raw.columns]
+    def first_canal(row):
+        for col in q19_cols:
+            v = row.get(col)
+            if pd.notna(v) and str(v).strip() not in ("", "0"):
+                return str(v).strip()
+        return None
+    df["Canal_Decouverte"] = df_raw.apply(first_canal, axis=1) if q19_cols else None
+
+    # ── Date column for export engine ──
+    df["Date_Interview"] = pd.to_datetime(df_raw.get("Date_Inter"), errors="coerce")
+
+    return df
+
+
+# ──────────────────────────────────────────────
+# FILE DISCOVERY & LOADING
+# ──────────────────────────────────────────────
 
 def detect_available_waves() -> list:
     """Auto-detect all Bases_Betclic_BrandPulse_Tracker_V*.xlsx files."""
@@ -67,12 +347,12 @@ def detect_available_waves() -> list:
 
 @st.cache_data(ttl=3600)
 def load_raw_data() -> pd.DataFrame:
-    """Load and concatenate all available tracker bases (auto-detection)."""
+    """Load and concatenate all available tracker bases (auto-detects format)."""
     wave_files = detect_available_waves()
     if not wave_files:
-        # Fallback legacy : chercher V1/V2/V3 meme sans auto-detection
+        # Fallback legacy : explicit V1/V2/V3 lookup
         wave_files = []
-        for v in [1, 2, 3]:
+        for v in range(1, 13):
             fpath = DATA_DIR / f"Bases_Betclic_BrandPulse_Tracker_V{v}.xlsx"
             if fpath.exists():
                 wave_files.append({"num": v, "path": fpath, "name": f"Vague {v}"})
@@ -80,11 +360,16 @@ def load_raw_data() -> pd.DataFrame:
     frames = []
     for wf in wave_files:
         try:
-            df = pd.read_excel(wf["path"], header=1)
-            # Normaliser le nom de vague au cas ou le fichier contient une valeur differente
-            if "Vague" in df.columns:
-                df["Vague"] = df["Vague"].fillna(wf["name"])
-            frames.append(df)
+            # Try raw format first (no header offset)
+            df_raw = pd.read_excel(wf["path"])
+            if _is_raw_format(df_raw):
+                df_norm = _transform_raw_to_normalized(df_raw, wave_name=wf["name"])
+            else:
+                # Legacy normalized format with 1-row header offset
+                df_norm = pd.read_excel(wf["path"], header=1)
+                if "Vague" in df_norm.columns:
+                    df_norm["Vague"] = df_norm["Vague"].fillna(wf["name"])
+            frames.append(df_norm)
         except Exception as e:
             print(f"Erreur lecture {wf['path'].name}: {e}")
             continue
@@ -94,17 +379,19 @@ def load_raw_data() -> pd.DataFrame:
 
     data = pd.concat(frames, ignore_index=True)
 
-    # Clean numeric columns
+    # Coerce numeric columns
     numeric_cols = [
-        "Frequence_Paris_Mois", "Notoriete_Totale_Betclic", "Notoriete_Aidee_Betclic",
-        "Notoriete_Totale_1XBET", "Notoriete_Totale_Sportcash", "Notoriete_Totale_PremierBet",
-        "Notoriete_Totale_Chopbet", "Notoriete_Totale_Melbet", "Notoriete_Totale_Betmomo",
-        "Notoriete_Totale_AkwaBet", "Notoriete_Totale_Paripesa",
-        "Rappel_Campagne_Betclic", "Utilise_Betclic", "Multi_Application",
-        "Nb_Apps_Utilisees", "Part_Portefeuille_Betclic",
+        "Frequence_Paris_Mois", "Rappel_Campagne_Betclic", "Utilise_Betclic",
+        "Multi_Application", "Nb_Apps_Utilisees", "Part_Portefeuille_Betclic",
         "Consideration_Betclic", "Preference_Betclic",
         "Satisfaction_Globale_Betclic", "NPS_Score",
     ]
+    for brand in COMPETITORS:
+        numeric_cols.extend([
+            f"Notoriete_Totale_{brand}",
+            f"Notoriete_Spontanee_{brand}",
+            f"Notoriete_Aidee_{brand}",
+        ])
     for col in numeric_cols:
         if col in data.columns:
             data[col] = pd.to_numeric(data[col], errors="coerce")
@@ -123,8 +410,12 @@ def load_waves_individually() -> dict:
     waves = {}
     for wf in wave_files:
         try:
-            df = pd.read_excel(wf["path"], header=1)
-            waves[wf["name"]] = df
+            df_raw = pd.read_excel(wf["path"])
+            if _is_raw_format(df_raw):
+                waves[wf["name"]] = _transform_raw_to_normalized(df_raw, wave_name=wf["name"])
+            else:
+                df_norm = pd.read_excel(wf["path"], header=1)
+                waves[wf["name"]] = df_norm
         except Exception:
             continue
     return waves
@@ -132,11 +423,19 @@ def load_waves_individually() -> dict:
 
 @st.cache_data(ttl=3600)
 def load_kpi_reference() -> pd.DataFrame:
-    """Load the KPI reference file for validation."""
+    """Load the KPI reference file for validation (legacy, optional)."""
     fpath = DATA_DIR / "Betclic_BrandPulse_Tracker_KPIS_V1V2V3.xlsx"
-    df = pd.read_excel(fpath, sheet_name=1, header=2)
-    return df
+    if not fpath.exists():
+        return pd.DataFrame()
+    try:
+        return pd.read_excel(fpath, sheet_name=1, header=2)
+    except Exception:
+        return pd.DataFrame()
 
+
+# ──────────────────────────────────────────────
+# FILTERS
+# ──────────────────────────────────────────────
 
 def apply_filters(df: pd.DataFrame, vagues=None, villes=None, genres=None, segments=None) -> pd.DataFrame:
     """Apply sidebar filters to the dataframe."""
@@ -163,11 +462,10 @@ def get_utilisateurs_betclic(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ──────────────────────────────────────────────
-# KPI CALCULATION FUNCTIONS
+# KPI CALCULATION FUNCTIONS (unchanged signatures)
 # ──────────────────────────────────────────────
 
 def calc_tom(df: pd.DataFrame, brand: str = "Betclic") -> float:
-    """Top-of-Mind: % of respondents citing brand first."""
     total = len(df)
     if total == 0:
         return 0.0
@@ -175,18 +473,13 @@ def calc_tom(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 
 def calc_tom_all_brands(df: pd.DataFrame) -> dict:
-    """TOM for all brands."""
     total = len(df)
     if total == 0:
-        return {}
-    result = {}
-    for brand in COMPETITORS:
-        result[brand] = round((df["TOM_Marque_Citee"] == brand).sum() / total * 100, 1)
-    return result
+        return {b: 0.0 for b in COMPETITORS}
+    return {b: round((df["TOM_Marque_Citee"] == b).sum() / total * 100, 1) for b in COMPETITORS}
 
 
 def calc_notoriete_totale(df: pd.DataFrame, brand: str = "Betclic") -> float:
-    """Total awareness for a brand."""
     col = f"Notoriete_Totale_{brand}"
     if col not in df.columns:
         return 0.0
@@ -197,40 +490,39 @@ def calc_notoriete_totale(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 
 def calc_notoriete_all_brands(df: pd.DataFrame) -> dict:
-    """Total awareness for all brands."""
-    result = {}
-    for brand in COMPETITORS:
-        result[brand] = calc_notoriete_totale(df, brand)
-    return result
+    return {b: calc_notoriete_totale(df, b) for b in COMPETITORS}
 
 
-def calc_notoriete_aidee(df: pd.DataFrame) -> float:
-    """Aided awareness for Betclic."""
+def calc_notoriete_aidee(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    col = f"Notoriete_Aidee_{brand}"
+    if col not in df.columns:
+        return 0.0
     total = len(df)
     if total == 0:
         return 0.0
-    return round(df["Notoriete_Aidee_Betclic"].sum() / total * 100, 1)
+    return round(df[col].sum() / total * 100, 1)
 
 
 def calc_rappel_campagne(df: pd.DataFrame) -> float:
-    """Campaign recall among bettors."""
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
+    if len(parieurs) == 0 or "Rappel_Campagne_Betclic" not in parieurs.columns:
         return 0.0
     return round(parieurs["Rappel_Campagne_Betclic"].sum() / len(parieurs) * 100, 1)
 
 
 def calc_ambassadeur_distribution(df: pd.DataFrame) -> dict:
-    """Distribution of ambassador recall."""
     parieurs = get_parieurs(df)
-    rappel = parieurs[parieurs["Rappel_Campagne_Betclic"] == 1]
+    if "Ambassadeur_Rappele" not in parieurs.columns:
+        return {}
+    rappel = parieurs[parieurs["Ambassadeur_Rappele"].notna()]
     if len(rappel) == 0:
         return {}
     return rappel["Ambassadeur_Rappele"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
 
 
 def calc_canal_decouverte(df: pd.DataFrame) -> dict:
-    """Discovery channel distribution."""
+    if "Canal_Decouverte" not in df.columns:
+        return {}
     valid = df[df["Canal_Decouverte"].notna()]
     if len(valid) == 0:
         return {}
@@ -238,7 +530,6 @@ def calc_canal_decouverte(df: pd.DataFrame) -> dict:
 
 
 def calc_penetration(df: pd.DataFrame) -> float:
-    """Betclic penetration rate among bettors."""
     parieurs = get_parieurs(df)
     if len(parieurs) == 0:
         return 0.0
@@ -246,7 +537,6 @@ def calc_penetration(df: pd.DataFrame) -> float:
 
 
 def calc_marque_principale(df: pd.DataFrame) -> float:
-    """% bettors whose primary brand is Betclic."""
     parieurs = get_parieurs(df)
     if len(parieurs) == 0:
         return 0.0
@@ -254,60 +544,58 @@ def calc_marque_principale(df: pd.DataFrame) -> float:
 
 
 def calc_marque_principale_all(df: pd.DataFrame) -> dict:
-    """Primary brand share for all brands."""
     parieurs = get_parieurs(df)
     if len(parieurs) == 0:
-        return {}
+        return {b: 0.0 for b in COMPETITORS}
     total = len(parieurs)
-    result = {}
-    for brand in COMPETITORS:
-        result[brand] = round((parieurs["Marque_Principale_Utilisee"] == brand).sum() / total * 100, 1)
-    return result
+    return {
+        b: round((parieurs["Marque_Principale_Utilisee"] == b).sum() / total * 100, 1)
+        for b in COMPETITORS
+    }
 
 
 def calc_multi_app(df: pd.DataFrame) -> float:
-    """% bettors using 2+ apps."""
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
+    if len(parieurs) == 0 or "Multi_Application" not in parieurs.columns:
         return 0.0
     return round(parieurs["Multi_Application"].sum() / len(parieurs) * 100, 1)
 
 
 def calc_consideration(df: pd.DataFrame) -> float:
-    """Consideration for Betclic among bettors."""
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
+    if len(parieurs) == 0 or "Consideration_Betclic" not in parieurs.columns:
         return 0.0
     return round(parieurs["Consideration_Betclic"].sum() / len(parieurs) * 100, 1)
 
 
 def calc_preference(df: pd.DataFrame) -> float:
-    """Preference for Betclic among bettors."""
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
+    if len(parieurs) == 0 or "Preference_Betclic" not in parieurs.columns:
         return 0.0
     return round(parieurs["Preference_Betclic"].sum() / len(parieurs) * 100, 1)
 
 
 def calc_wallet_share(df: pd.DataFrame) -> float:
-    """Average wallet share for Betclic among its users."""
     users = get_utilisateurs_betclic(df)
-    if len(users) == 0:
+    if len(users) == 0 or "Part_Portefeuille_Betclic" not in users.columns:
         return 0.0
     return round(users["Part_Portefeuille_Betclic"].mean() * 100, 1)
 
 
 def calc_sport_distribution(df: pd.DataFrame) -> dict:
-    """Distribution of preferred sports."""
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0:
+    if len(parieurs) == 0 or "Sport_Prefere" not in parieurs.columns:
         return {}
-    return parieurs["Sport_Prefere"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
+    valid = parieurs[parieurs["Sport_Prefere"].notna()]
+    if len(valid) == 0:
+        return {}
+    return valid["Sport_Prefere"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
 
 
 def calc_pari_type_distribution(df: pd.DataFrame) -> dict:
-    """Distribution of bet types."""
     parieurs = get_parieurs(df)
+    if "Type_Pari_Prefere" not in parieurs.columns:
+        return {}
     valid = parieurs[parieurs["Type_Pari_Prefere"].notna()]
     if len(valid) == 0:
         return {}
@@ -315,8 +603,9 @@ def calc_pari_type_distribution(df: pd.DataFrame) -> dict:
 
 
 def calc_paiement_distribution(df: pd.DataFrame) -> dict:
-    """Distribution of payment methods."""
     parieurs = get_parieurs(df)
+    if "Moyen_Paiement_Principal" not in parieurs.columns:
+        return {}
     valid = parieurs[parieurs["Moyen_Paiement_Principal"].notna()]
     if len(valid) == 0:
         return {}
@@ -325,20 +614,21 @@ def calc_paiement_distribution(df: pd.DataFrame) -> dict:
 
 def calc_image_scores(df: pd.DataFrame) -> dict:
     """Average image attribute scores for Betclic (among those who know it)."""
-    aware = df[df["Notoriete_Totale_Betclic"] == 1]
+    aware = df[df.get("Notoriete_Totale_Betclic", pd.Series([0]*len(df))) == 1]
     result = {}
     for col, label in IMAGE_ATTRIBUTES.items():
-        vals = aware[col].dropna()
-        if len(vals) > 0:
-            result[label] = round(vals.mean(), 2)
+        if col in aware.columns:
+            vals = aware[col].dropna()
+            result[label] = round(vals.mean(), 2) if len(vals) > 0 else 0.0
         else:
             result[label] = 0.0
     return result
 
 
 def calc_satisfaction(df: pd.DataFrame) -> float:
-    """Average satisfaction among Betclic users."""
     users = get_utilisateurs_betclic(df)
+    if "Satisfaction_Globale_Betclic" not in users.columns:
+        return 0.0
     vals = users["Satisfaction_Globale_Betclic"].dropna()
     if len(vals) == 0:
         return 0.0
@@ -346,8 +636,9 @@ def calc_satisfaction(df: pd.DataFrame) -> float:
 
 
 def calc_nps(df: pd.DataFrame) -> dict:
-    """NPS calculation among Betclic users."""
     users = get_utilisateurs_betclic(df)
+    if "NPS_Categorie" not in users.columns:
+        return {"nps": 0, "promoteurs": 0, "passifs": 0, "detracteurs": 0}
     nps_data = users["NPS_Categorie"].dropna()
     total = len(nps_data)
     if total == 0:
@@ -355,9 +646,8 @@ def calc_nps(df: pd.DataFrame) -> dict:
     promoteurs = (nps_data == "Promoteur").sum() / total * 100
     passifs = (nps_data == "Passif").sum() / total * 100
     detracteurs = (nps_data.isin(["Détracteur", "Detracteur"])).sum() / total * 100
-    nps_score = round(promoteurs - detracteurs, 1)
     return {
-        "nps": nps_score,
+        "nps": round(promoteurs - detracteurs, 1),
         "promoteurs": round(promoteurs, 1),
         "passifs": round(passifs, 1),
         "detracteurs": round(detracteurs, 1),
@@ -365,8 +655,9 @@ def calc_nps(df: pd.DataFrame) -> dict:
 
 
 def calc_churn_risk(df: pd.DataFrame) -> dict:
-    """Churn risk distribution among Betclic users."""
     users = get_utilisateurs_betclic(df)
+    if "Risque_Churn" not in users.columns:
+        return {}
     valid = users["Risque_Churn"].dropna()
     total = len(valid)
     if total == 0:
@@ -379,30 +670,32 @@ def calc_churn_risk(df: pd.DataFrame) -> dict:
 
 
 def calc_irritants(df: pd.DataFrame) -> dict:
-    """Distribution of main irritants among Betclic users."""
     users = get_utilisateurs_betclic(df)
+    if "Principal_Irritant" not in users.columns:
+        return {}
     valid = users["Principal_Irritant"].dropna()
     if len(valid) == 0:
         return {}
-    return valid.value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
+    # If the column contains free-text verbatims, group only the most frequent ones
+    counts = valid.value_counts()
+    top = counts.head(10)
+    pct = (top / len(valid) * 100).round(1)
+    return pct.to_dict()
 
 
 def calc_intention(df: pd.DataFrame) -> dict:
-    """Reuse intention distribution among Betclic users."""
     users = get_utilisateurs_betclic(df)
+    if "Intention_Reutilisation" not in users.columns:
+        return {}
     valid = users["Intention_Reutilisation"].dropna()
     total = len(valid)
     if total == 0:
         return {}
     order = ["Certainement", "Probablement", "Incertain", "Probablement pas"]
-    result = {}
-    for cat in order:
-        result[cat] = round((valid == cat).sum() / total * 100, 1)
-    return result
+    return {cat: round((valid == cat).sum() / total * 100, 1) for cat in order}
 
 
 def calc_intention_positive(df: pd.DataFrame) -> float:
-    """% Certainement + Probablement among Betclic users."""
     intent = calc_intention(df)
     return round(intent.get("Certainement", 0) + intent.get("Probablement", 0), 1)
 
@@ -412,23 +705,20 @@ def calc_intention_positive(df: pd.DataFrame) -> float:
 # ──────────────────────────────────────────────
 
 def calc_kpi_by_vague(df: pd.DataFrame, calc_func, **kwargs) -> dict:
-    """Calculate a KPI for each vague separately (dynamic: works for any number of waves)."""
+    """Calculate a KPI for each vague separately."""
     result = {}
-    # Utilise les vagues effectivement presentes dans les donnees, triees
-    all_vagues = sorted(df["Vague"].dropna().unique().tolist(),
-                        key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999)
+    all_vagues = sorted(
+        df["Vague"].dropna().unique().tolist(),
+        key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
+    )
     _build_dynamic_vague_labels(all_vagues)
     for vague in all_vagues:
         sub = df[df["Vague"] == vague]
-        if len(sub) > 0:
-            result[vague] = calc_func(sub, **kwargs)
-        else:
-            result[vague] = None
+        result[vague] = calc_func(sub, **kwargs) if len(sub) > 0 else None
     return result
 
 
 def calc_delta(current, previous) -> tuple:
-    """Calculate delta and direction between two values."""
     if current is None or previous is None:
         return None, "neutral"
     delta = round(current - previous, 1)
@@ -436,31 +726,24 @@ def calc_delta(current, previous) -> tuple:
         return f"+{delta}", "up"
     elif delta < 0:
         return str(delta), "down"
-    else:
-        return "0", "neutral"
+    return "0", "neutral"
 
 
 def get_latest_vague(vague_dict: dict):
-    """Get the latest vague value from a dict (dynamic)."""
     sorted_keys = sorted(
         [k for k, v in vague_dict.items() if v is not None],
         key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
         reverse=True,
     )
-    if sorted_keys:
-        return vague_dict[sorted_keys[0]]
-    return None
+    return vague_dict[sorted_keys[0]] if sorted_keys else None
 
 
 def get_previous_vague(vague_dict: dict):
-    """Get the previous vague value (the one before latest)."""
     sorted_keys = sorted(
         [k for k, v in vague_dict.items() if v is not None],
         key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
     )
-    if len(sorted_keys) >= 2:
-        return vague_dict[sorted_keys[-2]]
-    return None
+    return vague_dict[sorted_keys[-2]] if len(sorted_keys) >= 2 else None
 
 
 # ──────────────────────────────────────────────
@@ -468,7 +751,6 @@ def get_previous_vague(vague_dict: dict):
 # ──────────────────────────────────────────────
 
 def calc_kpi_by_city(df: pd.DataFrame, calc_func, **kwargs) -> dict:
-    """Calculate a KPI for each city."""
     result = {}
     for city in CITIES:
         sub = df[df["Ville"] == city]
@@ -482,7 +764,7 @@ def calc_kpi_by_city(df: pd.DataFrame, calc_func, **kwargs) -> dict:
 # ──────────────────────────────────────────────
 
 def calc_funnel(df: pd.DataFrame) -> dict:
-    """Calculate the brand funnel for Betclic."""
+    """Brand funnel for Betclic."""
     return {
         "Notoriété Totale": calc_notoriete_totale(df),
         "Notoriété Aidée": calc_notoriete_aidee(df),
