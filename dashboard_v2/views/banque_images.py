@@ -24,6 +24,37 @@ CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo",
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
+# Préfixes courts utilisés par le terrain en début de nom de fichier
+# (ex: "Abj_yop_220526.jpg" → Abidjan ; "BK_220526.jpg" → Bouaké)
+CITY_PREFIXES = {
+    "abj":  "Abidjan",
+    "bk":   "Bouaké",
+    "bke":  "Bouaké",
+    "dal":  "Daloa",
+    "kgo":  "Korhogo",
+    "yak":  "Yamoussoukro",
+    "yam":  "Yamoussoukro",
+    "sp":   "San Pedro",
+    "sape": "San Pedro",
+    "abg":  "Abengourou",
+    "aben": "Abengourou",
+}
+
+
+def _detect_city(stem: str) -> str:
+    """Return the city for a given filename stem, using prefix or substring."""
+    parts = stem.split("_")
+    if parts:
+        head = parts[0].lower()
+        if head in CITY_PREFIXES:
+            return CITY_PREFIXES[head]
+    # Fallback : substring matching on the full filename
+    lower = stem.lower()
+    for c in CITIES:
+        if c.lower() in lower:
+            return c
+    return "—"
+
 
 def _scan_local_photos(vague: str) -> list:
     """Scan local field_photos/Vague_X folder for real images."""
@@ -35,12 +66,7 @@ def _scan_local_photos(vague: str) -> list:
     for f in sorted(folder.iterdir()):
         if f.suffix.lower() in IMAGE_EXTS:
             stem = f.stem
-            city = "—"
-            for c in CITIES:
-                if c.lower() in stem.lower():
-                    city = c
-                    break
-
+            city = _detect_city(stem)
             photos.append({
                 "local_path": f,
                 "caption": stem.replace("_", " ").title(),
