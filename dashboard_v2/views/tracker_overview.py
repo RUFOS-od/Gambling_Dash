@@ -46,14 +46,29 @@ def render():
     # ── Row 1: Main KPIs ──
     col1, col2, col3, col4, col5 = st.columns(5)
 
-    def _render_kpi(col, label, vague_data, suffix="%"):
+    def _fmt(value, suffix, currency=False):
+        if currency:
+            # Thousand separator with non-breaking space, no decimals
+            return f"{int(round(float(value))):,}".replace(",", " ") + suffix
+        return f"{value}{suffix}"
+
+    def _render_kpi(col, label, vague_data, suffix="%", currency=False):
         latest = get_latest_vague(vague_data)
         prev = get_previous_vague(vague_data)
         delta_str, delta_dir = calc_delta(latest, prev)
         if delta_str:
-            delta_str = f"{delta_str} pt"
+            if currency:
+                # Strip "+/-" prefix and reformat as currency delta
+                try:
+                    raw = float(str(delta_str).replace(",", ".").replace("+", "").strip())
+                    sign = "+" if raw >= 0 else "−"
+                    delta_str = f"{sign}{int(round(abs(raw))):,}".replace(",", " ") + " F CFA"
+                except Exception:
+                    delta_str = f"{delta_str} F CFA"
+            else:
+                delta_str = f"{delta_str} pt"
         with col:
-            st.markdown(kpi_card(label, f"{latest}{suffix}", delta_str, delta_dir), unsafe_allow_html=True)
+            st.markdown(kpi_card(label, _fmt(latest, suffix, currency), delta_str, delta_dir), unsafe_allow_html=True)
 
     _render_kpi(col1, "Top-of-Mind", tom_v)
     _render_kpi(col2, "Notoriété Totale", not_v)
@@ -67,7 +82,7 @@ def render():
     col1, col2, col3, col4, col5 = st.columns(5)
     _render_kpi(col1, "Considération", consid_v)
     _render_kpi(col2, "Préférence", pref_v)
-    _render_kpi(col3, "Wallet Share", wallet_v)
+    _render_kpi(col3, "Wallet Share", wallet_v, suffix=" F CFA", currency=True)
     _render_kpi(col4, "Rappel Pub", rappel_v)
     _render_kpi(col5, "Réutilisation", intent_v)
 

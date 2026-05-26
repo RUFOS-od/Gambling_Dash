@@ -226,6 +226,8 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Frequence_Paris"] = df_raw.get("Q8", None)
     df["Frequence_Paris_Mois"] = df["Frequence_Paris"]
     df["Montant_Mise_Mensuel"] = df_raw.get("Q10", None)
+    # Numeric version (FCFA, milieu de tranche) — utilisé pour les agrégations pivot
+    df["Montant_Mise_Mensuel_FCFA"] = df["Montant_Mise_Mensuel"].map(Q10_MIDPOINTS_FCFA)
 
     # ── TOM (Top of Mind) ──
     tom_raw = df_raw["Q1A"].astype(str).str.strip()

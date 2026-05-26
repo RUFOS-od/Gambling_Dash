@@ -40,19 +40,33 @@ def render():
     col1, col2, col3 = st.columns(3)
     col4, col5, col6 = st.columns(3)
 
-    for col, label, vdata in [
-        (col1, "Pénétration", pen_v),
-        (col2, "Marque Principale", mp_v),
-        (col3, "Multi-App", multi_v),
-        (col4, "Considération", consid_v),
-        (col5, "Préférence", pref_v),
-        (col6, "Wallet Share", wallet_v),
+    for col, label, vdata, is_currency in [
+        (col1, "Pénétration", pen_v, False),
+        (col2, "Marque Principale", mp_v, False),
+        (col3, "Multi-App", multi_v, False),
+        (col4, "Considération", consid_v, False),
+        (col5, "Préférence", pref_v, False),
+        (col6, "Wallet Share", wallet_v, True),
     ]:
         latest = get_latest_vague(vdata)
         prev = get_previous_vague(vdata)
         d, direction = calc_delta(latest, prev)
+        if is_currency:
+            value_str = f"{int(round(float(latest))):,}".replace(",", " ") + " F CFA"
+            if d:
+                try:
+                    raw = float(str(d).replace(",", ".").replace("+", "").strip())
+                    sign = "+" if raw >= 0 else "−"
+                    delta_str = f"{sign}{int(round(abs(raw))):,}".replace(",", " ") + " F CFA"
+                except Exception:
+                    delta_str = f"{d} F CFA"
+            else:
+                delta_str = None
+        else:
+            value_str = f"{latest}%"
+            delta_str = f"{d} pt" if d else None
         with col:
-            st.markdown(kpi_card(label, f"{latest}%", f"{d} pt" if d else None, direction), unsafe_allow_html=True)
+            st.markdown(kpi_card(label, value_str, delta_str, direction), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
@@ -97,7 +111,7 @@ def render():
 
     with col_right:
         wallet_evol = {v: wallet_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if wallet_v.get(v) is not None}
-        fig = line_chart_evolution(wallet_evol, "Évolution Wallet Share Betclic", height=380)
+        fig = line_chart_evolution(wallet_evol, "Évolution Wallet Share Betclic (F CFA / mois)", height=380)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

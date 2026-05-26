@@ -38,7 +38,7 @@ MEASURE_COLS = {
     "Préférence Betclic (%)": {"col": "Preference_Betclic", "agg": "pct"},
     "Multi-Application (%)": {"col": "Multi_Application", "agg": "pct"},
     "Rappel Campagne (%)": {"col": "Rappel_Campagne_Betclic", "agg": "pct"},
-    "Wallet Share moyen (%)": {"col": "Part_Portefeuille_Betclic", "agg": "mean_pct"},
+    "Wallet Share moyen (F CFA)": {"col": "Montant_Mise_Mensuel_FCFA", "agg": "mean_fcfa"},
     "Satisfaction moyenne (/5)": {"col": "Satisfaction_Globale_Betclic", "agg": "mean"},
     "NPS Score": {"col": "NPS_Score", "agg": "mean"},
     "Fréquence paris/mois": {"col": "Frequence_Paris_Mois", "agg": "mean"},
@@ -86,6 +86,9 @@ def _compute_pivot(df, row_dim, col_dim, measure_name):
     elif agg_type == "mean":
         result = df.groupby(groups)[col_name].mean().reset_index(name="Valeur")
         result["Valeur"] = result["Valeur"].round(2)
+    elif agg_type == "mean_fcfa":
+        result = df.groupby(groups)[col_name].mean().reset_index(name="Valeur")
+        result["Valeur"] = result["Valeur"].round(0)
 
     if has_col_dim:
         pivot = result.pivot_table(
