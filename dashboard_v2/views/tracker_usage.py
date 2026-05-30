@@ -265,20 +265,20 @@ def render():
 
     with col1:
         sports = calc_sport_distribution(df_latest)
-        fig = _horizontal_bar(sports, "Sport préféré", BETCLIC_RED)
+        fig = _horizontal_bar(sports, "Sports sur lesquels les parieurs misent (Q11, multi-réponse)", BETCLIC_RED)
         if fig:
             st.plotly_chart(fig, width='stretch')
 
     with col2:
+        paiements = calc_paiement_distribution(df_latest)
+        fig = _horizontal_bar(paiements, "Moyen de paiement le plus utilisé (Q9)", "#2980B9")
+        if fig:
+            st.plotly_chart(fig, width='stretch')
+
+    with col3:
         types = calc_pari_type_distribution(df_latest)
         fig = _horizontal_bar(types, "Type de pari préféré", OPINIONWAY_PURPLE)
         if fig:
             st.plotly_chart(fig, width='stretch')
         else:
             st.caption("Donnée Type de pari non collectée dans cette vague.")
-
-    with col3:
-        paiements = calc_paiement_distribution(df_latest)
-        fig = _horizontal_bar(paiements, "Moyen de paiement", "#2980B9")
-        if fig:
-            st.plotly_chart(fig, width='stretch')

@@ -276,7 +276,12 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
         col = f"A_Q5_{idx}"
         df[f"A_Deja_Parie_{brand}"] = _str_yes_no(df_raw[col]).values if col in df_raw.columns else 0
 
-    # ── Sport préféré : first non-"0" A_Q11_X ──
+    # ── Sport préféré (Q11 multi-réponse) ──
+    # 1 flag par sport pour permettre l'agrégation correcte
+    for raw_col, sport in SPORT_MAP.items():
+        if raw_col in df_raw.columns:
+            df[f"Sport_{sport.replace(' ', '_').replace('/', '_')}"] = _str_yes_no(df_raw[raw_col]).values
+    # Compat : on garde le premier sport cité comme fallback
     def first_sport(row):
         for col, sport in SPORT_MAP.items():
             v = row.get(col)
@@ -773,13 +778,25 @@ def calc_wallet_share_distribution(df: pd.DataFrame, brand: str = "Betclic") -> 
 
 
 def calc_sport_distribution(df: pd.DataFrame) -> dict:
+    """Distribution multi-réponse Q11 : pour chaque sport, % de parieurs qui le citent.
+
+    Q11 accepte plusieurs réponses (508 parieurs citent 1 sport, 152 en citent 2,
+    107 en citent 3). On agrège donc tous les sports cités et on rapporte
+    au nombre de parieurs. La somme peut dépasser 100% (multi-réponse).
+    """
     parieurs = get_parieurs(df)
-    if len(parieurs) == 0 or "Sport_Prefere" not in parieurs.columns:
+    if len(parieurs) == 0:
         return {}
-    valid = parieurs[parieurs["Sport_Prefere"].notna()]
-    if len(valid) == 0:
-        return {}
-    return valid["Sport_Prefere"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
+    n = len(parieurs)
+    out = {}
+    for _, sport in SPORT_MAP.items():
+        col = f"Sport_{sport.replace(' ', '_').replace('/', '_')}"
+        if col in parieurs.columns:
+            count = int(parieurs[col].sum())
+            if count > 0:
+                label = sport.replace(" (préciser) :", "").strip()
+                out[label] = round(count / n * 100, 1)
+    return dict(sorted(out.items(), key=lambda x: -x[1]))
 
 
 def calc_pari_type_distribution(df: pd.DataFrame) -> dict:
