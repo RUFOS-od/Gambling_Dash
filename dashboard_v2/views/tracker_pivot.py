@@ -26,7 +26,6 @@ DIMENSION_COLS = {
     "Catégorie NPS": "NPS_Categorie",
     "Risque de churn": "Risque_Churn",
     "Principal irritant": "Principal_Irritant",
-    "Intention réutilisation": "Intention_Reutilisation",
     "Ambassadeur rappelé": "Ambassadeur_Rappele",
 }
 

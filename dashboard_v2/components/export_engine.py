@@ -16,7 +16,7 @@ from data.loader import (
     apply_filters, get_parieurs, get_utilisateurs_betclic,
     calc_tom, calc_notoriete_totale, calc_penetration, calc_consideration,
     calc_preference, calc_wallet_share, calc_rappel_campagne,
-    calc_satisfaction, calc_nps, calc_intention_positive,
+    calc_satisfaction, calc_nps,
     calc_image_scores, calc_notoriete_all_brands, calc_tom_all_brands,
     calc_marque_principale_all, calc_funnel, calc_kpi_by_vague,
     calc_delta, get_latest_vague, get_previous_vague,
@@ -47,7 +47,6 @@ def _compute_all_kpis(df, vagues_list):
     kpis["wallet_vagues"] = calc_kpi_by_vague(df, calc_wallet_share)
     kpis["rappel_vagues"] = calc_kpi_by_vague(df, calc_rappel_campagne)
     kpis["satisfaction_vagues"] = calc_kpi_by_vague(df, calc_satisfaction)
-    kpis["intention_vagues"] = calc_kpi_by_vague(df, calc_intention_positive)
 
     def _nps_score(d):
         return calc_nps(d)["nps"]
@@ -74,7 +73,6 @@ def _compute_all_kpis(df, vagues_list):
     kpis["rappel"] = calc_rappel_campagne(df_latest)
     kpis["satisfaction"] = calc_satisfaction(df_latest)
     kpis["nps"] = calc_nps(df_latest)
-    kpis["intention"] = calc_intention_positive(df_latest)
     kpis["image"] = calc_image_scores(df_latest)
     kpis["notoriete_brands"] = calc_notoriete_all_brands(df_latest)
     kpis["tom_brands"] = calc_tom_all_brands(df_latest)
@@ -82,7 +80,7 @@ def _compute_all_kpis(df, vagues_list):
 
     # Deltas
     for key in ["tom", "notoriete", "penetration", "consideration", "preference",
-                 "wallet", "rappel", "satisfaction", "intention"]:
+                 "wallet", "rappel", "satisfaction"]:
         vague_key = f"{key}_vagues"
         latest_val = get_latest_vague(kpis[vague_key])
         prev_val = get_previous_vague(kpis[vague_key])
@@ -170,7 +168,6 @@ def _add_kpi_slide(prs, kpis):
         ("NPS Score", f"{kpis['nps']['nps']} pts", kpis['nps_delta']),
         ("Satisfaction", f"{kpis['satisfaction']}/5", kpis['satisfaction_delta']),
         ("Rappel Campagne", f"{kpis['rappel']}%", kpis['rappel_delta']),
-        ("Intention Réutil.", f"{kpis['intention']}%", kpis['intention_delta']),
     ]
 
     # Build table
@@ -411,7 +408,6 @@ def generate_pdf(df, vagues_list) -> bytes:
         ("NPS Score", f"{kpis['nps']['nps']} pts", kpis['nps_delta']),
         ("Satisfaction", f"{kpis['satisfaction']}/5", kpis['satisfaction_delta']),
         ("Rappel Campagne", f"{kpis['rappel']}%", kpis['rappel_delta']),
-        ("Intention Reutilisation", f"{kpis['intention']}%", kpis['intention_delta']),
     ]
 
     for i, (label, value, delta) in enumerate(kpi_rows):
@@ -573,7 +569,6 @@ def generate_excel(df, vagues_list) -> bytes:
         ("NPS Score", f"{kpis['nps']['nps']} pts", kpis['nps_delta']),
         ("Satisfaction", f"{kpis['satisfaction']}/5", kpis['satisfaction_delta']),
         ("Rappel Campagne", f"{kpis['rappel']}%", kpis['rappel_delta']),
-        ("Intention Reutilisation", f"{kpis['intention']}%", kpis['intention_delta']),
     ]
 
     for i, (label, value, delta) in enumerate(kpi_rows):
@@ -609,7 +604,6 @@ def generate_excel(df, vagues_list) -> bytes:
         ("Satisfaction", kpis["satisfaction_vagues"]),
         ("NPS", kpis["nps_vagues"]),
         ("Rappel Campagne", kpis["rappel_vagues"]),
-        ("Intention Reutilisation", kpis["intention_vagues"]),
     ]
 
     for i, (label, vague_data) in enumerate(evol_kpis):

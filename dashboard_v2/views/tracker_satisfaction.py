@@ -5,7 +5,6 @@ from data.loader import (
     apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
     calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
     calc_irritants, calc_motifs_satisfaction, load_verbatim_themes,
-    calc_intention, calc_intention_positive,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     get_utilisateurs_betclic, MAIN_COMPETITORS
 )
@@ -48,7 +47,6 @@ def render():
     prom_v = calc_kpi_by_vague(df, _nps_promoteurs)
     det_v = calc_kpi_by_vague(df, _nps_detracteurs)
     churn_v = calc_kpi_by_vague(df, _churn_eleve)
-    intent_v = calc_kpi_by_vague(df, calc_intention_positive)
 
     # ── KPI Cards ──
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -215,36 +213,6 @@ def render():
                         "Thèmes non encore générés pour cette vague. "
                         "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague 1`."
                     )
-
-    st.markdown(styled_divider(), unsafe_allow_html=True)
-
-    # ── Intention de réutilisation ──
-    st.markdown(section_header("Intention de Réutilisation"), unsafe_allow_html=True)
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        if latest_vague:
-            intention = calc_intention(df[df["Vague"] == latest_vague[0]])
-            if intention:
-                colors_int = ["#27AE60", "#2980B9", "#F39C12", "#E74C3C"]
-                fig = donut_chart(intention, "Intention de réutilisation Betclic", colors=colors_int[:len(intention)], height=350)
-                st.plotly_chart(fig, width='stretch')
-
-    with col_right:
-        intent_evol = {v: intent_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if intent_v.get(v) is not None}
-        if len(intent_evol) >= 2:
-            fig = line_chart_evolution(intent_evol, "Évolution Intention Positive (Certainement + Probablement)", height=350)
-            st.plotly_chart(fig, width='stretch')
-        else:
-            latest_intent = intent_v.get("Vague 1", 0)
-            st.markdown(f"""
-            <div style="background:#FFFFFF;border:1px solid #E2E4E8;border-radius:14px;padding:2rem;text-align:center;height:350px;display:flex;flex-direction:column;justify-content:center;">
-                <div style="font-size:0.85rem;color:#4A5568;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.8rem;">Intention Positive — V1</div>
-                <div style="font-size:3.5rem;font-weight:800;color:#C0392B;">{latest_intent}%</div>
-                <div style="color:#7B8794;font-size:0.85rem;margin-top:1rem;">Courbe d'évolution disponible dès la V2</div>
-            </div>
-            """, unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 

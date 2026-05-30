@@ -8,7 +8,7 @@ from data.loader import (
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
     calc_consideration, calc_wallet_share, calc_rappel_campagne,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
-    calc_intention_positive, calc_funnel, calc_marque_principale,
+    calc_funnel, calc_marque_principale,
     calc_tom_all_brands, calc_notoriete_all_brands,
     calc_penetration_all_brands, calc_marque_principale_all,
     VAGUE_SHORT, MAIN_COMPETITORS
@@ -48,8 +48,6 @@ def render():
         return calc_nps(sub)["nps"]
     nps_v = calc_kpi_by_vague(df, _nps_extract)
 
-    intent_v = calc_kpi_by_vague(df, calc_intention_positive)
-
     # ── Row 1: Main KPIs ──
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -86,12 +84,11 @@ def render():
     st.markdown("", unsafe_allow_html=True)
 
     # ── Row 2: Secondary KPIs ──
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     _render_kpi(col1, "Considération", consid_v)
     _render_kpi(col2, "Préférence", pref_v)
     _render_kpi(col3, "Wallet Share", wallet_v, suffix=" F CFA", currency=True)
     _render_kpi(col4, "Rappel Pub", rappel_v)
-    _render_kpi(col5, "Réutilisation", intent_v)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
