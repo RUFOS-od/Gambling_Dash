@@ -122,7 +122,7 @@ def render():
     # ── Comparatif concurrentiel ──
     st.markdown(section_header(
         "Image de Marque — Comparaison concurrentielle",
-        "Profil d'image de Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
+        "Scores par attribut pour Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
     ), unsafe_allow_html=True)
 
     image_by_brand = calc_image_scores_main_brands(df)
@@ -131,11 +131,11 @@ def render():
                       if any(v > 0 for v in scores.values())}
 
     if image_by_brand:
-        fig = radar_chart(image_by_brand, "Profil d'Image — Betclic vs concurrents", height=520)
-        st.plotly_chart(fig, width='stretch')
-
-        # Build a comparative bar chart for top differentiators
         attrs = list(IMAGE_ATTRIBUTES.values())
+        # Sort attributes by Betclic score (descending) for readability
+        betclic_scores = image_by_brand.get("Betclic", {})
+        attrs = sorted(attrs, key=lambda a: -betclic_scores.get(a, 0))
+
         fig_bar = go.Figure()
         for i, brand in enumerate(image_by_brand.keys()):
             vals = [image_by_brand[brand].get(a, 0) for a in attrs]
@@ -143,7 +143,7 @@ def render():
                 name=brand,
                 x=attrs,
                 y=vals,
-                marker_color=COLORS_SEQ[i % len(COLORS_SEQ)] if brand != "Betclic" else BETCLIC_RED,
+                marker_color=BETCLIC_RED if brand == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)],
                 text=[f"{v:.2f}" for v in vals],
                 textposition="outside",
                 textfont=dict(size=9),
@@ -153,11 +153,21 @@ def render():
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
-            margin=dict(l=40, r=40, t=50, b=100),
-            height=480,
-            title=dict(text="Scores par attribut — Multi-marques", font=dict(size=15)),
-            yaxis=dict(range=[0, 5.3], gridcolor="rgba(0,0,0,0.06)"),
-            xaxis=dict(tickangle=-45),
-            legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.28),
+            margin=dict(l=40, r=40, t=50, b=120),
+            height=520,
+            title=dict(text="Scores par attribut — Multi-marques (trié par score Betclic)", font=dict(size=15)),
+            yaxis=dict(range=[0, 5.5], gridcolor="rgba(0,0,0,0.06)", title="Score moyen / 5"),
+            xaxis=dict(tickangle=-40),
+            legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.32),
         )
         st.plotly_chart(fig_bar, width='stretch')
+
+        # Compact table for precise reading
+        import pandas as pd
+        table_rows = []
+        for a in attrs:
+            row = {"Attribut": a}
+            for b in image_by_brand.keys():
+                row[b] = image_by_brand[b].get(a, 0)
+            table_rows.append(row)
+        st.dataframe(pd.DataFrame(table_rows).set_index("Attribut"), width='stretch', height=460)
