@@ -887,13 +887,35 @@ def calc_churn_risk(df: pd.DataFrame) -> dict:
 
 
 def calc_irritants(df: pd.DataFrame) -> dict:
+    """Principaux irritants : verbatims Q16 (raison du NPS) parmi les Détracteurs.
+
+    Q16 contient le "pourquoi" de la note NPS Q15. Pour les Promoteurs (9-10)
+    c'est un compliment, pour les Détracteurs (0-6) c'est une critique réelle.
+    On filtre donc strictement sur les Détracteurs pour avoir les vrais
+    irritants.
+    """
     users = get_utilisateurs_betclic(df)
-    if "Principal_Irritant" not in users.columns:
+    if "Principal_Irritant" not in users.columns or "NPS_Categorie" not in users.columns:
         return {}
-    valid = users["Principal_Irritant"].dropna()
+    detractors = users[users["NPS_Categorie"] == "Détracteur"]
+    valid = detractors["Principal_Irritant"].dropna()
     if len(valid) == 0:
         return {}
-    # If the column contains free-text verbatims, group only the most frequent ones
+    counts = valid.value_counts()
+    top = counts.head(10)
+    pct = (top / len(valid) * 100).round(1)
+    return pct.to_dict()
+
+
+def calc_motifs_satisfaction(df: pd.DataFrame) -> dict:
+    """Symétrique : top motifs de satisfaction (verbatims Q16 des Promoteurs)."""
+    users = get_utilisateurs_betclic(df)
+    if "Principal_Irritant" not in users.columns or "NPS_Categorie" not in users.columns:
+        return {}
+    promoters = users[users["NPS_Categorie"] == "Promoteur"]
+    valid = promoters["Principal_Irritant"].dropna()
+    if len(valid) == 0:
+        return {}
     counts = valid.value_counts()
     top = counts.head(10)
     pct = (top / len(valid) * 100).round(1)

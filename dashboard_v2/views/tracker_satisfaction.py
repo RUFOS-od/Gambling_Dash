@@ -4,7 +4,8 @@ import streamlit as st
 from data.loader import (
     apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
     calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
-    calc_irritants, calc_intention, calc_intention_positive,
+    calc_irritants, calc_motifs_satisfaction,
+    calc_intention, calc_intention_positive,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     get_utilisateurs_betclic, MAIN_COMPETITORS
 )
@@ -94,14 +95,20 @@ def render():
             st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        # NPS + Satisfaction evolution
+        # NPS + Satisfaction evolution — affiché seulement si au moins 2 vagues disponibles
         nps_evol = {v: nps_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if nps_v.get(v) is not None}
-        fig = line_chart_evolution(nps_evol, "Évolution NPS", suffix=" pts", height=300)
-        st.plotly_chart(fig, width='stretch')
-
         sat_evol = {v: sat_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if sat_v.get(v) is not None}
-        fig = line_chart_evolution(sat_evol, "Évolution Satisfaction", suffix="/5", height=300)
-        st.plotly_chart(fig, width='stretch')
+
+        if len(nps_evol) >= 2:
+            fig = line_chart_evolution(nps_evol, "Évolution NPS", suffix=" pts", height=300)
+            st.plotly_chart(fig, width='stretch')
+        if len(sat_evol) >= 2:
+            fig = line_chart_evolution(sat_evol, "Évolution Satisfaction", suffix="/5", height=300)
+            st.plotly_chart(fig, width='stretch')
+        if len(nps_evol) < 2 and len(sat_evol) < 2:
+            st.info(
+                "📊 Les courbes d'évolution apparaîtront dès la collecte de la Vague 2."
+            )
 
     # Insight
     latest_sat = get_latest_vague(sat_v)
@@ -114,8 +121,11 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Churn Risk + Irritants ──
-    st.markdown(section_header("Risque de Churn & Irritants"), unsafe_allow_html=True)
+    # ── Churn Risk + Verbatims NPS ──
+    st.markdown(section_header(
+        "Risque de Churn & Verbatims NPS",
+        "Profil de risque et raisons exprimées par les utilisateurs Betclic"
+    ), unsafe_allow_html=True)
 
     col_left, col_right = st.columns(2)
 
@@ -126,17 +136,49 @@ def render():
                 fig = donut_chart(churn, "Répartition Risque de Churn", colors=["#27AE60", "#F39C12", "#E74C3C"], height=350)
                 st.plotly_chart(fig, width='stretch')
 
-        # Churn evolution
+        # Churn evolution — affiché seulement si au moins 2 vagues
         churn_evol = {v: churn_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if churn_v.get(v) is not None}
-        fig = line_chart_evolution(churn_evol, "Évolution Churn Élevé (%)", height=300)
-        st.plotly_chart(fig, width='stretch')
+        if len(churn_evol) >= 2:
+            fig = line_chart_evolution(churn_evol, "Évolution Churn Élevé (%)", height=300)
+            st.plotly_chart(fig, width='stretch')
 
     with col_right:
         if latest_vague:
-            irritants = calc_irritants(df[df["Vague"] == latest_vague[0]])
-            if irritants:
-                fig = bar_chart_brands(irritants, "Principaux Irritants", highlight="", height=380)
-                st.plotly_chart(fig, width='stretch')
+            df_lv = df[df["Vague"] == latest_vague[0]]
+            irritants = calc_irritants(df_lv)
+            motifs_sat = calc_motifs_satisfaction(df_lv)
+
+            # ── Onglets : Irritants (Détracteurs) vs Motifs Satisfaction (Promoteurs)
+            t_irr, t_sat = st.tabs([
+                "🔴 Irritants (Détracteurs)",
+                "🟢 Motifs satisfaction (Promoteurs)",
+            ])
+            with t_irr:
+                if irritants:
+                    fig = bar_chart_brands(
+                        irritants,
+                        "Verbatims les plus fréquents chez les Détracteurs",
+                        highlight="", height=380,
+                    )
+                    st.plotly_chart(fig, width='stretch')
+                    st.caption(
+                        "Verbatims Q16 — raisons exprimées spontanément par les Détracteurs (NPS 0-6)."
+                    )
+                else:
+                    st.info("Aucun verbatim détracteur disponible dans cette vague.")
+            with t_sat:
+                if motifs_sat:
+                    fig = bar_chart_brands(
+                        motifs_sat,
+                        "Verbatims les plus fréquents chez les Promoteurs",
+                        highlight="", height=380,
+                    )
+                    st.plotly_chart(fig, width='stretch')
+                    st.caption(
+                        "Verbatims Q16 — raisons exprimées spontanément par les Promoteurs (NPS 9-10)."
+                    )
+                else:
+                    st.info("Aucun verbatim promoteur disponible dans cette vague.")
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
@@ -155,8 +197,18 @@ def render():
 
     with col_right:
         intent_evol = {v: intent_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if intent_v.get(v) is not None}
-        fig = line_chart_evolution(intent_evol, "Évolution Intention Positive (Certainement + Probablement)", height=350)
-        st.plotly_chart(fig, width='stretch')
+        if len(intent_evol) >= 2:
+            fig = line_chart_evolution(intent_evol, "Évolution Intention Positive (Certainement + Probablement)", height=350)
+            st.plotly_chart(fig, width='stretch')
+        else:
+            latest_intent = intent_v.get("Vague 1", 0)
+            st.markdown(f"""
+            <div style="background:#FFFFFF;border:1px solid #E2E4E8;border-radius:14px;padding:2rem;text-align:center;height:350px;display:flex;flex-direction:column;justify-content:center;">
+                <div style="font-size:0.85rem;color:#4A5568;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.8rem;">Intention Positive — V1</div>
+                <div style="font-size:3.5rem;font-weight:800;color:#C0392B;">{latest_intent}%</div>
+                <div style="color:#7B8794;font-size:0.85rem;margin-top:1rem;">Courbe d'évolution disponible dès la V2</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
