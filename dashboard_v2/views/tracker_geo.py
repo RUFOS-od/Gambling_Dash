@@ -60,32 +60,38 @@ def render():
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
+        fig = heatmap_cities(kpis_geo["Notoriété Totale (%)"], f"Notoriété Totale par ville ({vague_label})", height=350)
+        st.plotly_chart(fig, width='stretch')
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    col_left, col_right = st.columns(2)
+
+    with col_left:
         fig = heatmap_cities(kpis_geo["Pénétration (%)"], f"Pénétration par ville ({vague_label})", height=350)
         st.plotly_chart(fig, width='stretch')
 
-    st.markdown(styled_divider(), unsafe_allow_html=True)
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
+    with col_right:
         fig = heatmap_cities(kpis_geo["Considération (%)"], f"Considération par ville ({vague_label})", height=350)
         st.plotly_chart(fig, width='stretch')
 
-    with col_right:
-        fig = heatmap_cities(kpis_geo["Préférence (%)"], f"Préférence par ville ({vague_label})", height=350)
-        st.plotly_chart(fig, width='stretch')
-
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     col_left, col_right = st.columns(2)
 
     with col_left:
-        fig = heatmap_cities(kpis_geo["Satisfaction (/5)"], f"Satisfaction par ville ({vague_label})", height=350)
+        fig = heatmap_cities(kpis_geo["Préférence (%)"], f"Préférence par ville ({vague_label})", height=350)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        fig = heatmap_cities(kpis_geo["NPS (pts)"], f"NPS par ville ({vague_label})", height=350)
+        fig = heatmap_cities(kpis_geo["Satisfaction (/5)"], f"Satisfaction par ville ({vague_label})", height=350, suffix="/5")
         st.plotly_chart(fig, width='stretch')
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # NPS — without % suffix
+    fig = heatmap_cities(kpis_geo["NPS (pts)"], f"NPS par ville ({vague_label})", height=350, suffix=" pts")
+    st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
@@ -115,48 +121,208 @@ def render():
     # ── Comparatif concurrentiel par ville ──
     st.markdown(section_header(
         "Comparaison concurrentielle par ville",
-        "Pénétration (% a déjà parié sur la marque) — Betclic vs principaux concurrents"
+        "Betclic vs principaux concurrents — choisissez le KPI à comparer"
     ), unsafe_allow_html=True)
 
     import plotly.graph_objects as go
-    pen_per_brand_per_city = {}
-    for b in MAIN_COMPETITORS:
-        per_city = {}
-        for city in CITIES:
-            sub = df_latest[df_latest["Ville"] == city]
-            if len(sub) > 0:
-                col = f"A_Deja_Parie_{b}"
-                if col in sub.columns:
+    import pandas as pd
+
+    # Helper : compute per-brand per-city KPI from a column already present in df
+    def _per_brand_per_city_pct(df_in, col_template):
+        """Returns {brand: {city: pct}} for binary indicator columns like A_Deja_Parie_{brand}."""
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            col = col_template.format(brand=b)
+            for city in CITIES:
+                sub = df_in[df_in["Ville"] == city]
+                if len(sub) > 0 and col in sub.columns:
                     per_city[city] = round(sub[col].sum() / len(sub) * 100, 1)
                 else:
                     per_city[city] = 0
-        pen_per_brand_per_city[b] = per_city
+            out[b] = per_city
+        return out
+
+    def _tom_per_brand_per_city(df_in):
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            for city in CITIES:
+                sub = df_in[df_in["Ville"] == city]
+                if len(sub) > 0:
+                    per_city[city] = round((sub["TOM_Marque_Citee"] == b).sum() / len(sub) * 100, 1)
+                else:
+                    per_city[city] = 0
+            out[b] = per_city
+        return out
+
+    def _pref_per_brand_per_city(df_in):
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            for city in CITIES:
+                sub = df_in[(df_in["Ville"] == city) & (df_in["Type_Repondant"] == "Parieur")]
+                if len(sub) > 0:
+                    per_city[city] = round((sub["Marque_Principale_Utilisee"] == b).sum() / len(sub) * 100, 1)
+                else:
+                    per_city[city] = 0
+            out[b] = per_city
+        return out
+
+    def _consid_per_brand_per_city(df_in):
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            col = f"Consideration_{b}"
+            for city in CITIES:
+                sub = df_in[(df_in["Ville"] == city) & (df_in["Type_Repondant"] == "Parieur")]
+                if len(sub) > 0 and col in sub.columns:
+                    per_city[city] = round(sub[col].sum() / len(sub) * 100, 1)
+                else:
+                    per_city[city] = 0
+            out[b] = per_city
+        return out
+
+    def _sat_per_brand_per_city(df_in):
+        """Satisfaction mean (/5) per city, for parieurs whose Q6 = brand."""
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            for city in CITIES:
+                sub = df_in[(df_in["Ville"] == city) & (df_in["Marque_Principale_Utilisee"] == b)]
+                if len(sub) >= 5 and "Satisfaction_Globale_Betclic" in sub.columns:
+                    vals = sub["Satisfaction_Globale_Betclic"].dropna()
+                    per_city[city] = round(vals.mean(), 2) if len(vals) > 0 else None
+                else:
+                    per_city[city] = None
+            out[b] = per_city
+        return out
+
+    def _nps_per_brand_per_city(df_in):
+        """NPS per city per brand (parieurs Q6=brand). Requires n>=10 to display."""
+        out = {}
+        for b in MAIN_COMPETITORS:
+            per_city = {}
+            for city in CITIES:
+                sub = df_in[(df_in["Ville"] == city) & (df_in["Marque_Principale_Utilisee"] == b)]
+                if len(sub) >= 10 and "NPS_Categorie" in sub.columns:
+                    cats = sub["NPS_Categorie"].dropna()
+                    if len(cats) > 0:
+                        counts = cats.value_counts()
+                        prom = counts.get("Promoteur", 0)
+                        det = counts.get("Détracteur", 0)
+                        per_city[city] = round((prom - det) / len(cats) * 100, 1)
+                    else:
+                        per_city[city] = None
+                else:
+                    per_city[city] = None
+            out[b] = per_city
+        return out
+
+    # KPI selector
+    KPI_CHOICES = {
+        "Top-of-Mind (Q1A)": ("tom", "%", 0),
+        "Notoriété Totale (Q1A+Q1B+Q1C)": ("notor", "%", 0),
+        "Pénétration / Essai (Q5)": ("pen", "%", 0),
+        "Considération (Q5 ∪ Q13 fort)": ("consid", "%", 0),
+        "Préférence (Q6 marque principale)": ("pref", "%", 0),
+        "Satisfaction (/5)": ("sat", "/5", 2),
+        "NPS (pts)": ("nps", " pts", 0),
+    }
+    kpi_label = st.selectbox(
+        "KPI à comparer entre marques et villes :",
+        list(KPI_CHOICES.keys()),
+        index=2,  # default = Pénétration
+        key="geo_kpi_selector",
+    )
+    kpi_key, kpi_suffix, kpi_decimals = KPI_CHOICES[kpi_label]
+
+    # Compute the data
+    if kpi_key == "tom":
+        data_per_brand = _tom_per_brand_per_city(df_latest)
+    elif kpi_key == "notor":
+        data_per_brand = _per_brand_per_city_pct(df_latest, "Notoriete_Totale_{brand}")
+    elif kpi_key == "pen":
+        data_per_brand = _per_brand_per_city_pct(df_latest, "A_Deja_Parie_{brand}")
+    elif kpi_key == "consid":
+        data_per_brand = _consid_per_brand_per_city(df_latest)
+    elif kpi_key == "pref":
+        data_per_brand = _pref_per_brand_per_city(df_latest)
+    elif kpi_key == "sat":
+        data_per_brand = _sat_per_brand_per_city(df_latest)
+    elif kpi_key == "nps":
+        data_per_brand = _nps_per_brand_per_city(df_latest)
+    else:
+        data_per_brand = {}
+
+    # Format helper for text labels
+    def _fmt(v):
+        if v is None:
+            return ""
+        if kpi_decimals == 0:
+            return f"{v:.0f}{kpi_suffix}"
+        return f"{v:.{kpi_decimals}f}{kpi_suffix}"
 
     fig_geo = go.Figure()
+    has_any = False
     for i, b in enumerate(MAIN_COMPETITORS):
-        vals = [pen_per_brand_per_city[b].get(c, 0) for c in CITIES]
+        vals = [data_per_brand.get(b, {}).get(c) for c in CITIES]
+        # Skip if all values are None for this brand
+        if all(v is None for v in vals):
+            continue
+        has_any = True
+        plot_vals = [v if v is not None else 0 for v in vals]
         fig_geo.add_trace(go.Bar(
             name=b,
             x=CITIES,
-            y=vals,
-            text=[f"{v:.0f}%" for v in vals],
+            y=plot_vals,
+            text=[_fmt(v) for v in vals],
             textposition="outside",
             textfont=dict(size=9),
             marker_color=BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)],
         ))
-    fig_geo.update_layout(
-        barmode="group",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
-        margin=dict(l=40, r=40, t=50, b=80),
-        height=460,
-        title=dict(text=f"Pénétration par ville et par marque ({vague_label})", font=dict(size=15)),
-        yaxis=dict(gridcolor="rgba(0,0,0,0.06)", title="%"),
-        xaxis=dict(tickangle=-20),
-        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.20),
-    )
-    st.plotly_chart(fig_geo, width='stretch')
+
+    if has_any:
+        # Adjust Y-axis range based on data
+        all_vals = [v for b in MAIN_COMPETITORS for v in data_per_brand.get(b, {}).values() if v is not None]
+        if all_vals:
+            y_min = min(0, min(all_vals) - 5)
+            y_max = max(all_vals) * 1.18
+        else:
+            y_min, y_max = 0, 100
+        fig_geo.update_layout(
+            barmode="group",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+            margin=dict(l=40, r=40, t=50, b=80),
+            height=460,
+            title=dict(text=f"{kpi_label} par ville et par marque ({vague_label})", font=dict(size=15)),
+            yaxis=dict(range=[y_min, y_max], gridcolor="rgba(0,0,0,0.06)",
+                       title=kpi_suffix.strip() or "%", zeroline=True, zerolinecolor="#1A1D23"),
+            xaxis=dict(tickangle=-20),
+            legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.20),
+        )
+        st.plotly_chart(fig_geo, width='stretch')
+
+        # Compact comparison table
+        table_rows = []
+        for c in CITIES:
+            row = {"Ville": c}
+            for b in MAIN_COMPETITORS:
+                v = data_per_brand.get(b, {}).get(c)
+                row[b] = _fmt(v) if v is not None else "—"
+            table_rows.append(row)
+        st.dataframe(pd.DataFrame(table_rows).set_index("Ville"), width='stretch', height=300)
+
+        if kpi_key in ("sat", "nps"):
+            st.caption(
+                "ℹ️ Satisfaction et NPS sont calculés uniquement sur les utilisateurs principaux "
+                "(Q6 = marque). Affichage masqué si la base est trop petite par ville × marque "
+                f"(< {5 if kpi_key == 'sat' else 10} répondants)."
+            )
+    else:
+        st.info("Pas assez de données pour ce KPI à ce niveau de granularité.")
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 

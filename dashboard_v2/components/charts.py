@@ -208,7 +208,8 @@ def nps_gauge(nps_score: float, height=280):
     return _apply_layout(fig, "", height)
 
 
-def heatmap_cities(city_data: dict, kpi_name: str = "", height=300):
+def heatmap_cities(city_data: dict, kpi_name: str = "", height=300, suffix: str = "%"):
+    """Bar-style heatmap of a KPI by city. `suffix` is appended to value labels."""
     cities = list(city_data.keys())
 
     fig = go.Figure(go.Bar(
@@ -219,7 +220,7 @@ def heatmap_cities(city_data: dict, kpi_name: str = "", height=300):
             showscale=True,
             colorbar=dict(title=dict(text=kpi_name, font=dict(size=11))),
         ),
-        text=[f"{v[0] if isinstance(v, list) else v}%" for v in city_data.values()],
+        text=[f"{v[0] if isinstance(v, list) else v}{suffix}" for v in city_data.values()],
         textposition="outside",
         textfont=dict(size=13, color=TEXT_COLOR),
     ))
