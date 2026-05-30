@@ -225,22 +225,60 @@ def render():
     # ── Sports, Paris, Paiements ──
     st.markdown(section_header("Profil des Parieurs", "Sports, types de paris et moyens de paiement"), unsafe_allow_html=True)
 
+    def _horizontal_bar(dist: dict, title: str, color: str, height: int = 320):
+        """Trie décroissant + horizontal bar chart : lisible même si très déséquilibré."""
+        if not dist:
+            return None
+        sorted_items = sorted(dist.items(), key=lambda x: x[1], reverse=True)
+        labels = [k for k, _ in sorted_items][::-1]  # reverse for plotly y-axis top-down
+        values = [v for _, v in sorted_items][::-1]
+        # Shorten very long labels (e.g. mobile money providers)
+        def _short(lbl):
+            if len(lbl) <= 35:
+                return lbl
+            return lbl[:32].rsplit(" ", 1)[0] + "…"
+        fig = go.Figure(go.Bar(
+            y=[_short(l) for l in labels],
+            x=values,
+            orientation="h",
+            marker=dict(color=color),
+            text=[f"{v:.1f}%" for v in values],
+            textposition="outside",
+            textfont=dict(size=12, color="#1A1D23"),
+            hovertext=labels,
+            hovertemplate="%{hovertext}<br>%{x:.1f}%<extra></extra>",
+        ))
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+            margin=dict(l=10, r=70, t=40, b=20),
+            height=height,
+            title=dict(text=title, font=dict(size=14)),
+            xaxis=dict(range=[0, max(values) * 1.18], showticklabels=False,
+                       gridcolor="rgba(0,0,0,0.04)"),
+            yaxis=dict(automargin=True),
+        )
+        return fig
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
         sports = calc_sport_distribution(df_latest)
-        if sports:
-            fig = donut_chart(sports, "Sport préféré", colors=COLORS_SEQ[:len(sports)], height=350)
+        fig = _horizontal_bar(sports, "Sport préféré", BETCLIC_RED)
+        if fig:
             st.plotly_chart(fig, width='stretch')
 
     with col2:
         types = calc_pari_type_distribution(df_latest)
-        if types:
-            fig = donut_chart(types, "Type de pari préféré", colors=COLORS_SEQ[:len(types)], height=350)
+        fig = _horizontal_bar(types, "Type de pari préféré", OPINIONWAY_PURPLE)
+        if fig:
             st.plotly_chart(fig, width='stretch')
+        else:
+            st.caption("Donnée Type de pari non collectée dans cette vague.")
 
     with col3:
         paiements = calc_paiement_distribution(df_latest)
-        if paiements:
-            fig = donut_chart(paiements, "Moyen de paiement", colors=COLORS_SEQ[:len(paiements)], height=350)
+        fig = _horizontal_bar(paiements, "Moyen de paiement", "#2980B9")
+        if fig:
             st.plotly_chart(fig, width='stretch')
