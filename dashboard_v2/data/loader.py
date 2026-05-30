@@ -736,6 +736,30 @@ def calc_wallet_share(df: pd.DataFrame, brand: str = "Betclic") -> float:
     return round(float(amounts.mean()), 0)
 
 
+def calc_pdm_valeur(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Part de Marché en VALEUR monétaire (% du marché).
+
+    Formule : Σ(Q10 FCFA chez parieurs Q6=brand) / Σ(Q10 FCFA tous parieurs) × 100
+
+    Interprétation business : sur 100 F CFA misés mensuellement sur le marché
+    ivoirien des paris, X% vont chez Betclic (selon les déclarations Q6+Q10).
+    """
+    parieurs = get_parieurs(df)
+    if "Montant_Mise_Mensuel_FCFA" not in parieurs.columns:
+        return 0.0
+    total_market = parieurs["Montant_Mise_Mensuel_FCFA"].dropna().sum()
+    if total_market == 0:
+        return 0.0
+    brand_users = parieurs[parieurs["Marque_Principale_Utilisee"] == brand]
+    brand_revenue = brand_users["Montant_Mise_Mensuel_FCFA"].dropna().sum()
+    return round(float(brand_revenue) / float(total_market) * 100, 1)
+
+
+def calc_pdm_valeur_all_brands(df: pd.DataFrame) -> dict:
+    """PDM Valeur par marque (toutes marques COMPETITORS)."""
+    return {b: calc_pdm_valeur(df, b) for b in COMPETITORS}
+
+
 def calc_wallet_share_distribution(df: pd.DataFrame, brand: str = "Betclic") -> dict:
     """Distribution des tranches de mise mensuelle Q10 chez les parieurs Q6==brand."""
     parieurs = get_parieurs(df)
