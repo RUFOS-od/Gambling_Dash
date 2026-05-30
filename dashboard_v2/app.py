@@ -212,33 +212,49 @@ st.session_state["data"] = data
 if module == "Brand Health Tracker":
     from views import tracker_overview, tracker_notoriete, tracker_usage, tracker_image, tracker_satisfaction, tracker_geo, tracker_pivot, banque_images
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    # ── Détection OpinionWay : onglet Tableau Croisé visible uniquement
+    # pour l'équipe interne (domaines email autorisés).
+    OPINIONWAY_DOMAINS = ("opinion-way.com", "opinionway.com", "oway.fr")
+    is_opinionway = False
+    try:
+        user_email = getattr(getattr(st, "user", None), "email", None) or ""
+        if user_email and user_email.lower().split("@")[-1] in OPINIONWAY_DOMAINS:
+            is_opinionway = True
+    except Exception:
+        # En local (pas d'auth Streamlit Cloud) on suppose dev OpinionWay
+        is_opinionway = True
+
+    base_tabs = [
         "Vue d'ensemble",
         "Notoriété & Visibilité",
         "Usage & Pénétration",
         "Image de Marque",
         "Satisfaction & Fidélité",
         "Analyse Géographique",
-        "Tableau Croisé",
         "Banque des Images",
-    ])
+    ]
+    if is_opinionway:
+        # On insère "Tableau Croisé" juste avant la Banque des Images
+        tab_labels = base_tabs[:-1] + ["Tableau Croisé", base_tabs[-1]]
+    else:
+        tab_labels = base_tabs
 
-    with tab1:
-        tracker_overview.render()
-    with tab2:
-        tracker_notoriete.render()
-    with tab3:
-        tracker_usage.render()
-    with tab4:
-        tracker_image.render()
-    with tab5:
-        tracker_satisfaction.render()
-    with tab6:
-        tracker_geo.render()
-    with tab7:
-        tracker_pivot.render()
-    with tab8:
-        banque_images.render()
+    tabs = st.tabs(tab_labels)
+
+    # Mapping label -> render function
+    renderers = {
+        "Vue d'ensemble": tracker_overview.render,
+        "Notoriété & Visibilité": tracker_notoriete.render,
+        "Usage & Pénétration": tracker_usage.render,
+        "Image de Marque": tracker_image.render,
+        "Satisfaction & Fidélité": tracker_satisfaction.render,
+        "Analyse Géographique": tracker_geo.render,
+        "Tableau Croisé": tracker_pivot.render,
+        "Banque des Images": banque_images.render,
+    }
+    for tab, label in zip(tabs, tab_labels):
+        with tab:
+            renderers[label]()
 
 else:
     # Live mode : utilise les collecteurs réels (Google Trends/News, YouTube, Meta Ads)
