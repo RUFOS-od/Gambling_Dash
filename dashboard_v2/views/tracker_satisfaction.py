@@ -4,7 +4,7 @@ import streamlit as st
 from data.loader import (
     apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
     calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
-    calc_irritants, calc_motifs_satisfaction,
+    calc_irritants, calc_motifs_satisfaction, load_verbatim_themes,
     calc_intention, calc_intention_positive,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     get_utilisateurs_betclic, MAIN_COMPETITORS
@@ -144,41 +144,77 @@ def render():
 
     with col_right:
         if latest_vague:
-            df_lv = df[df["Vague"] == latest_vague[0]]
-            irritants = calc_irritants(df_lv)
-            motifs_sat = calc_motifs_satisfaction(df_lv)
+            wave_name = latest_vague[0]
+            themes_data = load_verbatim_themes(wave_name)
 
-            # ── Onglets : Irritants (Détracteurs) vs Motifs Satisfaction (Promoteurs)
             t_irr, t_sat = st.tabs([
                 "🔴 Irritants (Détracteurs)",
                 "🟢 Motifs satisfaction (Promoteurs)",
             ])
+
+            def _render_themes(block: dict | None, color: str, palette_label: str):
+                if not block or not block.get("themes"):
+                    note = (block or {}).get("note") or "Thèmes non encore générés."
+                    st.info(note)
+                    return
+                n_total = block.get("n_total", 0)
+                themes = block["themes"]
+                # Bar chart of themes
+                fig = go.Figure(go.Bar(
+                    y=[t["label"] for t in themes][::-1],
+                    x=[t["share_pct"] for t in themes][::-1],
+                    orientation="h",
+                    marker=dict(color=color),
+                    text=[f"{t['share_pct']:.0f}% ({t['count']})" for t in themes][::-1],
+                    textposition="outside",
+                    textfont=dict(size=11),
+                ))
+                fig.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+                    margin=dict(l=10, r=80, t=30, b=30),
+                    height=380,
+                    title=dict(text=f"Thèmes {palette_label} — base : {n_total} verbatims", font=dict(size=13)),
+                    xaxis=dict(range=[0, max(t["share_pct"] for t in themes) * 1.25],
+                               gridcolor="rgba(0,0,0,0.06)", showticklabels=False),
+                    yaxis=dict(automargin=True),
+                )
+                st.plotly_chart(fig, width='stretch')
+
+                # Illustrative quotes for top 3 themes
+                st.markdown("**Verbatims illustratifs**")
+                for t in themes[:3]:
+                    quotes = t.get("illustrative_quotes", [])
+                    if quotes:
+                        quote_html = "<br>".join(f"• <em>« {q} »</em>" for q in quotes)
+                        st.markdown(
+                            f"""<div style="background:#FFFFFF;border-left:3px solid {color};
+                            padding:0.7rem 1rem;margin-bottom:0.5rem;border-radius:6px;
+                            font-size:0.85rem;color:#4A5568;">
+                            <strong style="color:#1A1D23;">{t['label']}</strong><br>{quote_html}
+                            </div>""",
+                            unsafe_allow_html=True,
+                        )
+
             with t_irr:
-                if irritants:
-                    fig = bar_chart_brands(
-                        irritants,
-                        "Verbatims les plus fréquents chez les Détracteurs",
-                        highlight="", height=380,
-                    )
-                    st.plotly_chart(fig, width='stretch')
-                    st.caption(
-                        "Verbatims Q16 — raisons exprimées spontanément par les Détracteurs (NPS 0-6)."
-                    )
+                if themes_data:
+                    _render_themes(themes_data.get("detractors"), "#E74C3C", "détracteurs")
+                    st.caption(f"Thèmes générés par IA · {themes_data.get('generated_at','')[:16].replace('T',' ')}")
                 else:
-                    st.info("Aucun verbatim détracteur disponible dans cette vague.")
+                    st.info(
+                        "Thèmes non encore générés pour cette vague. "
+                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague 1`."
+                    )
             with t_sat:
-                if motifs_sat:
-                    fig = bar_chart_brands(
-                        motifs_sat,
-                        "Verbatims les plus fréquents chez les Promoteurs",
-                        highlight="", height=380,
-                    )
-                    st.plotly_chart(fig, width='stretch')
-                    st.caption(
-                        "Verbatims Q16 — raisons exprimées spontanément par les Promoteurs (NPS 9-10)."
-                    )
+                if themes_data:
+                    _render_themes(themes_data.get("promoters"), "#27AE60", "promoteurs")
+                    st.caption(f"Thèmes générés par IA · {themes_data.get('generated_at','')[:16].replace('T',' ')}")
                 else:
-                    st.info("Aucun verbatim promoteur disponible dans cette vague.")
+                    st.info(
+                        "Thèmes non encore générés pour cette vague. "
+                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague 1`."
+                    )
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 

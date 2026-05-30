@@ -1,0 +1,141 @@
+{
+  "wave": "Vague 1",
+  "generated_at": "2026-05-30T02:30:53",
+  "model": "claude-opus-4-7",
+  "detractors": {
+    "n_total": 47,
+    "themes": [
+      {
+        "label": "Risque d'addiction / dépendance",
+        "count": 12,
+        "share_pct": 25.5,
+        "illustrative_quotes": [
+          "parce que on devient vite dépendant et c'est mauvais pour les finances",
+          "PARCE QU'ON DOIS JOUER REPOSNSABLE , NE PAS LES POUSSER A ETRE ACCROC"
+        ]
+      },
+      {
+        "label": "Retraits bloqués / comptes gelés",
+        "count": 8,
+        "share_pct": 17.0,
+        "illustrative_quotes": [
+          "souvent quand tu gagnes de grosses sommes c'est difficile à retirer",
+          "j'ai donné 3 parce que site a bloqué mon compte pourtant j'avais de l'argent sur le compte"
+        ]
+      },
+      {
+        "label": "Cotes peu compétitives",
+        "count": 6,
+        "share_pct": 12.8,
+        "illustrative_quotes": [
+          "leurs côtes sont pas élevé",
+          "les côtes de Betclic sont moins compétitives"
+        ]
+      },
+      {
+        "label": "Difficile de gagner / perte d'argent",
+        "count": 6,
+        "share_pct": 12.8,
+        "illustrative_quotes": [
+          "on ne gagne pas facilement",
+          "L'APPLICATION EST BONNE MAIS JE GAGNE PRESQUE JAMAIS"
+        ]
+      },
+      {
+        "label": "Bonus & cashout insuffisants",
+        "count": 6,
+        "share_pct": 12.8,
+        "illustrative_quotes": [
+          "ils ne font plus de bonus",
+          "parce que les cash out sont pas enormes et lorsque vous gagnez un gros gain le compte beug"
+        ]
+      },
+      {
+        "label": "Fiabilité / transparence en doute",
+        "count": 5,
+        "share_pct": 10.6,
+        "illustrative_quotes": [
+          "je ne peux me fier à sans 100%",
+          "manque transparence"
+        ]
+      },
+      {
+        "label": "Manque variété sports / options paris",
+        "count": 4,
+        "share_pct": 8.5,
+        "illustrative_quotes": [
+          "- les côtes sont faible, et pas trop d'option de jeux",
+          "moins de variétés de sport en terme du football"
+        ]
+      }
+    ]
+  },
+  "promoters": {
+    "n_total": 203,
+    "themes": [
+      {
+        "label": "Rapidité dépôts/retraits & paiements",
+        "count": 58,
+        "share_pct": 28.6,
+        "illustrative_quotes": [
+          "la rapidité de dépôts et retraits. les bonus sont attractifs",
+          "parce que dès que je lance mon retrait je le reçois immédiatement"
+        ]
+      },
+      {
+        "label": "Fiabilité & sécurité perçues",
+        "count": 52,
+        "share_pct": 25.6,
+        "illustrative_quotes": [
+          "Fiable et securisé",
+          "l'application est sécurisée rapide et protège les données personnelles de chaque client"
+        ]
+      },
+      {
+        "label": "Cash-out élevés et attractifs",
+        "count": 28,
+        "share_pct": 13.8,
+        "illustrative_quotes": [
+          "selon moi c'est la meilleure application parce que les dépôts et retraits sont rapides et il propose des cashout élevés",
+          "pour leur cashout élevé par à ses concurrents"
+        ]
+      },
+      {
+        "label": "Meilleur site / leader perçu",
+        "count": 24,
+        "share_pct": 11.8,
+        "illustrative_quotes": [
+          "c'est la meilleure application de paris sportifs",
+          "NUMÉRO 1 DES SITES DE PARI SPORTIF"
+        ]
+      },
+      {
+        "label": "Simplicité & ergonomie de l'app",
+        "count": 22,
+        "share_pct": 10.8,
+        "illustrative_quotes": [
+          "c'est plus facile à utiliser",
+          "l'application est simple rapide et fiable"
+        ]
+      },
+      {
+        "label": "Cotes compétitives & offres de paris",
+        "count": 11,
+        "share_pct": 5.4,
+        "illustrative_quotes": [
+          "parce que le cash out est attrayant aussi les côte sont élevés",
+          "pous des côtes élevés"
+        ]
+      },
+      {
+        "label": "Bonus & promotions attractifs",
+        "count": 8,
+        "share_pct": 3.9,
+        "illustrative_quotes": [
+          "Simple avec beaucoup de Bonus",
+          "faire des promotions et des bonus chaque semaine"
+        ]
+      }
+    ]
+  }
+}

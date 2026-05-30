@@ -12,6 +12,7 @@ downstream views/KPI functions keep using the same column names.
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from typing import Optional
 import streamlit as st
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent
@@ -920,6 +921,26 @@ def calc_motifs_satisfaction(df: pd.DataFrame) -> dict:
     top = counts.head(10)
     pct = (top / len(valid) * 100).round(1)
     return pct.to_dict()
+
+
+def load_verbatim_themes(vague: str = "Vague 1") -> Optional[dict]:
+    """Charge les thèmes verbatim générés par scripts/build_verbatim_themes.py.
+
+    Retourne None si le fichier n'existe pas (ex: nouvelle vague pas encore
+    thématisée). La vue Satisfaction bascule alors sur l'affichage brut.
+    """
+    import json
+    target = (
+        Path(__file__).resolve().parent.parent
+        / "data" / "verbatim_themes" / f"{vague.replace(' ', '_')}.json"
+    )
+    if not target.exists():
+        return None
+    try:
+        with open(target, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 
 def calc_intention(df: pd.DataFrame) -> dict:
