@@ -2,10 +2,11 @@
 
 import streamlit as st
 from data.loader import (
-    apply_filters, calc_satisfaction, calc_nps, calc_churn_risk,
+    apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
+    calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
     calc_irritants, calc_intention, calc_intention_positive,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
-    get_utilisateurs_betclic
+    get_utilisateurs_betclic, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import (
@@ -156,3 +157,74 @@ def render():
         intent_evol = {v: intent_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if intent_v.get(v) is not None}
         fig = line_chart_evolution(intent_evol, "Évolution Intention Positive (Certainement + Probablement)", height=350)
         st.plotly_chart(fig, width='stretch')
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # ── Comparatif concurrentiel ──
+    st.markdown(section_header(
+        "Satisfaction & NPS — Comparaison concurrentielle",
+        "Indicateurs mesurés sur les utilisateurs principaux de chaque marque (Q6)"
+    ), unsafe_allow_html=True)
+
+    df_eval = df[df["Vague"] == latest_vague[0]] if latest_vague else df
+    sat_all = calc_satisfaction_all_brands(df_eval)
+    nps_all = calc_nps_all_brands(df_eval)
+
+    # Keep only brands with at least 10 respondents for reliable scores
+    base_per_brand = {b: int((df_eval["Marque_Principale_Utilisee"] == b).sum()) for b in MAIN_COMPETITORS}
+    eligible = [b for b in MAIN_COMPETITORS if base_per_brand[b] >= 10]
+
+    if eligible:
+        col_l, col_r = st.columns(2)
+        with col_l:
+            fig_sat = go.Figure()
+            fig_sat.add_trace(go.Bar(
+                x=eligible,
+                y=[sat_all.get(b, 0) for b in eligible],
+                text=[f"{sat_all.get(b, 0):.2f}/5" for b in eligible],
+                textposition="outside",
+                marker_color=[BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)]
+                              for i, b in enumerate(eligible)],
+            ))
+            fig_sat.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+                margin=dict(l=40, r=40, t=50, b=40),
+                height=380,
+                title=dict(text="Satisfaction globale (/5) par marque", font=dict(size=15)),
+                yaxis=dict(range=[0, 5.3], gridcolor="rgba(0,0,0,0.06)"),
+                showlegend=False,
+            )
+            st.plotly_chart(fig_sat, width='stretch')
+
+        with col_r:
+            fig_nps = go.Figure()
+            fig_nps.add_trace(go.Bar(
+                x=eligible,
+                y=[nps_all.get(b, 0) for b in eligible],
+                text=[f"{nps_all.get(b, 0):.0f}" for b in eligible],
+                textposition="outside",
+                marker_color=[BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)]
+                              for i, b in enumerate(eligible)],
+            ))
+            min_nps = min(nps_all.get(b, 0) for b in eligible)
+            max_nps = max(nps_all.get(b, 0) for b in eligible)
+            fig_nps.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+                margin=dict(l=40, r=40, t=50, b=40),
+                height=380,
+                title=dict(text="NPS par marque", font=dict(size=15)),
+                yaxis=dict(range=[min(min_nps, -10) - 10, max(max_nps, 10) + 15],
+                           gridcolor="rgba(0,0,0,0.06)", zeroline=True, zerolinecolor="#1A1D23"),
+                showlegend=False,
+            )
+            st.plotly_chart(fig_nps, width='stretch')
+
+        # Caption with base sizes
+        base_str = " • ".join([f"{b}: n={base_per_brand[b]}" for b in eligible])
+        st.caption(f"Base d'utilisateurs principaux par marque — {base_str}")
+    else:
+        st.info("Pas assez d'utilisateurs principaux pour comparer (minimum 10 par marque).")

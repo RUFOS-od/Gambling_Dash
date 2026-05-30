@@ -27,6 +27,10 @@ COMPETITORS = [
     "Betway", "Afropari", "Paripesa", "Bet365",
 ]
 
+# Marques principales à afficher dans les comparaisons concurrentielles
+# (basé sur le top notoriété + part de marché sur le marché ivoirien)
+MAIN_COMPETITORS = ["Betclic", "1XBET", "Sportcash", "Melbet", "BetMomo"]
+
 VAGUE_LABELS = {"Vague 1": "V1 — Mai 2026"}
 VAGUE_SHORT = {"Vague 1": "V1"}
 VAGUE_MONTHS = {"Vague 1": "Mai 2026"}
@@ -773,27 +777,79 @@ def calc_paiement_distribution(df: pd.DataFrame) -> dict:
     return valid["Moyen_Paiement_Principal"].value_counts(normalize=True).apply(lambda x: round(x * 100, 1)).to_dict()
 
 
-def calc_image_scores(df: pd.DataFrame) -> dict:
-    """Average image attribute scores for Betclic (among those who know it)."""
-    aware = df[df.get("Notoriete_Totale_Betclic", pd.Series([0]*len(df))) == 1]
+def calc_image_scores(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """Average image attribute scores for a given brand (among those who know it).
+
+    For Betclic uses the base columns (Image_Modernite, ...).
+    For competitors uses suffixed columns (Image_Modernite_1XBET, ...).
+    """
+    n_col = f"Notoriete_Totale_{brand}"
+    aware = df[df.get(n_col, pd.Series([0]*len(df))) == 1]
     result = {}
     for col, label in IMAGE_ATTRIBUTES.items():
-        if col in aware.columns:
-            vals = aware[col].dropna()
+        target_col = col if brand == "Betclic" else f"{col}_{brand}"
+        if target_col in aware.columns:
+            vals = aware[target_col].dropna()
             result[label] = round(vals.mean(), 2) if len(vals) > 0 else 0.0
         else:
             result[label] = 0.0
     return result
 
 
-def calc_satisfaction(df: pd.DataFrame) -> float:
-    users = get_utilisateurs_betclic(df)
-    if "Satisfaction_Globale_Betclic" not in users.columns:
+def calc_image_scores_main_brands(df: pd.DataFrame) -> dict:
+    """Image scores per brand for the main competitors. Returns {brand: {attr: score}}."""
+    out = {}
+    for b in MAIN_COMPETITORS:
+        out[b] = calc_image_scores(df, b)
+    return out
+
+
+def calc_satisfaction(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Satisfaction moyenne (/5) parmi les parieurs dont la marque principale (Q6) = brand.
+
+    T_Q14_1 (Satisfaction_Globale_Betclic dans le df normalisé) capture la
+    satisfaction du répondant vis-à-vis de SA marque principale Q6. On filtre
+    donc Q6==brand pour avoir la satisfaction de chaque marque.
+    """
+    target = df[df.get("Marque_Principale_Utilisee").astype(str) == brand]
+    if "Satisfaction_Globale_Betclic" not in target.columns:
         return 0.0
-    vals = users["Satisfaction_Globale_Betclic"].dropna()
+    vals = target["Satisfaction_Globale_Betclic"].dropna()
     if len(vals) == 0:
         return 0.0
     return round(vals.mean(), 2)
+
+
+def calc_satisfaction_all_brands(df: pd.DataFrame) -> dict:
+    """Satisfaction (/5) per brand. Base : parieurs dont Q6 = chaque marque."""
+    return {b: calc_satisfaction(df, b) for b in COMPETITORS}
+
+
+def calc_nps_by_brand(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """NPS per brand (parieurs Q6 = brand). Q15 capture le NPS de leur marque."""
+    target = df[df.get("Marque_Principale_Utilisee").astype(str) == brand]
+    if "NPS_Categorie" not in target.columns:
+        return {"nps": 0, "promoteurs": 0, "passifs": 0, "detracteurs": 0, "n": 0}
+    nps_data = target["NPS_Categorie"].dropna()
+    n = len(nps_data)
+    if n == 0:
+        return {"nps": 0, "promoteurs": 0, "passifs": 0, "detracteurs": 0, "n": 0}
+    counts = nps_data.value_counts()
+    prom = counts.get("Promoteur", 0)
+    det = counts.get("Détracteur", 0)
+    pas = counts.get("Passif", 0)
+    return {
+        "nps": round((prom - det) / n * 100, 1),
+        "promoteurs": round(prom / n * 100, 1),
+        "passifs": round(pas / n * 100, 1),
+        "detracteurs": round(det / n * 100, 1),
+        "n": n,
+    }
+
+
+def calc_nps_all_brands(df: pd.DataFrame) -> dict:
+    """NPS score par marque (uniquement le score, pas le détail)."""
+    return {b: calc_nps_by_brand(df, b)["nps"] for b in COMPETITORS}
 
 
 def calc_nps(df: pd.DataFrame) -> dict:

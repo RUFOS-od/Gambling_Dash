@@ -3,16 +3,18 @@
 import streamlit as st
 from data.loader import (
     apply_filters, calc_penetration, calc_marque_principale, calc_marque_principale_all,
+    calc_penetration_all_brands,
     calc_multi_app, calc_consideration, calc_preference, calc_wallet_share,
     calc_sport_distribution, calc_pari_type_distribution, calc_paiement_distribution,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
-    calc_funnel, get_parieurs, VAGUE_SHORT
+    calc_funnel, get_parieurs, VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import (
     bar_chart_brands, line_chart_evolution, donut_chart, funnel_chart,
     multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
 )
+import plotly.graph_objects as go
 
 
 def render():
@@ -102,11 +104,51 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
+    # ── Comparatif concurrentiel : Pénétration vs Marque Principale ──
+    st.markdown(section_header(
+        "Comparatif concurrentiel",
+        "Pénétration (Q5 : a déjà parié) vs Marque Principale (Q6) par marque"
+    ), unsafe_allow_html=True)
+
+    pen_all = calc_penetration_all_brands(df_latest)
+    mp_all = calc_marque_principale_all(df_latest)
+
+    fig_cmp = go.Figure()
+    fig_cmp.add_trace(go.Bar(
+        name="Pénétration (Q5)",
+        x=MAIN_COMPETITORS,
+        y=[pen_all.get(b, 0) for b in MAIN_COMPETITORS],
+        text=[f"{pen_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
+        textposition="outside",
+        marker_color=BETCLIC_RED,
+    ))
+    fig_cmp.add_trace(go.Bar(
+        name="Marque Principale (Q6)",
+        x=MAIN_COMPETITORS,
+        y=[mp_all.get(b, 0) for b in MAIN_COMPETITORS],
+        text=[f"{mp_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
+        textposition="outside",
+        marker_color=OPINIONWAY_PURPLE,
+    ))
+    fig_cmp.update_layout(
+        barmode="group",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+        margin=dict(l=40, r=40, t=50, b=80),
+        height=400,
+        title=dict(text="Funnel essai → préférence par marque", font=dict(size=15)),
+        yaxis=dict(range=[0, max(max(pen_all.values()), max(mp_all.values())) * 1.2], gridcolor="rgba(0,0,0,0.06)", title="%"),
+        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+    )
+    st.plotly_chart(fig_cmp, width='stretch')
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
     # ── Marque principale ──
     col_left, col_right = st.columns(2)
     with col_left:
-        mp_all = calc_marque_principale_all(df_latest)
-        fig = bar_chart_brands(mp_all, "Marque Principale des parieurs", height=380)
+        fig = bar_chart_brands(mp_all, "Marque Principale des parieurs (toutes marques)", height=380)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:

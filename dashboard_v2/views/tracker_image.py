@@ -3,12 +3,13 @@
 import streamlit as st
 import pandas as pd
 from data.loader import (
-    apply_filters, calc_image_scores, calc_kpi_by_vague,
+    apply_filters, calc_image_scores, calc_image_scores_main_brands,
+    calc_kpi_by_vague,
     calc_delta, get_latest_vague, get_previous_vague,
-    IMAGE_ATTRIBUTES
+    IMAGE_ATTRIBUTES, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
-from components.charts import radar_chart, bar_chart_brands, multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_VAGUES
+from components.charts import radar_chart, bar_chart_brands, multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_VAGUES, COLORS_SEQ
 import plotly.graph_objects as go
 
 
@@ -115,3 +116,48 @@ def render():
             f"Globalement, tous les attributs progressent entre V1 et V3, signe d'un renforcement "
             f"cohérent de l'image de marque."
         ), unsafe_allow_html=True)
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # ── Comparatif concurrentiel ──
+    st.markdown(section_header(
+        "Image de Marque — Comparaison concurrentielle",
+        "Profil d'image de Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
+    ), unsafe_allow_html=True)
+
+    image_by_brand = calc_image_scores_main_brands(df)
+    # Filter to brands that have at least some data
+    image_by_brand = {b: scores for b, scores in image_by_brand.items()
+                      if any(v > 0 for v in scores.values())}
+
+    if image_by_brand:
+        fig = radar_chart(image_by_brand, "Profil d'Image — Betclic vs concurrents", height=520)
+        st.plotly_chart(fig, width='stretch')
+
+        # Build a comparative bar chart for top differentiators
+        attrs = list(IMAGE_ATTRIBUTES.values())
+        fig_bar = go.Figure()
+        for i, brand in enumerate(image_by_brand.keys()):
+            vals = [image_by_brand[brand].get(a, 0) for a in attrs]
+            fig_bar.add_trace(go.Bar(
+                name=brand,
+                x=attrs,
+                y=vals,
+                marker_color=COLORS_SEQ[i % len(COLORS_SEQ)] if brand != "Betclic" else BETCLIC_RED,
+                text=[f"{v:.2f}" for v in vals],
+                textposition="outside",
+                textfont=dict(size=9),
+            ))
+        fig_bar.update_layout(
+            barmode="group",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+            margin=dict(l=40, r=40, t=50, b=100),
+            height=480,
+            title=dict(text="Scores par attribut — Multi-marques", font=dict(size=15)),
+            yaxis=dict(range=[0, 5.3], gridcolor="rgba(0,0,0,0.06)"),
+            xaxis=dict(tickangle=-45),
+            legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.28),
+        )
+        st.plotly_chart(fig_bar, width='stretch')

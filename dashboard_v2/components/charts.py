@@ -153,8 +153,10 @@ def funnel_chart(data: dict, title: str = "", height=400):
 
     fig = go.Figure(go.Funnel(
         y=labels, x=values,
-        textinfo="value+percent initial",
-        textfont=dict(size=13, color="#FFFFFF"),
+        # Affiche uniquement la valeur en % (les valeurs sont déjà des pourcentages)
+        texttemplate="%{x:.1f}%",
+        textposition="inside",
+        textfont=dict(size=14, color="#FFFFFF"),
         marker=dict(color=colors_f[:len(labels)]),
         connector=dict(line=dict(color=GRID_COLOR, width=1)),
     ))

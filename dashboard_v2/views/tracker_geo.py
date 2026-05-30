@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from data.loader import (
     apply_filters, calc_tom, calc_notoriete_totale, calc_penetration,
     calc_satisfaction, calc_nps, calc_preference, calc_consideration,
-    calc_kpi_by_city, CITIES, VAGUE_SHORT
+    calc_kpi_by_city, CITIES, VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import heatmap_cities, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
@@ -109,6 +109,56 @@ def render():
         width='stretch',
         height=320,
     )
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
+    # ── Comparatif concurrentiel par ville ──
+    st.markdown(section_header(
+        "Comparaison concurrentielle par ville",
+        "Pénétration (% a déjà parié sur la marque) — Betclic vs principaux concurrents"
+    ), unsafe_allow_html=True)
+
+    import plotly.graph_objects as go
+    pen_per_brand_per_city = {}
+    for b in MAIN_COMPETITORS:
+        per_city = {}
+        for city in CITIES:
+            sub = df_latest[df_latest["Ville"] == city]
+            if len(sub) > 0:
+                col = f"A_Deja_Parie_{b}"
+                if col in sub.columns:
+                    per_city[city] = round(sub[col].sum() / len(sub) * 100, 1)
+                else:
+                    per_city[city] = 0
+        pen_per_brand_per_city[b] = per_city
+
+    fig_geo = go.Figure()
+    for i, b in enumerate(MAIN_COMPETITORS):
+        vals = [pen_per_brand_per_city[b].get(c, 0) for c in CITIES]
+        fig_geo.add_trace(go.Bar(
+            name=b,
+            x=CITIES,
+            y=vals,
+            text=[f"{v:.0f}%" for v in vals],
+            textposition="outside",
+            textfont=dict(size=9),
+            marker_color=BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)],
+        ))
+    fig_geo.update_layout(
+        barmode="group",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+        margin=dict(l=40, r=40, t=50, b=80),
+        height=460,
+        title=dict(text=f"Pénétration par ville et par marque ({vague_label})", font=dict(size=15)),
+        yaxis=dict(gridcolor="rgba(0,0,0,0.06)", title="%"),
+        xaxis=dict(tickangle=-20),
+        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.20),
+    )
+    st.plotly_chart(fig_geo, width='stretch')
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Insight ──
     # Find best and worst performing cities

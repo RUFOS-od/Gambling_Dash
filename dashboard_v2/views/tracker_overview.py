@@ -1,16 +1,23 @@
 """Brand Health Tracker — Executive Scorecard & Overview."""
 
 import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
 from data.loader import (
     apply_filters, calc_tom, calc_notoriete_totale, calc_notoriete_aidee,
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
     calc_consideration, calc_wallet_share, calc_rappel_campagne,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     calc_intention_positive, calc_funnel, calc_marque_principale,
-    VAGUE_SHORT
+    calc_tom_all_brands, calc_notoriete_all_brands,
+    calc_penetration_all_brands, calc_marque_principale_all,
+    VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
-from components.charts import line_chart_evolution, funnel_chart, multi_line_chart
+from components.charts import (
+    line_chart_evolution, funnel_chart, multi_line_chart,
+    BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ,
+)
 
 
 def render():
@@ -104,6 +111,73 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
+    # ── Comparatif concurrentiel ──
+    st.markdown(section_header(
+        "Scorecard Concurrentiel",
+        "Comparaison Betclic vs principaux concurrents du marché ivoirien"
+    ), unsafe_allow_html=True)
+
+    latest_vague_name = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
+    df_latest = df[df["Vague"] == latest_vague_name[0]] if latest_vague_name else df
+
+    tom_all = calc_tom_all_brands(df_latest)
+    not_all = calc_notoriete_all_brands(df_latest)
+    pen_all = calc_penetration_all_brands(df_latest)
+    mp_all = calc_marque_principale_all(df_latest)
+
+    # Build the comparative bar chart : 4 KPIs grouped per brand
+    kpi_groups = {
+        "TOM": tom_all,
+        "Notoriété Totale": not_all,
+        "Pénétration": pen_all,
+        "Marque Principale": mp_all,
+    }
+    brand_colors = {
+        "Betclic": BETCLIC_RED,
+        "1XBET": "#2980B9",
+        "Sportcash": "#27AE60",
+        "Melbet": "#F39C12",
+        "BetMomo": "#8E44AD",
+    }
+    fig = go.Figure()
+    for kpi_name, kpi_values in kpi_groups.items():
+        vals = [kpi_values.get(b, 0) for b in MAIN_COMPETITORS]
+        fig.add_trace(go.Bar(
+            name=kpi_name,
+            x=MAIN_COMPETITORS,
+            y=vals,
+            text=[f"{v:.1f}%" for v in vals],
+            textposition="outside",
+            textfont=dict(size=11),
+        ))
+    fig.update_layout(
+        barmode="group",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+        margin=dict(l=40, r=40, t=50, b=60),
+        height=440,
+        title=dict(text="KPIs clés par marque", font=dict(size=15)),
+        yaxis=dict(range=[0, 105], gridcolor="rgba(0,0,0,0.06)", title="%"),
+        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+    )
+    st.plotly_chart(fig, width='stretch')
+
+    # Comparative table for precise reading
+    table_rows = []
+    for b in MAIN_COMPETITORS:
+        table_rows.append({
+            "Marque": b,
+            "TOM (%)": tom_all.get(b, 0),
+            "Notoriété Totale (%)": not_all.get(b, 0),
+            "Pénétration (%)": pen_all.get(b, 0),
+            "Marque Principale (%)": mp_all.get(b, 0),
+        })
+    df_table = pd.DataFrame(table_rows).set_index("Marque")
+    st.dataframe(df_table, width='stretch', height=240)
+
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+
     # ── Charts ──
     col_left, col_right = st.columns(2)
 
@@ -119,14 +193,10 @@ def render():
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        # Funnel chart - latest vague
-        latest_vague_name = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
-        if latest_vague_name:
-            df_latest = df[df["Vague"] == latest_vague_name[0]]
-        else:
-            df_latest = df
+        # Funnel chart - latest vague (df_latest already computed above)
         funnel_data = calc_funnel(df_latest)
-        fig = funnel_chart(funnel_data, f"Funnel de Conversion Betclic ({VAGUE_SHORT.get(latest_vague_name[0], '')})", height=420)
+        vague_label = VAGUE_SHORT.get(latest_vague_name[0], '') if latest_vague_name else ''
+        fig = funnel_chart(funnel_data, f"Funnel de Conversion Betclic ({vague_label})", height=420)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

@@ -26,6 +26,11 @@ Thumbs.db
 .streamlit/secrets.toml
 **/.streamlit/secrets.toml
 
+# Local Windows backups (Ctrl+C duplicates from Explorer)
+**/* - Copie/
+**/* - Copy/
+**/* - Kopie/
+
 # Virtualenv
 venv/
 env/
