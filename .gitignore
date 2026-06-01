@@ -30,6 +30,9 @@ Thumbs.db
 **/* - Copie/
 **/* - Copy/
 **/* - Kopie/
+**/* - Copie.*
+**/* - Copy.*
+**/* - Kopie.*
 
 # Virtualenv
 venv/
