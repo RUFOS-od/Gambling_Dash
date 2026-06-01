@@ -125,47 +125,46 @@ def render():
     pen_all = calc_penetration_all_brands(df_latest)
     mp_all = calc_marque_principale_all(df_latest)
 
-    # Build the comparative bar chart : 4 KPIs grouped per brand
-    kpi_groups = {
-        "TOM": tom_all,
-        "Notoriété Totale": not_all,
-        "Pénétration": pen_all,
-        "Marque Principale": mp_all,
-    }
-    brand_colors = {
-        "Betclic": BETCLIC_RED,
-        "1XBET": "#2980B9",
-        "Sportcash": "#27AE60",
-        "Melbet": "#F39C12",
-        "BetMomo": "#8E44AD",
-    }
-    fig = go.Figure()
-    for kpi_name, kpi_values in kpi_groups.items():
-        vals = [kpi_values.get(b, 0) for b in MAIN_COMPETITORS]
-        fig.add_trace(go.Bar(
-            name=kpi_name,
-            x=MAIN_COMPETITORS,
+    # Helper : bar chart simple par marque, trié décroissant, Betclic toujours rouge
+    def _brand_bar(data: dict, title: str, accent_color: str, height: int = 330):
+        sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
+        vals = [data.get(b, 0) for b in sorted_brands]
+        fig = go.Figure(go.Bar(
+            x=sorted_brands,
             y=vals,
             text=[f"{v:.1f}%" for v in vals],
             textposition="outside",
-            textfont=dict(size=11),
+            textfont=dict(size=12),
+            marker_color=[BETCLIC_RED if b == "Betclic" else accent_color for b in sorted_brands],
         ))
-    fig.update_layout(
-        barmode="group",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
-        margin=dict(l=40, r=40, t=50, b=60),
-        height=440,
-        title=dict(text="KPIs clés par marque", font=dict(size=15)),
-        yaxis=dict(range=[0, 105], gridcolor="rgba(0,0,0,0.06)", title="%"),
-        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
-    )
-    st.plotly_chart(fig, width='stretch')
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+            margin=dict(l=40, r=40, t=50, b=40),
+            height=height,
+            title=dict(text=title, font=dict(size=14)),
+            yaxis=dict(range=[0, max(vals) * 1.22 if vals else 100], gridcolor="rgba(0,0,0,0.06)", title="%"),
+            showlegend=False,
+        )
+        return fig
+
+    # 4 charts séparés (un par KPI), disposés sur 2 lignes de 2 colonnes
+    row1_l, row1_r = st.columns(2)
+    with row1_l:
+        st.plotly_chart(_brand_bar(tom_all, "Top of Mind (Q1A)", "#2980B9"), width='stretch')
+    with row1_r:
+        st.plotly_chart(_brand_bar(not_all, "Notoriété Totale (Q1A+Q1B+Q1C)", "#7FB3D5"), width='stretch')
+
+    row2_l, row2_r = st.columns(2)
+    with row2_l:
+        st.plotly_chart(_brand_bar(pen_all, "Pénétration (Q5)", "#94A3B8"), width='stretch')
+    with row2_r:
+        st.plotly_chart(_brand_bar(mp_all, "Marque Principale (Q6)", OPINIONWAY_PURPLE), width='stretch')
 
     # Comparative table for precise reading
     table_rows = []
-    for b in MAIN_COMPETITORS:
+    for b in sorted(MAIN_COMPETITORS, key=lambda b: -tom_all.get(b, 0)):
         table_rows.append({
             "Marque": b,
             "TOM (%)": tom_all.get(b, 0),
