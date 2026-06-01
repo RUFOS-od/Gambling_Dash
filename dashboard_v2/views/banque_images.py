@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Banque des Images (photos terrain par vague)."""
+"""Brand Health Tracker · Banque des Images (photos terrain par vague)."""
 
 import streamlit as st
 import base64
@@ -146,7 +146,7 @@ def _render_wave_gallery(vague: str):
         st.markdown(f"""
         <div class="wave-header" style="border-left:4px solid {vague_color};">
             <div class="wave-title" style="color:{vague_color};">{vague}</div>
-            <div class="wave-subtitle">{meta['mois']} — Collecte CAPI face-à-face</div>
+            <div class="wave-subtitle">{meta['mois']} · Collecte CAPI face-à-face</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
@@ -200,7 +200,7 @@ def _render_wave_gallery(vague: str):
         st.info("Aucune photo ne correspond à vos filtres.")
         return
 
-    # ── Gallery grid — 3 cols ──
+    # ── Gallery grid · 3 cols ──
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
     cols_per_row = 3
     for i in range(0, len(filtered), cols_per_row):
@@ -345,9 +345,9 @@ def render():
 
     # Sub-tabs per vague
     t1, t2, t3 = st.tabs([
-        "Vague 1 — Janvier 2026",
-        "Vague 2 — Février 2026",
-        "Vague 3 — Mars 2026",
+        "Vague 1 (Janvier 2026)",
+        "Vague 2 (Février 2026)",
+        "Vague 3 (Mars 2026)",
     ])
 
     with t1:

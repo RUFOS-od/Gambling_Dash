@@ -1,4 +1,4 @@
-"""Custom CSS styles for the Betclic Brand Pulse Dashboard — V2 White Premium."""
+"""Custom CSS styles for the Betclic Brand Pulse Dashboard · V2 White Premium."""
 
 CUSTOM_CSS = """
 <style>
@@ -24,7 +24,7 @@ html, body, [class*="css"] {
     letter-spacing: 0.05em;
 }
 
-/* ── KPI Cards — Premium Power BI style ── */
+/* ── KPI Cards · Premium Power BI style ── */
 .kpi-card {
     background: #FFFFFF;
     border: 1px solid #E8EAEE;
@@ -94,7 +94,7 @@ html, body, [class*="css"] {
 .delta-down  { color: #B91C1C; background: rgba(239, 68, 68, 0.10); }
 .delta-neutral { color: #B45309; background: rgba(245, 158, 11, 0.10); }
 
-/* ── Section Headers — premium typography with underline ── */
+/* ── Section Headers · premium typography with underline ── */
 .section-header {
     color: #0F172A;
     font-size: 1.6rem;
@@ -170,7 +170,7 @@ html, body, [class*="css"] {
     box-shadow: 0 8px 24px rgba(108,52,131,0.08);
 }
 
-/* ── Tabs — Power BI style segmented controls ── */
+/* ── Tabs · Power BI style segmented controls ── */
 .stTabs [data-baseweb="tab-list"] {
     gap: 4px;
     background: #F1F3F6;
@@ -285,7 +285,7 @@ html, body, [class*="css"] {
     flex-direction: column;
 }
 
-/* ── Metric containers — premium card style ── */
+/* ── Metric containers · premium card style ── */
 [data-testid="stMetric"] {
     background: #FFFFFF;
     border: 1px solid #E8EAEE;
@@ -347,7 +347,7 @@ html, body, [class*="css"] {
     box-shadow: 0 4px 10px rgba(192, 57, 43, 0.18);
 }
 
-/* ── Dataframes — Power BI grid look ── */
+/* ── Dataframes · Power BI grid look ── */
 [data-testid="stDataFrame"] {
     border-radius: 12px;
     overflow: hidden;
@@ -355,7 +355,7 @@ html, body, [class*="css"] {
     box-shadow: 0 1px 3px rgba(15,23,42,0.04);
 }
 
-/* ── Multiselect / Selectbox (filters) — cleaner pills ── */
+/* ── Multiselect / Selectbox (filters) · cleaner pills ── */
 [data-baseweb="tag"] {
     background: linear-gradient(135deg, #C0392B 0%, #A93226 100%) !important;
     border-radius: 8px !important;
@@ -367,7 +367,7 @@ html, body, [class*="css"] {
     color: rgba(255,255,255,0.85) !important;
 }
 
-/* ── Divider — subtle, less garish ── */
+/* ── Divider · subtle, less garish ── */
 .styled-divider {
     height: 1px;
     background: linear-gradient(90deg, transparent 0%, #E2E5EA 20%, #E2E5EA 80%, transparent 100%);

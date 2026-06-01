@@ -1,4 +1,4 @@
-"""AI Market Radar — Alertes & Signaux Faibles."""
+"""AI Market Radar · Alertes & Signaux Faibles."""
 
 import streamlit as st
 from data.simulator import generate_alerts, generate_competitor_actions, generate_risk_levels, COMPETITORS
@@ -56,7 +56,7 @@ def render():
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Timeline of competitor actions ──
-    st.markdown(section_header("Timeline des Actions Concurrentes — Mars 2026"), unsafe_allow_html=True)
+    st.markdown(section_header("Timeline des Actions Concurrentes (Mars 2026)"), unsafe_allow_html=True)
 
     # Flatten all actions
     all_actions = []

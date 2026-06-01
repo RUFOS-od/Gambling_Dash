@@ -1,4 +1,4 @@
-"""AI Market Radar — Fiches concurrents (donnees reelles)."""
+"""AI Market Radar · Fiches concurrents (donnees reelles)."""
 
 import pandas as pd
 import streamlit as st
@@ -76,7 +76,7 @@ def render():
                 for _, row in news_b.iterrows():
                     st.markdown(
                         f"- [{row['title']}]({row['link']})  \n"
-                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('source','')} — {row.get('published','')[:10]}</span>",
+                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('source','')} · {row.get('published','')[:10]}</span>",
                         unsafe_allow_html=True,
                     )
             else:
@@ -93,7 +93,7 @@ def render():
                     url = f"https://youtube.com/watch?v={row['video_id']}"
                     st.markdown(
                         f"- [{row['title']}]({url})  \n"
-                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('channel','')} — {int(row.get('views',0)):,} vues</span>",
+                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('channel','')} · {int(row.get('views',0)):,} vues</span>",
                         unsafe_allow_html=True,
                     )
             else:

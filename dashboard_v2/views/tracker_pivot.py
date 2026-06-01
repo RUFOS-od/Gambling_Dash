@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Tableau Croisé Dynamique (Pivot)."""
+"""Brand Health Tracker · Tableau Croisé Dynamique (Pivot)."""
 
 import streamlit as st
 import pandas as pd
@@ -45,14 +45,14 @@ MEASURE_COLS = {
     "NPS Score": {"col": "NPS_Score", "agg": "mean"},
     "Fréquence paris/mois": {"col": "Frequence_Paris_Mois", "agg": "mean"},
     "Nb apps utilisées": {"col": "Nb_Apps_Utilisees", "agg": "mean"},
-    "Image — Modernité (/5)": {"col": "Image_Modernite", "agg": "mean"},
-    "Image — Fiabilité (/5)": {"col": "Image_Fiabilite", "agg": "mean"},
-    "Image — Sécurité (/5)": {"col": "Image_Securite", "agg": "mean"},
-    "Image — Rapidité Paiements (/5)": {"col": "Image_Rapidite_Paiements", "agg": "mean"},
-    "Image — Proximité (/5)": {"col": "Image_Proximite", "agg": "mean"},
-    "Image — Innovation (/5)": {"col": "Image_Innovation", "agg": "mean"},
-    "Image — Qualité App (/5)": {"col": "Image_Qualite_App", "agg": "mean"},
-    "Image — Simplicité (/5)": {"col": "Image_Simplicite", "agg": "mean"},
+    "Image · Modernité (/5)": {"col": "Image_Modernite", "agg": "mean"},
+    "Image · Fiabilité (/5)": {"col": "Image_Fiabilite", "agg": "mean"},
+    "Image · Sécurité (/5)": {"col": "Image_Securite", "agg": "mean"},
+    "Image · Rapidité Paiements (/5)": {"col": "Image_Rapidite_Paiements", "agg": "mean"},
+    "Image · Proximité (/5)": {"col": "Image_Proximite", "agg": "mean"},
+    "Image · Innovation (/5)": {"col": "Image_Innovation", "agg": "mean"},
+    "Image · Qualité App (/5)": {"col": "Image_Qualite_App", "agg": "mean"},
+    "Image · Simplicité (/5)": {"col": "Image_Simplicite", "agg": "mean"},
 }
 
 # Notoriete for all brands

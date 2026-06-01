@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Analyse Géographique."""
+"""Brand Health Tracker · Analyse Géographique."""
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -90,7 +90,7 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # NPS — without % suffix
+    # NPS · without % suffix
     fig = heatmap_cities(kpis_geo["NPS (pts)"], f"NPS par ville ({vague_label})", height=350, suffix=" pts")
     st.plotly_chart(fig, width='stretch')
 
@@ -122,7 +122,7 @@ def render():
     # ── Comparatif concurrentiel par ville ──
     st.markdown(section_header(
         "Comparaison concurrentielle par ville",
-        "Betclic vs principaux concurrents — choisissez le KPI à comparer"
+        "Betclic vs principaux concurrents · choisissez le KPI à comparer"
     ), unsafe_allow_html=True)
 
     import plotly.graph_objects as go
@@ -345,11 +345,11 @@ def render():
         ), unsafe_allow_html=True)
 
     # ────────────────────────────────────────────────────────
-    # ZOOM ABIDJAN — analyse par commune (Q29_Commune)
+    # ZOOM ABIDJAN · analyse par commune (Q29_Commune)
     # ────────────────────────────────────────────────────────
     st.markdown(styled_divider(), unsafe_allow_html=True)
     st.markdown(section_header(
-        "🏙️ Zoom Abidjan — Analyse par commune",
+        "🏙️ Zoom Abidjan · Analyse par commune",
         "Décomposition par commune des 256 répondants abidjanais (Q29_Commune)"
     ), unsafe_allow_html=True)
 
@@ -488,5 +488,5 @@ def render():
                     f"({pen_c[top_pen]}%), et <strong>{top_pref}</strong> la meilleure préférence "
                     f"({pref_c[top_pref]}%). Ces communes sont des bastions Betclic, à consolider. "
                     f"Les communes à fort potentiel restent celles où la notoriété est élevée mais la "
-                    f"pénétration faible — opportunité d'activation locale."
+                    f"pénétration faible · opportunité d'activation locale."
                 ), unsafe_allow_html=True)

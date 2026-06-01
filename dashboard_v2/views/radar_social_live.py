@@ -1,4 +1,4 @@
-"""AI Market Radar — Social & Sentiment (donnees reelles)."""
+"""AI Market Radar · Social & Sentiment (donnees reelles)."""
 
 import pandas as pd
 import streamlit as st
@@ -79,7 +79,7 @@ def render():
     if len(neg) > 0:
         for _, row in neg.iterrows():
             st.markdown(
-                f"- **{row['brand']}** — [{row['text']}]({row['link']})  \n"
+                f"- **{row['brand']}** · [{row['text']}]({row['link']})  \n"
                 f"  <span style='color:#7B8794;font-size:0.8rem'>score={row['score']:.2f} · {row['rationale']}</span>",
                 unsafe_allow_html=True,
             )
@@ -103,7 +103,7 @@ def render():
                 x=sos.index, y=sos[col], mode="lines", name=col, stackgroup="one",
             ))
         fig2.update_layout(
-            title="Share of Search (%) — evolution hebdomadaire",
+            title="Share of Search (%) · evolution hebdomadaire",
             height=400, paper_bgcolor="white", plot_bgcolor="white",
             margin=dict(l=20, r=20, t=50, b=40),
             yaxis=dict(title="% du volume total", gridcolor="#F0F0F0"),

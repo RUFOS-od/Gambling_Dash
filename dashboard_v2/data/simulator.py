@@ -135,13 +135,13 @@ def generate_competitor_actions():
             {"date": "2026-03-05", "type": "Ambassadeur", "detail": "Nouveau contrat influenceur TikTok (500K followers)", "impact": "Moyen"},
         ],
         "Chopbet": [
-            {"date": "2026-03-21", "type": "Promotion", "detail": "Paris gratuits weekend — campagne agressive SMS", "impact": "Moyen"},
+            {"date": "2026-03-21", "type": "Promotion", "detail": "Paris gratuits weekend · campagne agressive SMS", "impact": "Moyen"},
         ],
         "Melbet": [
             {"date": "2026-03-19", "type": "Produit", "detail": "Refonte UX application mobile", "impact": "Faible"},
         ],
         "Betmomo": [
-            {"date": "2026-03-17", "type": "Communication", "detail": "Activation terrain Abidjan — stands mobile money", "impact": "Moyen"},
+            {"date": "2026-03-17", "type": "Communication", "detail": "Activation terrain Abidjan · stands mobile money", "impact": "Moyen"},
         ],
         "AkwaBet": [
             {"date": "2026-03-10", "type": "Promotion", "detail": "Bonus inscription 5 000 FCFA", "impact": "Faible"},
@@ -150,7 +150,7 @@ def generate_competitor_actions():
             {"date": "2026-03-14", "type": "Produit", "detail": "Ajout cotes boostées football européen", "impact": "Faible"},
         ],
         "Betclic": [
-            {"date": "2026-03-23", "type": "Communication", "detail": "Campagne Willy Dumbo — TV + digital", "impact": "Fort"},
+            {"date": "2026-03-23", "type": "Communication", "detail": "Campagne Willy Dumbo · TV + digital", "impact": "Fort"},
             {"date": "2026-03-16", "type": "Produit", "detail": "Lancement section jeu responsable in-app", "impact": "Moyen"},
             {"date": "2026-03-09", "type": "Promotion", "detail": "Offre VIP parieurs intensifs", "impact": "Fort"},
         ],
@@ -165,7 +165,7 @@ def generate_alerts():
             "date": "2026-03-22",
             "severity": "high",
             "title": "1XBET : Surenchère promotionnelle massive",
-            "detail": "Bonus 200% détecté — risque de captation parieurs occasionnels. Recommandation : activation défensive CRM sur segment Occasionnel.",
+            "detail": "Bonus 200% détecté · risque de captation parieurs occasionnels. Recommandation : activation défensive CRM sur segment Occasionnel.",
             "category": "Concurrence",
         },
         {
@@ -179,7 +179,7 @@ def generate_alerts():
             "date": "2026-03-18",
             "severity": "medium",
             "title": "PremierBet : Expansion paiement mobile",
-            "detail": "Intégration Moov Money complétée — PremierBet couvre désormais 4 opérateurs. Aligne son offre paiement sur Betclic.",
+            "detail": "Intégration Moov Money complétée · PremierBet couvre désormais 4 opérateurs. Aligne son offre paiement sur Betclic.",
             "category": "Produit",
         },
         {

@@ -18,7 +18,7 @@ import streamlit as st
 DATA_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ──────────────────────────────────────────────
-# REFERENCE LISTS — updated to match real V1 questionnaire
+# REFERENCE LISTS · updated to match real V1 questionnaire
 # ──────────────────────────────────────────────
 
 # 14 competing sports betting brands tracked in the questionnaire
@@ -32,7 +32,7 @@ COMPETITORS = [
 # (basé sur le top notoriété + part de marché sur le marché ivoirien)
 MAIN_COMPETITORS = ["Betclic", "1XBET", "Sportcash", "Melbet", "BetMomo"]
 
-VAGUE_LABELS = {"Vague 1": "V1 — Mai 2026"}
+VAGUE_LABELS = {"Vague 1": "V1 (Mai 2026)"}
 VAGUE_SHORT = {"Vague 1": "V1"}
 VAGUE_MONTHS = {"Vague 1": "Mai 2026"}
 
@@ -51,14 +51,14 @@ def _build_dynamic_vague_labels(vagues_list):
             month_idx = (4 + (num - 1)) % 12
             year = 2026 + (4 + (num - 1)) // 12
             VAGUE_MONTHS[v_name] = f"{months_fr[month_idx]} {year}"
-            VAGUE_LABELS[v_name] = f"V{num} — {months_fr[month_idx][:3]} {year}"
+            VAGUE_LABELS[v_name] = f"V{num} · {months_fr[month_idx][:3]} {year}"
         except (ValueError, TypeError):
             VAGUE_SHORT[v_name] = v_name
             VAGUE_MONTHS[v_name] = ""
             VAGUE_LABELS[v_name] = v_name
 
 
-# 13 image attributes (Q12) — matches the real questionnaire
+# 13 image attributes (Q12) · matches the real questionnaire
 IMAGE_ATTRIBUTES = {
     "Image_Fiabilite_Paiement": "Fiabilité paiements",
     "Image_Securite": "Sécurité",
@@ -233,7 +233,7 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Frequence_Paris"] = df_raw.get("Q8", None)
     df["Frequence_Paris_Mois"] = df["Frequence_Paris"]
     df["Montant_Mise_Mensuel"] = df_raw.get("Q10", None)
-    # Numeric version (FCFA, milieu de tranche) — utilisé pour les agrégations pivot
+    # Numeric version (FCFA, milieu de tranche) · utilisé pour les agrégations pivot
     df["Montant_Mise_Mensuel_FCFA"] = df["Montant_Mise_Mensuel"].map(Q10_MIDPOINTS_FCFA)
 
     # ── TOM (Top of Mind) ──
@@ -299,7 +299,7 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Type_Pari_Prefere"] = None
 
     # ── Intention recommandation (Q13) per-row flag : Très probablement OU Probablement ──
-    # Q13 = "Probabilité de recommander Q6 (NPS)" — asked to parieurs only.
+    # Q13 = "Probabilité de recommander Q6 (NPS)" · asked to parieurs only.
     # For non-parieurs Q13 is NaN, so the flag = 0.
     intent_raw = df_raw.get("Q13", pd.Series([None] * n)).astype(str).str.strip()
     intent_strong = (
@@ -332,7 +332,7 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
             if raw_col in df_raw.columns:
                 df[f"{attr_col}_{brand}"] = pd.to_numeric(df_raw[raw_col], errors="coerce")
 
-    # ── Importance (Q4) — used by some views ──
+    # ── Importance (Q4) · used by some views ──
     importance_labels = list(RAW_IMAGE_ATTRS.values())
     for idx, attr_col in RAW_IMAGE_ATTRS.items():
         raw_col = f"T_Q4_{idx}"

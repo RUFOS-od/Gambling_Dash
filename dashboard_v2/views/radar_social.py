@@ -1,4 +1,4 @@
-"""AI Market Radar — Social & Sentiment Analysis."""
+"""AI Market Radar · Social & Sentiment Analysis."""
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -57,7 +57,7 @@ def render():
         ))
 
     fig.update_layout(
-        title="Évolution des mentions sociales — Top 5 marques",
+        title="Évolution des mentions sociales · Top 5 marques",
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter", color="#1A1D23", size=12),
         margin=dict(l=40, r=40, t=50, b=40), height=400,
@@ -97,7 +97,7 @@ def render():
     col_left, col_right = st.columns(2)
 
     with col_left:
-        fig = donut_chart(sov, "Share of Voice — Mars 2026", colors=COLORS_SEQ[:len(sov)], height=400)
+        fig = donut_chart(sov, "Share of Voice (Mars 2026)", colors=COLORS_SEQ[:len(sov)], height=400)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:

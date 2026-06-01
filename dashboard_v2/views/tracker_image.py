@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Attributs Fonctionnels."""
+"""Brand Health Tracker · Attributs Fonctionnels."""
 
 import streamlit as st
 import pandas as pd
@@ -35,7 +35,7 @@ def render():
             image_by_vague[v] = calc_image_scores(sub)
 
     if image_by_vague:
-        fig = radar_chart(image_by_vague, "Profil des Attributs Fonctionnels Betclic — Comparaison inter-vagues", height=520)
+        fig = radar_chart(image_by_vague, "Profil des Attributs Fonctionnels Betclic · Comparaison inter-vagues", height=520)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -99,7 +99,7 @@ def render():
             font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
             margin=dict(l=40, r=40, t=50, b=80),
             height=450,
-            title=dict(text="Scores par Attribut Fonctionnel — Évolution V1→V3", font=dict(size=16)),
+            title=dict(text="Scores par Attribut Fonctionnel · Évolution V1→V3", font=dict(size=16)),
             yaxis=dict(range=[0, 5.2], gridcolor="rgba(0,0,0,0.06)"),
             xaxis=dict(tickangle=-45),
             legend=dict(bgcolor="rgba(0,0,0,0)"),
@@ -121,7 +121,7 @@ def render():
 
     # ── Comparatif concurrentiel ──
     st.markdown(section_header(
-        "Attributs Fonctionnels — Comparaison concurrentielle",
+        "Attributs Fonctionnels · Comparaison concurrentielle",
         "Scores par attribut pour Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
     ), unsafe_allow_html=True)
 
@@ -155,7 +155,7 @@ def render():
             font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
             margin=dict(l=40, r=40, t=50, b=120),
             height=520,
-            title=dict(text="Scores par attribut — Multi-marques (trié par score Betclic)", font=dict(size=15)),
+            title=dict(text="Scores par attribut · Multi-marques (trié par score Betclic)", font=dict(size=15)),
             yaxis=dict(range=[0, 5.5], gridcolor="rgba(0,0,0,0.06)", title="Score moyen / 5"),
             xaxis=dict(tickangle=-40),
             legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.32),

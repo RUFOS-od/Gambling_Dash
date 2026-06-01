@@ -1,5 +1,5 @@
 """
-Reusable Plotly chart builders — V2 White Premium Theme.
+Reusable Plotly chart builders · V2 White Premium Theme.
 """
 
 import plotly.graph_objects as go

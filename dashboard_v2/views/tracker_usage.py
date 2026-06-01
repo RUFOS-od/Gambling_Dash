@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Usage & Pénétration."""
+"""Brand Health Tracker · Usage & Pénétration."""
 
 import streamlit as st
 from data.loader import (
@@ -147,7 +147,7 @@ def render():
 
     # ── Part de marché : Volume vs Valeur ──
     st.markdown(section_header(
-        "Part de Marché — Volume vs Valeur",
+        "Part de Marché · Volume vs Valeur",
         "PDM Volume = part des utilisateurs principaux (Q6) | PDM Valeur = part du chiffre d'affaires théorique (Q6 × Q10)"
     ), unsafe_allow_html=True)
 
@@ -217,7 +217,7 @@ def render():
             fig = line_chart_evolution(wallet_evol, "Évolution Wallet Share Betclic (F CFA / mois)", height=380)
             st.plotly_chart(fig, width='stretch')
         else:
-            fig = bar_chart_brands(pdm_valeur_all, "PDM Valeur — toutes marques", height=380)
+            fig = bar_chart_brands(pdm_valeur_all, "PDM Valeur · toutes marques", height=380)
             st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

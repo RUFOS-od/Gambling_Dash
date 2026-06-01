@@ -1,5 +1,5 @@
 """
-Betclic Brand Pulse — Business Intelligence Dashboard 2026
+Betclic Brand Pulse · Business Intelligence Dashboard 2026
 Main application entry point with sidebar navigation and global filters.
 """
 
@@ -39,7 +39,7 @@ if not _favicon_path.exists():
 _favicon = str(_favicon_path) if _favicon_path.exists() else "B"
 
 st.set_page_config(
-    page_title="Betclic Brand Pulse — BI Dashboard 2026",
+    page_title="Betclic Brand Pulse · BI Dashboard 2026",
     page_icon=_favicon,
     layout="wide",
     initial_sidebar_state="expanded",

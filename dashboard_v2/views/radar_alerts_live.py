@@ -1,4 +1,4 @@
-"""AI Market Radar — Alertes & Signaux (donnees reelles + brief executif IA)."""
+"""AI Market Radar · Alertes & Signaux (donnees reelles + brief executif IA)."""
 
 import pandas as pd
 import streamlit as st
@@ -21,7 +21,7 @@ SEVERITY_STYLES = {
 
 def _signal_card(s: dict) -> str:
     color, label = SEVERITY_STYLES.get(s["severity"], ("#4A5568", "INFO"))
-    brand_txt = f" — <strong>{s['brand']}</strong>" if s.get("brand") else ""
+    brand_txt = f" · <strong>{s['brand']}</strong>" if s.get("brand") else ""
     return (
         f'<div style="background:#FFFFFF;border-left:4px solid {color};'
         f'padding:0.8rem 1rem;margin-bottom:0.6rem;border-radius:0 8px 8px 0;'
@@ -75,7 +75,7 @@ def render():
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Brief executif IA ──
-    st.markdown("### Brief exécutif — Analyse IA")
+    st.markdown("### Brief exécutif · Analyse IA")
     with st.spinner("Generation du brief..."):
         # Pre-calcul du sentiment agrege
         sent_summary = {"positif": 0, "neutre": 0, "negatif": 0}

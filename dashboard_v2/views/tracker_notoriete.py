@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Notoriété & Visibilité."""
+"""Brand Health Tracker · Notoriété & Visibilité."""
 
 import streamlit as st
 from data.loader import (
@@ -76,7 +76,7 @@ def render():
             "Sportcash": tom_sport,
         }
         from components.charts import multi_line_chart
-        fig = multi_line_chart(data_evol, "Évolution TOM — Top 3 marques")
+        fig = multi_line_chart(data_evol, "Évolution TOM · Top 3 marques")
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -97,7 +97,7 @@ def render():
             if len(sub) > 0:
                 not_by_vague[v] = calc_notoriete_all_brands(sub)
         if not_by_vague:
-            fig = grouped_bar_vagues(not_by_vague, "Notoriété Totale — Évolution par vague", height=400)
+            fig = grouped_bar_vagues(not_by_vague, "Notoriété Totale · Évolution par vague", height=400)
             st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

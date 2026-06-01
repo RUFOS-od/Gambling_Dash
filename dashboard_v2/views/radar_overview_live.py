@@ -1,4 +1,4 @@
-"""AI Market Radar — Vue d'ensemble (donnees reelles issues des collecteurs)."""
+"""AI Market Radar · Vue d'ensemble (donnees reelles issues des collecteurs)."""
 
 from datetime import datetime
 import pandas as pd
@@ -21,7 +21,7 @@ def _empty_state():
 
 def render():
     st.markdown(section_header(
-        "AI Market Radar — Vue d'ensemble",
+        "AI Market Radar · Vue d'ensemble",
         "Veille concurrentielle multi-sources : tendances de recherche, actualités, médias sociaux et publicités"
     ), unsafe_allow_html=True)
 

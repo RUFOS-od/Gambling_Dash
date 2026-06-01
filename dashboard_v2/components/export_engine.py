@@ -1,5 +1,5 @@
 """
-Export Engine — Generate PPTX, PDF, and Excel reports from KPI data.
+Export Engine · Generate PPTX, PDF, and Excel reports from KPI data.
 """
 
 import io
@@ -124,7 +124,7 @@ def _add_title_slide(prs, kpis):
     p.alignment = PP_ALIGN.CENTER
 
     p2 = tf.add_paragraph()
-    p2.text = f"Scorecard Exécutif — {kpis['latest_vague']}"
+    p2.text = f"Scorecard Exécutif · {kpis['latest_vague']}"
     p2.font.size = Pt(18)
     p2.font.color.rgb = OW_PURPLE
     p2.alignment = PP_ALIGN.CENTER
@@ -139,7 +139,7 @@ def _add_title_slide(prs, kpis):
     txBox2 = slide.shapes.add_textbox(Inches(1), Inches(6.5), Inches(8), Inches(0.4))
     tf2 = txBox2.text_frame
     p_f = tf2.paragraphs[0]
-    p_f.text = f"© {datetime.date.today().year} OpinionWay Africa × Betclic CI — Confidentiel"
+    p_f.text = f"© {datetime.date.today().year} OpinionWay Africa × Betclic CI · Confidentiel"
     p_f.font.size = Pt(9)
     p_f.font.color.rgb = RGBColor(0x4A, 0x55, 0x68)
     p_f.alignment = PP_ALIGN.CENTER
@@ -252,7 +252,7 @@ def _add_image_slide(prs, kpis):
     txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
     tf = txBox.text_frame
     p = tf.paragraphs[0]
-    p.text = "Attributs Fonctionnels — Scores Moyens (/5)"
+    p.text = "Attributs Fonctionnels · Scores Moyens (/5)"
     p.font.size = Pt(22)
     p.font.bold = True
     p.font.color.rgb = BETCLIC_RED
@@ -551,7 +551,7 @@ def generate_excel(df, vagues_list) -> bytes:
     ws1.set_column("B:B", 15)
     ws1.set_column("C:C", 18)
 
-    ws1.write(0, 0, "Betclic Brand Pulse — Scorecard", title_fmt)
+    ws1.write(0, 0, "Betclic Brand Pulse · Scorecard", title_fmt)
     ws1.write(1, 0, f"{kpis['latest_vague']} | Base : {kpis['n_total']} repondants", subtitle_fmt)
 
     row = 3
@@ -646,7 +646,7 @@ def generate_excel(df, vagues_list) -> bytes:
     ws4.set_column("A:A", 28)
     ws4.set_column("B:B", 15)
 
-    ws4.write(0, 0, "Attributs Fonctionnels — Scores (/5)", title_fmt)
+    ws4.write(0, 0, "Attributs Fonctionnels · Scores (/5)", title_fmt)
     row = 2
     ws4.write(row, 0, "Attribut", header_fmt)
     ws4.write(row, 1, "Score moyen", header_fmt)

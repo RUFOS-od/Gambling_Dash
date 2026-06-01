@@ -1,4 +1,4 @@
-"""AI Market Radar — Overview."""
+"""AI Market Radar · Overview."""
 
 import streamlit as st
 from data.simulator import (
@@ -16,7 +16,7 @@ from components.charts import (
 
 def render():
     st.markdown(section_header(
-        "AI Market Radar — Vue d'ensemble",
+        "AI Market Radar · Vue d'ensemble",
         "Veille concurrentielle augmentée par IA | 9 acteurs du marché ivoirien des paris sportifs"
     ), unsafe_allow_html=True)
 
@@ -44,7 +44,7 @@ def render():
 
     # ── Positioning Bubble Chart ──
     pos_data = generate_positioning_data()
-    fig = bubble_chart(pos_data, "Positionnement Concurrentiel — Share of Voice vs Sentiment Positif", height=500)
+    fig = bubble_chart(pos_data, "Positionnement Concurrentiel · Share of Voice vs Sentiment Positif", height=500)
     fig.update_xaxes(title_text="Share of Voice (%)")
     fig.update_yaxes(title_text="Sentiment Positif (%)")
     st.plotly_chart(fig, width='stretch')

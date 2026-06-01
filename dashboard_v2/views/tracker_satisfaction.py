@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Satisfaction & Fidélité."""
+"""Brand Health Tracker · Satisfaction & Fidélité."""
 
 import streamlit as st
 from data.loader import (
@@ -93,7 +93,7 @@ def render():
             st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        # NPS + Satisfaction evolution — affiché seulement si au moins 2 vagues disponibles
+        # NPS + Satisfaction evolution · affiché seulement si au moins 2 vagues disponibles
         nps_evol = {v: nps_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if nps_v.get(v) is not None}
         sat_evol = {v: sat_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if sat_v.get(v) is not None}
 
@@ -134,7 +134,7 @@ def render():
                 fig = donut_chart(churn, "Répartition Risque de Churn", colors=["#27AE60", "#F39C12", "#E74C3C"], height=350)
                 st.plotly_chart(fig, width='stretch')
 
-        # Churn evolution — affiché seulement si au moins 2 vagues
+        # Churn evolution · affiché seulement si au moins 2 vagues
         churn_evol = {v: churn_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if churn_v.get(v) is not None}
         if len(churn_evol) >= 2:
             fig = line_chart_evolution(churn_evol, "Évolution Churn Élevé (%)", height=300)
@@ -173,7 +173,7 @@ def render():
                     font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
                     margin=dict(l=10, r=80, t=30, b=30),
                     height=380,
-                    title=dict(text=f"Thèmes {palette_label} — base : {n_total} verbatims", font=dict(size=13)),
+                    title=dict(text=f"Thèmes {palette_label} · base : {n_total} verbatims", font=dict(size=13)),
                     xaxis=dict(range=[0, max(t["share_pct"] for t in themes) * 1.25],
                                gridcolor="rgba(0,0,0,0.06)", showticklabels=False),
                     yaxis=dict(automargin=True),
@@ -218,7 +218,7 @@ def render():
 
     # ── Comparatif concurrentiel ──
     st.markdown(section_header(
-        "Satisfaction & NPS — Comparaison concurrentielle",
+        "Satisfaction & NPS · Comparaison concurrentielle",
         "Indicateurs mesurés sur les utilisateurs principaux de chaque marque (Q6)"
     ), unsafe_allow_html=True)
 
@@ -281,6 +281,6 @@ def render():
 
         # Caption with base sizes
         base_str = " • ".join([f"{b}: n={base_per_brand[b]}" for b in eligible])
-        st.caption(f"Base d'utilisateurs principaux par marque — {base_str}")
+        st.caption(f"Base d'utilisateurs principaux par marque · {base_str}")
     else:
         st.info("Pas assez d'utilisateurs principaux pour comparer (minimum 10 par marque).")

@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Executive Scorecard & Overview."""
+"""Brand Health Tracker · Executive Scorecard & Overview."""
 
 import streamlit as st
 import pandas as pd
@@ -31,7 +31,7 @@ def render():
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None)
 
     st.markdown(section_header(
-        "Scorecard Exécutif — Betclic Brand Pulse",
+        "Scorecard Exécutif · Betclic Brand Pulse",
         "Vue synthétique des indicateurs clés de santé de marque | Évolution inter-vagues"
     ), unsafe_allow_html=True)
 

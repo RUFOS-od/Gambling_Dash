@@ -1,4 +1,4 @@
-"""AI Market Radar — Fiches Concurrents."""
+"""AI Market Radar · Fiches Concurrents."""
 
 import streamlit as st
 from data.simulator import (
@@ -72,7 +72,7 @@ def render():
 
     with col_left:
         fig = donut_chart(
-            sent, f"Sentiment — {selected}",
+            sent, f"Sentiment · {selected}",
             colors=["#27AE60", "#F39C12", "#E74C3C"], height=350
         )
         st.plotly_chart(fig, width='stretch')
@@ -91,7 +91,7 @@ def render():
                 textfont=dict(size=13, color="#1A1D23"),
             ))
             fig.update_layout(
-                title=f"Mentions sociales hebdomadaires — {selected}",
+                title=f"Mentions sociales hebdomadaires · {selected}",
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font=dict(family="Inter", color="#1A1D23", size=12),
                 margin=dict(l=40, r=40, t=50, b=40), height=350,
@@ -102,7 +102,7 @@ def render():
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Recent Actions ──
-    st.markdown(section_header(f"Actions récentes — {selected}"), unsafe_allow_html=True)
+    st.markdown(section_header(f"Actions récentes · {selected}"), unsafe_allow_html=True)
 
     brand_actions = actions.get(selected, [])
     if brand_actions:

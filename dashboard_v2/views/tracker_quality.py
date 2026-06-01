@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Qualite des Donnees (data quality report par vague)."""
+"""Brand Health Tracker · Qualite des Donnees (data quality report par vague)."""
 
 import streamlit as st
 import pandas as pd
@@ -180,7 +180,7 @@ def render():
                 for nm in new_modalities:
                     st.markdown(
                         f'<div class="quality-warning">'
-                        f'<strong>{nm["wave"]}</strong> — Nouvelle(s) modalite(s) dans <code>{nm["column"]}</code> : '
+                        f'<strong>{nm["wave"]}</strong> · Nouvelle(s) modalite(s) dans <code>{nm["column"]}</code> : '
                         f'{", ".join(str(v) for v in nm["values"])}'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -189,7 +189,7 @@ def render():
                 for rm in removed:
                     st.markdown(
                         f'<div class="quality-warning">'
-                        f'<strong>{rm["wave"]}</strong> — Modalite(s) disparue(s) de <code>{rm["column"]}</code> : '
+                        f'<strong>{rm["wave"]}</strong> · Modalite(s) disparue(s) de <code>{rm["column"]}</code> : '
                         f'{", ".join(str(v) for v in rm["values"])}'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -198,7 +198,7 @@ def render():
                 for sd in size_dev:
                     st.markdown(
                         f'<div class="quality-warning">'
-                        f'<strong>{sd["wave"]}</strong> — Taille echantillon : {sd["size"]} '
+                        f'<strong>{sd["wave"]}</strong> · Taille echantillon : {sd["size"]} '
                         f'(reference : {sd["reference_size"]}, ecart : {sd["deviation_pct"]}%)'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -240,7 +240,7 @@ def render():
 
         badge = _status_badge(ok, n_err, n_warn)
 
-        with st.expander(f"{wave_name} — {wave_info['filename']} ({wave_info['size_kb']} Ko)", expanded=(not ok or n_warn > 0)):
+        with st.expander(f"{wave_name} · {wave_info['filename']} ({wave_info['size_kb']} Ko)", expanded=(not ok or n_warn > 0)):
             st.markdown(f"""
             <div class="quality-header">
                 <div class="quality-title">Statut</div>
