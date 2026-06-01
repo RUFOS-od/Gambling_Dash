@@ -743,6 +743,42 @@ def calc_wallet_share(df: pd.DataFrame, brand: str = "Betclic") -> float:
     return round(float(amounts.mean()), 0)
 
 
+def calc_pdm_volume(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """Part de Marché en VOLUME basée sur l'essai (Q5).
+
+    Formule (validée client) :
+        PDM_volume(brand) = N(parieurs ayant déjà parié sur brand)
+                         / Σ N(parieurs ayant déjà parié sur chaque brand)
+                         × 100
+
+    Interprétation : sur 100 mentions d'essai du marché ivoirien, X% concernent
+    Betclic. La somme sur l'ensemble des marques = 100%.
+
+    Différent de la « Préférence » (Q6 = marque principale) qui compte une seule
+    marque par parieur. Ici, on compte toutes les marques essayées (Q5 est multi-réponse).
+    """
+    parieurs = get_parieurs(df)
+    if len(parieurs) == 0:
+        return 0.0
+    target_col = f"A_Deja_Parie_{brand}"
+    if target_col not in parieurs.columns:
+        return 0.0
+    n_brand = int(parieurs[target_col].sum())
+    total = 0
+    for b in COMPETITORS:
+        c = f"A_Deja_Parie_{b}"
+        if c in parieurs.columns:
+            total += int(parieurs[c].sum())
+    if total == 0:
+        return 0.0
+    return round(n_brand / total * 100, 1)
+
+
+def calc_pdm_volume_all_brands(df: pd.DataFrame) -> dict:
+    """PDM Volume Q5 pour toutes les marques. Somme = 100%."""
+    return {b: calc_pdm_volume(df, b) for b in COMPETITORS}
+
+
 def calc_pdm_valeur(df: pd.DataFrame, brand: str = "Betclic") -> float:
     """Part de Marché en VALEUR monétaire (% du marché).
 

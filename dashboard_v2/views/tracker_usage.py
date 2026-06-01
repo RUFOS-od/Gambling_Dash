@@ -3,7 +3,7 @@
 import streamlit as st
 from data.loader import (
     apply_filters, calc_penetration, calc_marque_principale, calc_marque_principale_all,
-    calc_penetration_all_brands, calc_pdm_valeur_all_brands,
+    calc_penetration_all_brands, calc_pdm_volume_all_brands,
     calc_multi_app, calc_consideration, calc_preference, calc_wallet_share,
     calc_sport_distribution, calc_pari_type_distribution, calc_paiement_distribution,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
@@ -104,103 +104,79 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Comparatif concurrentiel : Pénétration vs Marque Principale ──
+    # ── Comparatif concurrentiel ──
     st.markdown(section_header(
         "Comparatif concurrentiel",
-        "Pénétration (Q5 : a déjà parié) vs Marque Principale (Q6) par marque"
+        "Pénétration (Q5) et Marque Principale (Q6) par marque"
     ), unsafe_allow_html=True)
 
     pen_all = calc_penetration_all_brands(df_latest)
     mp_all = calc_marque_principale_all(df_latest)
+    pdm_vol_all = calc_pdm_volume_all_brands(df_latest)
 
-    fig_cmp = go.Figure()
-    fig_cmp.add_trace(go.Bar(
-        name="Pénétration (Q5)",
-        x=MAIN_COMPETITORS,
-        y=[pen_all.get(b, 0) for b in MAIN_COMPETITORS],
-        text=[f"{pen_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
-        textposition="outside",
-        marker_color=BETCLIC_RED,
-    ))
-    fig_cmp.add_trace(go.Bar(
-        name="Marque Principale (Q6)",
-        x=MAIN_COMPETITORS,
-        y=[mp_all.get(b, 0) for b in MAIN_COMPETITORS],
-        text=[f"{mp_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
-        textposition="outside",
-        marker_color=OPINIONWAY_PURPLE,
-    ))
-    fig_cmp.update_layout(
-        barmode="group",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
-        margin=dict(l=40, r=40, t=50, b=80),
-        height=400,
-        title=dict(text="Funnel essai → préférence par marque", font=dict(size=15)),
-        yaxis=dict(range=[0, max(max(pen_all.values()), max(mp_all.values())) * 1.2], gridcolor="rgba(0,0,0,0.06)", title="%"),
-        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+    # Helper pour bar charts simples par marque
+    def _brand_bar(data: dict, title: str, color: str, height: int = 380):
+        sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
+        vals = [data.get(b, 0) for b in sorted_brands]
+        fig = go.Figure(go.Bar(
+            x=sorted_brands,
+            y=vals,
+            text=[f"{v:.1f}%" for v in vals],
+            textposition="outside",
+            textfont=dict(size=12),
+            marker_color=[BETCLIC_RED if b == "Betclic" else color for b in sorted_brands],
+        ))
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
+            margin=dict(l=40, r=40, t=50, b=40),
+            height=height,
+            title=dict(text=title, font=dict(size=14)),
+            yaxis=dict(range=[0, max(vals) * 1.22 if vals else 100], gridcolor="rgba(0,0,0,0.06)", title="%"),
+            showlegend=False,
+        )
+        return fig
+
+    # 1) Pénétrations groupées (toutes les marques côte à côte)
+    st.plotly_chart(
+        _brand_bar(pen_all, "Pénétration par marque (Q5 · a déjà parié sur)", "#94A3B8"),
+        width='stretch',
     )
-    st.plotly_chart(fig_cmp, width='stretch')
+
+    # 2) Marques principales groupées (toutes les marques côte à côte)
+    st.plotly_chart(
+        _brand_bar(mp_all, "Marque Principale par marque (Q6)", OPINIONWAY_PURPLE),
+        width='stretch',
+    )
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Part de marché : Volume vs Valeur ──
+    # ── Part de Marché en Volume (basée sur Q5, somme = 100%) ──
     st.markdown(section_header(
-        "Part de Marché · Volume vs Valeur",
-        "PDM Volume = part des utilisateurs principaux (Q6) | PDM Valeur = part du chiffre d'affaires théorique (Q6 × Q10)"
+        "Part de Marché en Volume",
+        "PDM Volume = essais par marque sur l'ensemble des essais marché (Q5_marque / Σ Q5)"
     ), unsafe_allow_html=True)
 
-    pdm_valeur_all = calc_pdm_valeur_all_brands(df_latest)
-
-    fig_pdm = go.Figure()
-    fig_pdm.add_trace(go.Bar(
-        name="PDM Volume (% utilisateurs principaux)",
-        x=MAIN_COMPETITORS,
-        y=[mp_all.get(b, 0) for b in MAIN_COMPETITORS],
-        text=[f"{mp_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
-        textposition="outside",
-        marker_color=BETCLIC_RED,
-    ))
-    fig_pdm.add_trace(go.Bar(
-        name="PDM Valeur (% du marché en FCFA)",
-        x=MAIN_COMPETITORS,
-        y=[pdm_valeur_all.get(b, 0) for b in MAIN_COMPETITORS],
-        text=[f"{pdm_valeur_all.get(b, 0):.1f}%" for b in MAIN_COMPETITORS],
-        textposition="outside",
-        marker_color=OPINIONWAY_PURPLE,
-    ))
-    fig_pdm.update_layout(
-        barmode="group",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
-        margin=dict(l=40, r=40, t=50, b=80),
-        height=420,
-        title=dict(text="PDM Volume vs PDM Valeur par marque", font=dict(size=15)),
-        yaxis=dict(range=[0, max(max(mp_all.values()), max(pdm_valeur_all.values())) * 1.25],
-                   gridcolor="rgba(0,0,0,0.06)", title="%"),
-        legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+    st.plotly_chart(
+        _brand_bar(pdm_vol_all, "PDM Volume par marque", BETCLIC_RED, height=420),
+        width='stretch',
     )
-    st.plotly_chart(fig_pdm, width='stretch')
 
-    # Insight comparison + table
+    # Tableau récap
     import pandas as _pd
     table_rows = []
-    for b in MAIN_COMPETITORS:
-        vol = mp_all.get(b, 0)
-        val = pdm_valeur_all.get(b, 0)
-        ratio = round(val - vol, 1)
+    for b in sorted(MAIN_COMPETITORS, key=lambda b: -pdm_vol_all.get(b, 0)):
         table_rows.append({
             "Marque": b,
-            "PDM Volume (%)": vol,
-            "PDM Valeur (%)": val,
-            "Écart Valeur-Volume": f"+{ratio} pt" if ratio > 0 else f"{ratio} pt" if ratio < 0 else "≈ 0",
+            "Pénétration Q5 (%)": pen_all.get(b, 0),
+            "PDM Volume (%)": pdm_vol_all.get(b, 0),
+            "Marque Principale Q6 (%)": mp_all.get(b, 0),
         })
     st.dataframe(_pd.DataFrame(table_rows).set_index("Marque"), width='stretch', height=240)
     st.caption(
-        "💡 Écart positif = utilisateurs à plus fort budget (marque premium en valeur) · "
-        "Écart négatif = utilisateurs à plus petit budget (marque populaire en volume mais moins en valeur)."
+        f"📊 Somme PDM Volume sur l'ensemble des marques · {sum(pdm_vol_all.values()):.0f}% "
+        "(léger écart possible dû aux arrondis)."
     )
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -217,7 +193,7 @@ def render():
             fig = line_chart_evolution(wallet_evol, "Évolution Wallet Share Betclic (F CFA / mois)", height=380)
             st.plotly_chart(fig, width='stretch')
         else:
-            fig = bar_chart_brands(pdm_valeur_all, "PDM Valeur · toutes marques", height=380)
+            fig = bar_chart_brands(pdm_vol_all, "PDM Volume · toutes marques", height=380)
             st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

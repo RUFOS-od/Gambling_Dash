@@ -7,7 +7,7 @@ from data.loader import (
     apply_filters, calc_tom, calc_notoriete_totale, calc_notoriete_aidee,
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
     calc_consideration, calc_wallet_share, calc_rappel_campagne,
-    calc_pdm_valeur, calc_pdm_valeur_all_brands,
+    calc_pdm_volume, calc_pdm_volume_all_brands,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     calc_funnel, calc_marque_principale,
     calc_tom_all_brands, calc_notoriete_all_brands,
@@ -44,7 +44,7 @@ def render():
     consid_v = calc_kpi_by_vague(df, calc_consideration)
     wallet_v = calc_kpi_by_vague(df, calc_wallet_share)
     rappel_v = calc_kpi_by_vague(df, calc_rappel_campagne)
-    pdm_v = calc_kpi_by_vague(df, calc_pdm_valeur)
+    pdm_v = calc_kpi_by_vague(df, calc_pdm_volume)
 
     def _nps_extract(sub):
         return calc_nps(sub)["nps"]
@@ -89,7 +89,7 @@ def render():
     col1, col2, col3, col4, col5 = st.columns(5)
     _render_kpi(col1, "Considération", consid_v)
     _render_kpi(col2, "Préférence (PDM Vol.)", pref_v)
-    _render_kpi(col3, "PDM Valeur", pdm_v)
+    _render_kpi(col3, "PDM Volume", pdm_v)
     _render_kpi(col4, "Wallet Share", wallet_v, suffix=" F CFA", currency=True)
     _render_kpi(col5, "Rappel Pub", rappel_v)
 

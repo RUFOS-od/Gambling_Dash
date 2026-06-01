@@ -39,8 +39,8 @@ MEASURE_COLS = {
     "Multi-Application (%)": {"col": "Multi_Application", "agg": "pct"},
     "Rappel Campagne (%)": {"col": "Rappel_Campagne_Betclic", "agg": "pct"},
     "Wallet Share moyen (F CFA)": {"col": "Montant_Mise_Mensuel_FCFA", "agg": "mean_fcfa"},
-    "PDM Valeur Betclic (%)": {"col": "Montant_Mise_Mensuel_FCFA", "agg": "pdm_valeur", "brand": "Betclic"},
-    "PDM Valeur 1XBET (%)": {"col": "Montant_Mise_Mensuel_FCFA", "agg": "pdm_valeur", "brand": "1XBET"},
+    "PDM Volume Betclic (%)": {"col": "A_Deja_Parie_Betclic", "agg": "pdm_volume", "brand": "Betclic"},
+    "PDM Volume 1XBET (%)": {"col": "A_Deja_Parie_1XBET", "agg": "pdm_volume", "brand": "1XBET"},
     "Satisfaction moyenne (/5)": {"col": "Satisfaction_Globale_Betclic", "agg": "mean"},
     "NPS Score": {"col": "NPS_Score", "agg": "mean"},
     "Fréquence paris/mois": {"col": "Frequence_Paris_Mois", "agg": "mean"},
@@ -91,16 +91,18 @@ def _compute_pivot(df, row_dim, col_dim, measure_name):
     elif agg_type == "mean_fcfa":
         result = df.groupby(groups)[col_name].mean().reset_index(name="Valeur")
         result["Valeur"] = result["Valeur"].round(0)
-    elif agg_type == "pdm_valeur":
-        # PDM Valeur Betclic (%) par cellule = Σ(Q10 chez Q6=brand) / Σ(Q10 tous) × 100
-        brand = measure.get("brand", "Betclic")
-        def _pdm_for_group(sub):
-            total = sub[col_name].dropna().sum()
+    elif agg_type == "pdm_volume":
+        # PDM Volume par cellule = Σ(A_Deja_Parie_brand) / Σ(A_Deja_Parie_all_brands) × 100
+        from data.loader import COMPETITORS
+        all_q5_cols = [f"A_Deja_Parie_{b}" for b in COMPETITORS]
+        all_q5_cols = [c for c in all_q5_cols if c in df.columns]
+        def _pdm_vol_for_group(sub):
+            total = sum(int(sub[c].sum()) for c in all_q5_cols)
             if total == 0:
                 return 0.0
-            brand_sum = sub[sub["Marque_Principale_Utilisee"] == brand][col_name].dropna().sum()
-            return round(float(brand_sum) / float(total) * 100, 1)
-        result = df.groupby(groups).apply(_pdm_for_group, include_groups=False).reset_index(name="Valeur")
+            brand_sum = int(sub[col_name].sum()) if col_name in sub.columns else 0
+            return round(brand_sum / total * 100, 1)
+        result = df.groupby(groups).apply(_pdm_vol_for_group, include_groups=False).reset_index(name="Valeur")
 
     if has_col_dim:
         pivot = result.pivot_table(
