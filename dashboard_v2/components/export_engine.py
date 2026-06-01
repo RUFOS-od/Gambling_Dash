@@ -252,7 +252,7 @@ def _add_image_slide(prs, kpis):
     txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
     tf = txBox.text_frame
     p = tf.paragraphs[0]
-    p.text = "Image de Marque — Scores Moyens (/5)"
+    p.text = "Attributs Fonctionnels — Scores Moyens (/5)"
     p.font.size = Pt(22)
     p.font.bold = True
     p.font.color.rgb = BETCLIC_RED
@@ -464,7 +464,7 @@ def generate_pdf(df, vagues_list) -> bytes:
 
     # Page 4: Image
     pdf.add_page()
-    pdf.section_title("Image de Marque - Scores Moyens (/5)")
+    pdf.section_title("Attributs Fonctionnels - Scores Moyens (/5)")
 
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_fill_color(192, 57, 43)
@@ -642,11 +642,11 @@ def generate_excel(df, vagues_list) -> bytes:
             ws3.write(r, 2, f"{tom_val}%", fmt_c)
 
     # ── Sheet 4: Image de marque ──
-    ws4 = wb.add_worksheet("Image de Marque")
+    ws4 = wb.add_worksheet("Attributs Fonctionnels")
     ws4.set_column("A:A", 28)
     ws4.set_column("B:B", 15)
 
-    ws4.write(0, 0, "Image de Marque — Scores (/5)", title_fmt)
+    ws4.write(0, 0, "Attributs Fonctionnels — Scores (/5)", title_fmt)
     row = 2
     ws4.write(row, 0, "Attribut", header_fmt)
     ws4.write(row, 1, "Score moyen", header_fmt)

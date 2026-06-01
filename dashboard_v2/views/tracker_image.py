@@ -1,4 +1,4 @@
-"""Brand Health Tracker — Image de Marque."""
+"""Brand Health Tracker — Attributs Fonctionnels."""
 
 import streamlit as st
 import pandas as pd
@@ -23,8 +23,8 @@ def render():
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None)
 
     st.markdown(section_header(
-        "Image de Marque Betclic",
-        "12 attributs d'image mesurés sur une échelle de 1 à 5 | Évolution inter-vagues"
+        "Attributs Fonctionnels Betclic",
+        "12 attributs fonctionnels mesurés sur une échelle de 1 à 5 | Évolution inter-vagues"
     ), unsafe_allow_html=True)
 
     # ── Radar chart by vague ──
@@ -35,7 +35,7 @@ def render():
             image_by_vague[v] = calc_image_scores(sub)
 
     if image_by_vague:
-        fig = radar_chart(image_by_vague, "Profil d'Image Betclic — Comparaison 3 Vagues", height=520)
+        fig = radar_chart(image_by_vague, "Profil des Attributs Fonctionnels Betclic — Comparaison inter-vagues", height=520)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -49,7 +49,7 @@ def render():
         col_left, col_right = st.columns(2)
 
         with col_left:
-            st.markdown(section_header("Points Forts", "Top attributs d'image"), unsafe_allow_html=True)
+            st.markdown(section_header("Points Forts", "Top attributs fonctionnels"), unsafe_allow_html=True)
             for attr, score in sorted_attrs[:4]:
                 # Get delta vs V1
                 v1_score = image_by_vague.get("Vague 1", {}).get(attr, score)
@@ -99,7 +99,7 @@ def render():
             font=dict(family="Inter, sans-serif", color="#1A1D23", size=12),
             margin=dict(l=40, r=40, t=50, b=80),
             height=450,
-            title=dict(text="Scores d'Image par Attribut — Évolution V1→V3", font=dict(size=16)),
+            title=dict(text="Scores par Attribut Fonctionnel — Évolution V1→V3", font=dict(size=16)),
             yaxis=dict(range=[0, 5.2], gridcolor="rgba(0,0,0,0.06)"),
             xaxis=dict(tickangle=-45),
             legend=dict(bgcolor="rgba(0,0,0,0)"),
@@ -114,14 +114,14 @@ def render():
             f"<strong>{best[0]}</strong> reste le point fort de Betclic ({best[1]}/5). "
             f"<strong>{worst[0]}</strong> ({worst[1]}/5) représente le principal axe d'amélioration. "
             f"Globalement, tous les attributs progressent entre V1 et V3, signe d'un renforcement "
-            f"cohérent de l'image de marque."
+            f"cohérent des attributs fonctionnels."
         ), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
     # ── Comparatif concurrentiel ──
     st.markdown(section_header(
-        "Image de Marque — Comparaison concurrentielle",
+        "Attributs Fonctionnels — Comparaison concurrentielle",
         "Scores par attribut pour Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
     ), unsafe_allow_html=True)
 
