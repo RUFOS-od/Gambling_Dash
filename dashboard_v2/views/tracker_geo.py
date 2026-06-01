@@ -5,7 +5,8 @@ import plotly.graph_objects as go
 from data.loader import (
     apply_filters, calc_tom, calc_notoriete_totale, calc_penetration,
     calc_satisfaction, calc_nps, calc_preference, calc_consideration,
-    calc_kpi_by_city, CITIES, VAGUE_SHORT, MAIN_COMPETITORS
+    calc_kpi_by_city, calc_kpi_by_commune, get_communes_in_data,
+    CITIES, VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import heatmap_cities, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
@@ -342,3 +343,150 @@ def render():
             f"({pen_data.get(best_pen_city, 0)}%). "
             f"Les villes secondaires montrent un potentiel de croissance significatif pour Betclic."
         ), unsafe_allow_html=True)
+
+    # ────────────────────────────────────────────────────────
+    # ZOOM ABIDJAN — analyse par commune (Q29_Commune)
+    # ────────────────────────────────────────────────────────
+    st.markdown(styled_divider(), unsafe_allow_html=True)
+    st.markdown(section_header(
+        "🏙️ Zoom Abidjan — Analyse par commune",
+        "Décomposition par commune des 256 répondants abidjanais (Q29_Commune)"
+    ), unsafe_allow_html=True)
+
+    df_abidjan = df_latest[df_latest["Ville"] == "Abidjan"]
+    if "Commune" not in df_abidjan.columns or df_abidjan["Commune"].notna().sum() == 0:
+        st.info("Aucune donnée commune disponible dans cette vague.")
+    else:
+        valid_communes = get_communes_in_data(df_abidjan, min_base=10)
+        if not valid_communes:
+            st.warning(
+                "Bases insuffisantes par commune (toutes < 10 répondants). "
+                "L'analyse par commune sera disponible avec plus de données."
+            )
+        else:
+            # Recap des bases
+            base_per_commune = {c: int((df_abidjan["Commune"] == c).sum()) for c in valid_communes}
+            base_str = " • ".join([f"{c} ({n})" for c, n in sorted(base_per_commune.items(), key=lambda x: -x[1])])
+            st.caption(f"📍 **Communes affichées (base ≥ 10)** : {base_str}")
+
+            excluded = [c for c in df_abidjan["Commune"].dropna().unique() if c not in valid_communes]
+            if excluded:
+                st.caption(f"⚠️ Communes exclues (base < 10) : {', '.join(excluded)}")
+
+            # KPIs Betclic par commune
+            tom_c = calc_kpi_by_commune(df_abidjan, calc_tom)
+            notor_c = calc_kpi_by_commune(df_abidjan, calc_notoriete_totale)
+            pen_c = calc_kpi_by_commune(df_abidjan, calc_penetration)
+            pref_c = calc_kpi_by_commune(df_abidjan, calc_preference)
+            consid_c = calc_kpi_by_commune(df_abidjan, calc_consideration)
+
+            # Tri par pénétration décroissante pour cohérence visuelle
+            sorted_communes = sorted(valid_communes, key=lambda c: -pen_c.get(c, 0))
+
+            # Bar chart groupé : 5 KPIs par commune
+            fig_c = go.Figure()
+            kpi_groups = [
+                ("Notoriété Totale", notor_c, "#7B8794"),
+                ("TOM", tom_c, OPINIONWAY_PURPLE),
+                ("Considération", consid_c, "#2980B9"),
+                ("Pénétration", pen_c, BETCLIC_RED),
+                ("Préférence", pref_c, "#27AE60"),
+            ]
+            for label, data, color in kpi_groups:
+                vals = [data.get(c, 0) for c in sorted_communes]
+                fig_c.add_trace(go.Bar(
+                    name=label,
+                    x=sorted_communes,
+                    y=vals,
+                    text=[f"{v:.0f}%" for v in vals],
+                    textposition="outside",
+                    textfont=dict(size=9),
+                    marker_color=color,
+                ))
+            fig_c.update_layout(
+                barmode="group",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+                margin=dict(l=40, r=40, t=50, b=80),
+                height=480,
+                title=dict(text=f"KPIs Betclic par commune d'Abidjan ({vague_label})", font=dict(size=15)),
+                yaxis=dict(range=[0, 110], gridcolor="rgba(0,0,0,0.06)", title="%"),
+                xaxis=dict(tickangle=-20),
+                legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+            )
+            st.plotly_chart(fig_c, width='stretch')
+
+            # Comparaison Betclic vs 1XBET par commune (les 2 leaders)
+            st.markdown("**Comparaison Betclic vs 1XBET par commune** (Pénétration Q5)")
+
+            def _pen_per_brand_per_commune(brand):
+                col = f"A_Deja_Parie_{brand}"
+                if col not in df_abidjan.columns:
+                    return {}
+                out = {}
+                for commune in sorted_communes:
+                    sub = df_abidjan[df_abidjan["Commune"] == commune]
+                    if len(sub) > 0:
+                        out[commune] = round(sub[col].sum() / len(sub) * 100, 1)
+                return out
+
+            pen_betclic = _pen_per_brand_per_commune("Betclic")
+            pen_1xbet = _pen_per_brand_per_commune("1XBET")
+
+            fig_cmp_c = go.Figure()
+            fig_cmp_c.add_trace(go.Bar(
+                name="Betclic",
+                x=sorted_communes,
+                y=[pen_betclic.get(c, 0) for c in sorted_communes],
+                text=[f"{pen_betclic.get(c, 0):.0f}%" for c in sorted_communes],
+                textposition="outside",
+                marker_color=BETCLIC_RED,
+            ))
+            fig_cmp_c.add_trace(go.Bar(
+                name="1XBET",
+                x=sorted_communes,
+                y=[pen_1xbet.get(c, 0) for c in sorted_communes],
+                text=[f"{pen_1xbet.get(c, 0):.0f}%" for c in sorted_communes],
+                textposition="outside",
+                marker_color="#2980B9",
+            ))
+            fig_cmp_c.update_layout(
+                barmode="group",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", color="#1A1D23", size=11),
+                margin=dict(l=40, r=40, t=30, b=80),
+                height=380,
+                yaxis=dict(gridcolor="rgba(0,0,0,0.06)", title="Pénétration (%)"),
+                xaxis=dict(tickangle=-20),
+                legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=-0.18),
+            )
+            st.plotly_chart(fig_cmp_c, width='stretch')
+
+            # Tableau synthétique
+            import pandas as _pd
+            rows = []
+            for c in sorted_communes:
+                rows.append({
+                    "Commune": c,
+                    "n": base_per_commune[c],
+                    "TOM (%)": tom_c.get(c, 0),
+                    "Notoriété (%)": notor_c.get(c, 0),
+                    "Pénétration (%)": pen_c.get(c, 0),
+                    "Considération (%)": consid_c.get(c, 0),
+                    "Préférence (%)": pref_c.get(c, 0),
+                })
+            st.dataframe(_pd.DataFrame(rows).set_index("Commune"), width='stretch', height=320)
+
+            # Insight automatique
+            if pen_c:
+                top_pen = max(pen_c, key=pen_c.get)
+                top_pref = max(pref_c, key=pref_c.get)
+                st.markdown(insight_box(
+                    f"À Abidjan, <strong>{top_pen}</strong> affiche la plus forte pénétration Betclic "
+                    f"({pen_c[top_pen]}%), et <strong>{top_pref}</strong> la meilleure préférence "
+                    f"({pref_c[top_pref]}%). Ces communes sont des bastions Betclic, à consolider. "
+                    f"Les communes à fort potentiel restent celles où la notoriété est élevée mais la "
+                    f"pénétration faible — opportunité d'activation locale."
+                ), unsafe_allow_html=True)

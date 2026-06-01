@@ -218,6 +218,8 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Tranche_Age"] = df_raw["QF1"]
     df["Genre"] = df_raw["Q27"]
     df["Ville"] = df_raw["Q29"]
+    # Commune (sous-dimension Abidjan uniquement)
+    df["Commune"] = df_raw.get("Q29_Commune", pd.Series([None] * len(df_raw)))
     df["Profession"] = df_raw.get("Q28", "")
 
     # ── Type respondant ──
@@ -1057,6 +1059,34 @@ def calc_kpi_by_city(df: pd.DataFrame, calc_func, **kwargs) -> dict:
         sub = df[df["Ville"] == city]
         if len(sub) > 0:
             result[city] = calc_func(sub, **kwargs)
+    return result
+
+
+# Communes d'Abidjan ordonnées par taille de base typique (peut être ajusté)
+ABIDJAN_COMMUNES = [
+    "Attécoubé", "Cocody", "Treichville", "Adjamé", "Anyama",
+    "Abobo", "Bingerville", "Marcory", "Yopougon", "Plateau", "Koumassi",
+]
+
+
+def get_communes_in_data(df: pd.DataFrame, min_base: int = 10) -> list:
+    """Retourne les communes présentes dans le df avec base >= min_base."""
+    if "Commune" not in df.columns:
+        return []
+    counts = df["Commune"].dropna().value_counts()
+    return [c for c in counts.index if counts[c] >= min_base]
+
+
+def calc_kpi_by_commune(df: pd.DataFrame, calc_func, min_base: int = 10, **kwargs) -> dict:
+    """Compute a KPI per commune (uniquement Abidjan, communes avec base ≥ min_base)."""
+    if "Commune" not in df.columns:
+        return {}
+    result = {}
+    valid_communes = get_communes_in_data(df, min_base)
+    for commune in valid_communes:
+        sub = df[df["Commune"] == commune]
+        if len(sub) > 0:
+            result[commune] = calc_func(sub, **kwargs)
     return result
 
 

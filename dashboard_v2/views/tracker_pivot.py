@@ -13,6 +13,7 @@ from components.charts import BETCLIC_RED, OPINIONWAY_PURPLE, SLATE, TEXT_MUTED
 DIMENSION_COLS = {
     "Vague": "Vague",
     "Ville": "Ville",
+    "Commune (Abidjan)": "Commune",
     "Genre": "Genre",
     "Tranche d'âge": "Tranche_Age",
     "Type de répondant": "Type_Repondant",
