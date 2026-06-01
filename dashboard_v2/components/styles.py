@@ -24,70 +24,102 @@ html, body, [class*="css"] {
     letter-spacing: 0.05em;
 }
 
-/* ── KPI Cards ── */
+/* ── KPI Cards — Premium Power BI style ── */
 .kpi-card {
     background: #FFFFFF;
-    border: 1px solid #E2E4E8;
-    border-radius: 16px;
-    padding: 1.4rem 1rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    border: 1px solid #E8EAEE;
+    border-radius: 14px;
+    padding: 1.3rem 1.1rem 1.15rem 1.15rem;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
     min-height: 160px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
     box-sizing: border-box;
 }
+/* Accent bar à gauche (style Power BI cards) */
+.kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #C0392B 0%, #6C3483 100%);
+    opacity: 0.85;
+    transition: width 0.25s ease;
+}
 .kpi-card:hover {
-    border-color: #C0392B;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(192,57,43,0.12);
+    transform: translateY(-3px);
+    border-color: #D5D8DD;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(192, 57, 43, 0.06);
+}
+.kpi-card:hover::before {
+    width: 6px;
 }
 .kpi-value {
-    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-size: clamp(1.9rem, 3.6vw, 2.7rem);
     font-weight: 800;
-    color: #1A1D23;
-    line-height: 1.15;
-    margin: 0.3rem 0;
+    color: #0F172A;
+    line-height: 1.1;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
 }
 .kpi-label {
-    font-size: clamp(0.65rem, 1.2vw, 0.8rem);
-    color: #4A5568;
+    font-size: clamp(0.65rem, 1.1vw, 0.78rem);
+    color: #64748B;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     font-weight: 700;
     line-height: 1.3;
-    min-height: 1.6em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-bottom: 0.4rem;
 }
 .kpi-delta {
-    font-size: clamp(0.7rem, 1.1vw, 0.88rem);
+    font-size: clamp(0.72rem, 1.05vw, 0.85rem);
     font-weight: 700;
-    margin-top: 0.25rem;
+    margin-top: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 8px;
+    width: fit-content;
 }
-.delta-up { color: #1D8348; }
-.delta-down { color: #C0392B; }
-.delta-neutral { color: #D4760A; }
+.delta-up    { color: #15803D; background: rgba(34, 197, 94, 0.10); }
+.delta-down  { color: #B91C1C; background: rgba(239, 68, 68, 0.10); }
+.delta-neutral { color: #B45309; background: rgba(245, 158, 11, 0.10); }
 
-/* ── Section Headers ── */
+/* ── Section Headers — premium typography with underline ── */
 .section-header {
-    background: linear-gradient(90deg, #C0392B 0%, #6C3483 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 1.8rem;
+    color: #0F172A;
+    font-size: 1.6rem;
     font-weight: 800;
-    margin: 2rem 0 1rem 0;
-    letter-spacing: -0.02em;
+    margin: 2.2rem 0 0.3rem 0;
+    letter-spacing: -0.025em;
+    position: relative;
+    padding-bottom: 0.55rem;
+}
+.section-header::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 52px;
+    height: 3px;
+    background: linear-gradient(90deg, #C0392B 0%, #6C3483 100%);
+    border-radius: 2px;
 }
 .section-subheader {
-    color: #5A6676;
-    font-size: 0.95rem;
-    margin-top: -0.8rem;
-    margin-bottom: 1.5rem;
+    color: #64748B;
+    font-size: 0.92rem;
+    margin-top: 0.4rem;
+    margin-bottom: 1.6rem;
+    font-weight: 500;
 }
 
 /* ── Insight Boxes ── */
@@ -138,22 +170,45 @@ html, body, [class*="css"] {
     box-shadow: 0 8px 24px rgba(108,52,131,0.08);
 }
 
-/* ── Tabs ── */
+/* ── Tabs — Power BI style segmented controls ── */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    border-bottom: 2px solid #E8E9ED;
+    gap: 4px;
+    background: #F1F3F6;
+    padding: 4px !important;
+    border-radius: 12px;
+    border: 1px solid #E2E5EA;
+    box-shadow: inset 0 1px 2px rgba(15,23,42,0.04);
 }
 .stTabs [data-baseweb="tab"] {
-    background-color: transparent;
-    border-radius: 8px 8px 0 0;
-    padding: 8px 16px;
-    color: #4A5568;
+    background: transparent;
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    color: #64748B;
     font-weight: 600;
+    font-size: 0.88rem;
+    transition: all 0.2s ease;
+    border: none !important;
+    margin: 0 !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #0F172A;
+    background: rgba(255,255,255,0.6);
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #C0392B 0%, #6C3483 100%);
-    color: white !important;
-    border-radius: 8px;
+    background: #FFFFFF !important;
+    color: #C0392B !important;
+    box-shadow: 0 2px 6px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    border-radius: 8px !important;
+}
+/* Tab highlight indicator (red bottom bar) */
+.stTabs [aria-selected="true"]::after {
+    content: "";
+    display: block;
+    width: 28px;
+    height: 2px;
+    background: linear-gradient(90deg, #C0392B 0%, #6C3483 100%);
+    margin: 4px auto -2px auto;
+    border-radius: 2px;
 }
 
 /* ── Horizontal scroll for tabs with nav arrows ── */
@@ -230,40 +285,101 @@ html, body, [class*="css"] {
     flex-direction: column;
 }
 
-/* ── Metric containers ── */
+/* ── Metric containers — premium card style ── */
 [data-testid="stMetric"] {
     background: #FFFFFF;
-    border: 1px solid #E8E9ED;
-    border-radius: 16px;
+    border: 1px solid #E8EAEE;
+    border-radius: 14px;
     padding: 1rem 1.2rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+[data-testid="stMetric"]:hover {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
 }
 [data-testid="stMetric"] label {
-    color: #4A5568 !important;
-    font-weight: 600;
+    color: #64748B !important;
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.05em;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.07em;
 }
 [data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-size: 2rem !important;
     font-weight: 800;
-    color: #1A1D23 !important;
+    color: #0F172A !important;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ── Plotly charts container ── */
 .stPlotlyChart {
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
+    background: #FFFFFF;
+    border: 1px solid #EDF0F3;
+    padding: 0.4rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+}
+.stPlotlyChart:hover {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
-/* ── Divider ── */
+/* ── Buttons (Download / Refresh / etc.) ── */
+.stDownloadButton button, .stButton button {
+    background: #FFFFFF;
+    color: #C0392B;
+    border: 1px solid #E2E5EA;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.45rem 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+.stDownloadButton button:hover, .stButton button:hover {
+    background: linear-gradient(135deg, #C0392B 0%, #6C3483 100%);
+    color: #FFFFFF;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(192, 57, 43, 0.18);
+}
+
+/* ── Dataframes — Power BI grid look ── */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #E8EAEE;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+}
+
+/* ── Multiselect / Selectbox (filters) — cleaner pills ── */
+[data-baseweb="tag"] {
+    background: linear-gradient(135deg, #C0392B 0%, #A93226 100%) !important;
+    border-radius: 8px !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+[data-baseweb="tag"] svg {
+    color: rgba(255,255,255,0.85) !important;
+}
+
+/* ── Divider — subtle, less garish ── */
 .styled-divider {
-    height: 2px;
-    background: linear-gradient(90deg, #C0392B, #6C3483, transparent);
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #E2E5EA 20%, #E2E5EA 80%, transparent 100%);
     border: none;
-    margin: 2rem 0;
-    border-radius: 2px;
+    margin: 2.2rem 0 1.6rem 0;
+}
+
+/* ── Block container padding (more breathing room) ── */
+.main .block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+    max-width: 1400px;
 }
 
 /* ── Logo area ── */

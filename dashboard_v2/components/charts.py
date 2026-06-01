@@ -21,16 +21,61 @@ LAYOUT_DEFAULTS = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter, sans-serif", color=TEXT_COLOR, size=12),
-    margin=dict(l=40, r=40, t=50, b=40),
-    hoverlabel=dict(bgcolor="#FFFFFF", font_size=13, font_family="Inter", font_color=TEXT_COLOR, bordercolor="#E8E9ED"),
-    legend=dict(bgcolor="rgba(0,0,0,0)", borderwidth=0),
+    margin=dict(l=40, r=40, t=60, b=40),
+    hoverlabel=dict(
+        bgcolor="#FFFFFF",
+        font_size=12,
+        font_family="Inter, sans-serif",
+        font_color=TEXT_COLOR,
+        bordercolor="#E2E5EA",
+    ),
+    legend=dict(
+        bgcolor="rgba(0,0,0,0)",
+        borderwidth=0,
+        font=dict(size=11, color=TEXT_MUTED),
+    ),
+    # Toolbar Plotly réduite (Power BI clean look)
+    modebar=dict(
+        bgcolor="rgba(0,0,0,0)",
+        color="#94A3B8",
+        activecolor="#C0392B",
+        orientation="h",
+    ),
 )
 
 
 def _apply_layout(fig, title="", height=400):
-    fig.update_layout(**LAYOUT_DEFAULTS, title=dict(text=title, font=dict(size=16, color=TEXT_COLOR)), height=height)
-    fig.update_xaxes(gridcolor=GRID_COLOR, zerolinecolor="rgba(0,0,0,0.1)")
-    fig.update_yaxes(gridcolor=GRID_COLOR, zerolinecolor="rgba(0,0,0,0.1)")
+    fig.update_layout(
+        **LAYOUT_DEFAULTS,
+        title=dict(
+            text=title,
+            font=dict(size=15, color=TEXT_COLOR, family="Inter, sans-serif"),
+            x=0,
+            xanchor="left",
+            y=0.97,
+            yanchor="top",
+        ),
+        height=height,
+        # Réduire les boutons de la modebar à l'essentiel
+        # (on garde reset/zoom, on retire les boutons exotiques)
+    )
+    # Axes propres : pas de top/right spine, gridlines subtiles
+    fig.update_xaxes(
+        gridcolor=GRID_COLOR,
+        zerolinecolor="rgba(15,23,42,0.12)",
+        linecolor="#E8EAEE",
+        showline=True,
+        ticks="outside",
+        tickcolor="#E8EAEE",
+        tickfont=dict(size=11, color=TEXT_MUTED),
+    )
+    fig.update_yaxes(
+        gridcolor=GRID_COLOR,
+        zerolinecolor="rgba(15,23,42,0.12)",
+        linecolor="#E8EAEE",
+        showline=False,
+        tickfont=dict(size=11, color=TEXT_MUTED),
+    )
     return fig
 
 
