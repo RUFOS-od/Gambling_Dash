@@ -357,28 +357,25 @@ def render():
     if "Commune" not in df_abidjan.columns or df_abidjan["Commune"].notna().sum() == 0:
         st.info("Aucune donnée commune disponible dans cette vague.")
     else:
-        valid_communes = get_communes_in_data(df_abidjan, min_base=10)
+        # Toutes les communes présentes dans la data (pas de filtre par taille de base)
+        valid_communes = sorted(
+            [c for c in df_abidjan["Commune"].dropna().unique() if str(c).strip()],
+            key=lambda c: -int((df_abidjan["Commune"] == c).sum()),
+        )
         if not valid_communes:
-            st.warning(
-                "Bases insuffisantes par commune (toutes < 10 répondants). "
-                "L'analyse par commune sera disponible avec plus de données."
-            )
+            st.warning("Aucune commune renseignée dans cette vague.")
         else:
-            # Recap des bases
+            # Recap des bases (affichage de toutes les communes, sans seuil)
             base_per_commune = {c: int((df_abidjan["Commune"] == c).sum()) for c in valid_communes}
             base_str = " • ".join([f"{c} ({n})" for c, n in sorted(base_per_commune.items(), key=lambda x: -x[1])])
-            st.caption(f"📍 **Communes affichées (base ≥ 10)** : {base_str}")
-
-            excluded = [c for c in df_abidjan["Commune"].dropna().unique() if c not in valid_communes]
-            if excluded:
-                st.caption(f"⚠️ Communes exclues (base < 10) : {', '.join(excluded)}")
+            st.caption(f"📍 **Communes affichées** : {base_str}")
 
             # KPIs Betclic par commune
-            tom_c = calc_kpi_by_commune(df_abidjan, calc_tom)
-            notor_c = calc_kpi_by_commune(df_abidjan, calc_notoriete_totale)
-            pen_c = calc_kpi_by_commune(df_abidjan, calc_penetration)
-            pref_c = calc_kpi_by_commune(df_abidjan, calc_preference)
-            consid_c = calc_kpi_by_commune(df_abidjan, calc_consideration)
+            tom_c = calc_kpi_by_commune(df_abidjan, calc_tom, min_base=1)
+            notor_c = calc_kpi_by_commune(df_abidjan, calc_notoriete_totale, min_base=1)
+            pen_c = calc_kpi_by_commune(df_abidjan, calc_penetration, min_base=1)
+            pref_c = calc_kpi_by_commune(df_abidjan, calc_preference, min_base=1)
+            consid_c = calc_kpi_by_commune(df_abidjan, calc_consideration, min_base=1)
 
             # Tri par pénétration décroissante pour cohérence visuelle
             sorted_communes = sorted(valid_communes, key=lambda c: -pen_c.get(c, 0))
