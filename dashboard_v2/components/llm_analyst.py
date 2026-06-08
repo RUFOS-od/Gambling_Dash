@@ -37,9 +37,22 @@ NEG_WORDS = {
     "refuse", "triche", "voleur", "impayé", "impaye", "attente",
 }
 ALERT_PATTERNS = [
-    r"\blicence\b", r"\binterdit", r"\bregulateur", r"\bbloque", r"\bsuspens",
+    # Réglementaire / juridique
+    r"\blicence\b", r"\binterdit", r"\bregulateur", r"\bregulation",
+    r"\bsuspens", r"\bsanction", r"\bamende\b", r"\benqu[eê]te",
     r"\bscandale", r"\bpolitique\b", r"\bgouvernement", r"\bjustice",
-    r"\bproces", r"\bfraude", r"\bretrait impossib",
+    r"\bproces", r"\bfraude", r"\bcondamn",
+    # Opérationnel critique
+    r"\bbloque", r"\bblocage", r"\bpanne\b", r"\bcoupure",
+    r"\bpiratage", r"\bcyberatt", r"\bhack",
+    r"\bretrait impossib", r"\bcompte\s+bloque", r"\bcompte\s+suspendu",
+    # Marketing concurrent agressif
+    r"\bbonus\s+\d+%", r"\boffre\s+exclus", r"\blancement\b",
+    r"\bnouveau\s+sponsor", r"\bpartenariat",
+    # Jeu responsable / addiction
+    r"\baddict", r"\bdependa", r"\bjeu\s+responsable",
+    # Communication crise
+    r"\bcrise\b", r"\balerte\b", r"\bd[eé]non",
 ]
 
 
@@ -199,7 +212,9 @@ def detect_weak_signals(news_df: Optional[pd.DataFrame] = None,
                     })
                     break
 
-    # ── Signaux a partir des trends (pic vs moyenne 8 semaines) ──
+    # ── Signaux a partir des trends (pic vs moyenne) ──
+    # Seuils permissifs : 1.3x = pic notable, 0.7x = chute notable.
+    # Minimum 3 points pour avoir une baseline.
     if trends_df is not None and len(trends_df) > 0:
         try:
             df = trends_df.copy()
@@ -207,40 +222,90 @@ def detect_weak_signals(news_df: Optional[pd.DataFrame] = None,
             df["interest"] = pd.to_numeric(df["interest"], errors="coerce")
             df = df.dropna(subset=["interest"])
             for kw, grp in df.groupby("keyword"):
-                grp = grp.sort_values("date").tail(10)
-                if len(grp) < 6:
+                grp = grp.sort_values("date").tail(12)
+                if len(grp) < 3:
                     continue
                 recent = grp.iloc[-1]["interest"]
                 baseline = grp.iloc[:-1]["interest"].mean()
-                if baseline > 0 and recent > baseline * 1.5:
-                    signals.append({
-                        "severity": "medium",
-                        "type": "trend_spike",
-                        "brand": kw,
-                        "message": f"Pic d'interet Google : {recent:.0f} vs moyenne {baseline:.0f}",
-                        "evidence": f"keyword={kw}, ratio={recent/baseline:.2f}x",
-                        "detected_at": now,
-                    })
-                elif baseline > 0 and recent < baseline * 0.5:
-                    signals.append({
-                        "severity": "low",
-                        "type": "trend_drop",
-                        "brand": kw,
-                        "message": f"Chute d'interet Google : {recent:.0f} vs moyenne {baseline:.0f}",
-                        "evidence": f"keyword={kw}, ratio={recent/baseline:.2f}x",
-                        "detected_at": now,
-                    })
+                if baseline <= 0:
+                    continue
+                ratio = recent / baseline
+                if ratio >= 2.0:
+                    sev = "high"
+                elif ratio >= 1.3:
+                    sev = "medium"
+                elif ratio <= 0.5:
+                    sev = "medium"
+                elif ratio <= 0.7:
+                    sev = "low"
+                else:
+                    continue
+                direction = "Pic" if ratio > 1 else "Chute"
+                signals.append({
+                    "severity": sev,
+                    "type": "trend_spike" if ratio > 1 else "trend_drop",
+                    "brand": kw,
+                    "message": f"{direction} d'intérêt de recherche : {recent:.0f} vs moyenne {baseline:.0f} ({ratio:.1f}×)",
+                    "evidence": f"keyword={kw}, ratio={ratio:.2f}",
+                    "detected_at": now,
+                })
         except Exception as e:
             signals.append({
                 "severity": "info",
                 "type": "system",
                 "brand": "",
-                "message": f"Detection trends impossible : {e}",
+                "message": f"Détection trends impossible : {e}",
                 "evidence": "",
                 "detected_at": now,
             })
 
-    # Trier par severite
+    # ── Signaux de volume de mentions news (concentration concurrentielle) ──
+    if news_df is not None and len(news_df) > 0 and "brand" in news_df.columns:
+        try:
+            brand_counts = news_df["brand"].value_counts()
+            if len(brand_counts) >= 2:
+                top_brand = brand_counts.index[0]
+                top_count = int(brand_counts.iloc[0])
+                betclic_count = int(brand_counts.get("Betclic", 0))
+                # Si un concurrent capte > 2x le volume Betclic, c'est notable
+                if top_brand != "Betclic" and betclic_count > 0 and top_count >= betclic_count * 2:
+                    signals.append({
+                        "severity": "high",
+                        "type": "competitor_volume_dominance",
+                        "brand": top_brand,
+                        "message": f"{top_brand} capte {top_count} mentions presse contre {betclic_count} pour Betclic ({top_count/betclic_count:.1f}× le volume)",
+                        "evidence": f"{top_brand}={top_count}, Betclic={betclic_count}",
+                        "detected_at": now,
+                    })
+                # Si un concurrent émergent dépasse 30% du volume total
+                total = brand_counts.sum()
+                for brand, n in brand_counts.head(5).items():
+                    if brand == "Betclic":
+                        continue
+                    share = n / total
+                    if share >= 0.30:
+                        signals.append({
+                            "severity": "medium",
+                            "type": "competitor_share_high",
+                            "brand": brand,
+                            "message": f"{brand} concentre {share*100:.0f}% des mentions presse ({n} articles)",
+                            "evidence": f"{brand} share={share*100:.1f}%",
+                            "detected_at": now,
+                        })
+        except Exception:
+            pass
+
+    # Dédoublonner par (type, brand, message)
+    seen = set()
+    deduped = []
+    for s in signals:
+        key = (s.get("type"), s.get("brand"), s.get("message"))
+        if key not in seen:
+            seen.add(key)
+            deduped.append(s)
+    signals = deduped
+
+    # Trier par sévérité
     order = {"high": 0, "medium": 1, "low": 2, "info": 3}
     signals.sort(key=lambda s: order.get(s["severity"], 9))
     return signals
