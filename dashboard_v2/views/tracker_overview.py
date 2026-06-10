@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from data.loader import (
     apply_filters, calc_tom, calc_notoriete_totale, calc_notoriete_aidee,
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
-    calc_consideration, calc_wallet_share, calc_rappel_campagne,
+    calc_consideration, calc_rappel_campagne,
     calc_pdm_volume, calc_pdm_volume_all_brands,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     calc_funnel, calc_marque_principale,
@@ -42,7 +42,6 @@ def render():
     sat_v = calc_kpi_by_vague(df, calc_satisfaction)
     pref_v = calc_kpi_by_vague(df, calc_preference)
     consid_v = calc_kpi_by_vague(df, calc_consideration)
-    wallet_v = calc_kpi_by_vague(df, calc_wallet_share)
     rappel_v = calc_kpi_by_vague(df, calc_rappel_campagne)
     pdm_v = calc_kpi_by_vague(df, calc_pdm_volume)
 
@@ -86,12 +85,11 @@ def render():
     st.markdown("", unsafe_allow_html=True)
 
     # ── Row 2: Secondary KPIs ──
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     _render_kpi(col1, "Considération", consid_v)
     _render_kpi(col2, "Marque Principale", pref_v)
     _render_kpi(col3, "PDM Volume", pdm_v)
-    _render_kpi(col4, "Wallet Share", wallet_v, suffix=" F CFA", currency=True)
-    _render_kpi(col5, "Rappel Pub", rappel_v)
+    _render_kpi(col4, "Rappel Pub", rappel_v)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 

@@ -38,7 +38,6 @@ MEASURE_COLS = {
     "Préférence Betclic (%)": {"col": "Preference_Betclic", "agg": "pct"},
     "Multi-Application (%)": {"col": "Multi_Application", "agg": "pct"},
     "Rappel Campagne (%)": {"col": "Rappel_Campagne_Betclic", "agg": "pct"},
-    "Wallet Share moyen (F CFA)": {"col": "Montant_Mise_Mensuel_FCFA", "agg": "mean_fcfa"},
     "PDM Volume Betclic (%)": {"col": "A_Deja_Parie_Betclic", "agg": "pdm_volume", "brand": "Betclic"},
     "PDM Volume 1XBET (%)": {"col": "A_Deja_Parie_1XBET", "agg": "pdm_volume", "brand": "1XBET"},
     "Satisfaction moyenne (/5)": {"col": "Satisfaction_Globale_Betclic", "agg": "mean"},

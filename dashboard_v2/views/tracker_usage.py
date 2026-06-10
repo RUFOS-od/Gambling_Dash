@@ -4,7 +4,7 @@ import streamlit as st
 from data.loader import (
     apply_filters, calc_penetration, calc_marque_principale, calc_marque_principale_all,
     calc_penetration_all_brands, calc_pdm_volume_all_brands,
-    calc_multi_app, calc_consideration, calc_preference, calc_wallet_share,
+    calc_multi_app, calc_consideration, calc_preference,
     calc_sport_distribution, calc_pari_type_distribution, calc_paiement_distribution,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     calc_funnel, get_parieurs, VAGUE_SHORT, MAIN_COMPETITORS
@@ -28,7 +28,7 @@ def render():
 
     st.markdown(section_header(
         "Usage & Pénétration",
-        "Funnel de conversion, wallet share, multi-app, paiements et sports"
+        "Funnel de conversion, multi-app, paiements et sports"
     ), unsafe_allow_html=True)
 
     # ── KPI Cards ──
@@ -37,36 +37,22 @@ def render():
     multi_v = calc_kpi_by_vague(df, calc_multi_app)
     consid_v = calc_kpi_by_vague(df, calc_consideration)
     pref_v = calc_kpi_by_vague(df, calc_preference)
-    wallet_v = calc_kpi_by_vague(df, calc_wallet_share)
 
     col1, col2, col3 = st.columns(3)
-    col4, col5, col6 = st.columns(3)
+    col4, col5 = st.columns(2)
 
-    for col, label, vdata, is_currency in [
-        (col1, "Pénétration", pen_v, False),
-        (col2, "Marque Principale", mp_v, False),
-        (col3, "Multi-App", multi_v, False),
-        (col4, "Considération", consid_v, False),
-        (col5, "Préférence", pref_v, False),
-        (col6, "Wallet Share", wallet_v, True),
+    for col, label, vdata in [
+        (col1, "Pénétration", pen_v),
+        (col2, "Marque Principale", mp_v),
+        (col3, "Multi-App", multi_v),
+        (col4, "Considération", consid_v),
+        (col5, "Préférence", pref_v),
     ]:
         latest = get_latest_vague(vdata)
         prev = get_previous_vague(vdata)
         d, direction = calc_delta(latest, prev)
-        if is_currency:
-            value_str = f"{int(round(float(latest))):,}".replace(",", " ") + " F CFA"
-            if d:
-                try:
-                    raw = float(str(d).replace(",", ".").replace("+", "").strip())
-                    sign = "+" if raw >= 0 else "−"
-                    delta_str = f"{sign}{int(round(abs(raw))):,}".replace(",", " ") + " F CFA"
-                except Exception:
-                    delta_str = f"{d} F CFA"
-            else:
-                delta_str = None
-        else:
-            value_str = f"{latest}%"
-            delta_str = f"{d} pt" if d else None
+        value_str = f"{latest}%"
+        delta_str = f"{d} pt" if d else None
         with col:
             st.markdown(kpi_card(label, value_str, delta_str, direction), unsafe_allow_html=True)
 
@@ -181,20 +167,15 @@ def render():
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Marque principale ──
+    # ── Marque principale / PDM Volume (toutes marques) ──
     col_left, col_right = st.columns(2)
     with col_left:
         fig = bar_chart_brands(mp_all, "Marque Principale des parieurs (toutes marques)", height=380)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        wallet_evol = {v: wallet_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if wallet_v.get(v) is not None}
-        if len(wallet_evol) >= 2:
-            fig = line_chart_evolution(wallet_evol, "Évolution Wallet Share Betclic (F CFA / mois)", height=380)
-            st.plotly_chart(fig, width='stretch')
-        else:
-            fig = bar_chart_brands(pdm_vol_all, "PDM Volume · toutes marques", height=380)
-            st.plotly_chart(fig, width='stretch')
+        fig = bar_chart_brands(pdm_vol_all, "PDM Volume · toutes marques", height=380)
+        st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
