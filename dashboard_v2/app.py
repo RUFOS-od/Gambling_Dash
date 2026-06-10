@@ -107,6 +107,17 @@ with st.sidebar:
             help="Laisser vide = tous les genres"
         )
 
+        # Tri naturel des tranches d'âge (18-24, 25-34, 35-44, 45+)
+        _age_order = {"18 – 24 ans": 1, "25 – 34 ans": 2, "35 – 44 ans": 3, "45 ans et plus": 4}
+        all_ages = sorted(
+            data["Tranche_Age"].dropna().unique().tolist(),
+            key=lambda x: _age_order.get(x, 99),
+        )
+        selected_ages = st.multiselect(
+            "Tranche d'âge", all_ages, default=[],
+            help="Laisser vide = toutes les tranches"
+        )
+
         all_segments = sorted(data["Segment_Parieur"].dropna().unique().tolist())
         selected_segments = st.multiselect(
             "Segment Parieur", all_segments, default=[],
@@ -132,7 +143,8 @@ with st.sidebar:
         _df_export = apply_filters(data, _vagues,
                                    selected_villes if selected_villes else [],
                                    selected_genres if selected_genres else [],
-                                   selected_segments if selected_segments else [])
+                                   selected_segments if selected_segments else [],
+                                   ages=selected_ages if selected_ages else [])
         if selected_marques:
             _df_export = _df_export[_df_export["Marque_Principale_Utilisee"].isin(selected_marques)]
 
@@ -179,6 +191,7 @@ with st.sidebar:
         selected_vagues = all_vagues
         selected_villes = []
         selected_genres = []
+        selected_ages = []
         selected_segments = []
         selected_marques = []
 
@@ -202,6 +215,7 @@ with st.sidebar:
 st.session_state["selected_vagues"] = selected_vagues if selected_vagues else all_vagues
 st.session_state["selected_villes"] = selected_villes if selected_villes else []
 st.session_state["selected_genres"] = selected_genres if selected_genres else []
+st.session_state["selected_ages"] = selected_ages if selected_ages else []
 st.session_state["selected_segments"] = selected_segments if selected_segments else []
 st.session_state["selected_marques"] = selected_marques if selected_marques else []
 st.session_state["data"] = data

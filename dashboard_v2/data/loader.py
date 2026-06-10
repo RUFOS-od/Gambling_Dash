@@ -527,7 +527,7 @@ def load_kpi_reference() -> pd.DataFrame:
 # FILTERS
 # ──────────────────────────────────────────────
 
-def apply_filters(df: pd.DataFrame, vagues=None, villes=None, genres=None, segments=None) -> pd.DataFrame:
+def apply_filters(df: pd.DataFrame, vagues=None, villes=None, genres=None, segments=None, ages=None) -> pd.DataFrame:
     """Apply sidebar filters to the dataframe."""
     filtered = df.copy()
     if vagues:
@@ -538,6 +538,8 @@ def apply_filters(df: pd.DataFrame, vagues=None, villes=None, genres=None, segme
         filtered = filtered[filtered["Genre"].isin(genres)]
     if segments:
         filtered = filtered[filtered["Segment_Parieur"].isin(segments)]
+    if ages:
+        filtered = filtered[filtered["Tranche_Age"].isin(ages)]
     return filtered
 
 

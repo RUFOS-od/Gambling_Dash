@@ -195,9 +195,10 @@ def render():
     villes = st.session_state["selected_villes"]
     genres = st.session_state["selected_genres"]
     segments = st.session_state["selected_segments"]
+    ages = st.session_state.get("selected_ages", [])
     marques = st.session_state.get("selected_marques", [])
 
-    df = apply_filters(data, vagues, villes, genres, segments)
+    df = apply_filters(data, vagues, villes, genres, segments, ages=ages)
 
     # Apply brand filter if set
     if marques:
