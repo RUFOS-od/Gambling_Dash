@@ -9,7 +9,7 @@ from data.loader import (
     IMAGE_ATTRIBUTES, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
-from components.charts import radar_chart, bar_chart_brands, multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_VAGUES, COLORS_SEQ
+from components.charts import radar_chart, bar_chart_brands, multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_VAGUES, COLORS_SEQ, brand_color
 import plotly.graph_objects as go
 
 
@@ -143,7 +143,7 @@ def render():
                 name=brand,
                 x=attrs,
                 y=vals,
-                marker_color=BETCLIC_RED if brand == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)],
+                marker_color=brand_color(brand),
                 text=[f"{v:.2f}" for v in vals],
                 textposition="outside",
                 textfont=dict(size=9),

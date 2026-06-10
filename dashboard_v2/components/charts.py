@@ -17,6 +17,44 @@ COLORS_VAGUES = {"Vague 1": "#E74C3C", "Vague 2": "#F39C12", "Vague 3": "#27AE60
 COLORS_SEQ = ["#C0392B", "#6C3483", "#2980B9", "#27AE60", "#F39C12", "#E67E22", "#1ABC9C", "#8E44AD", "#34495E"]
 BAR_INACTIVE = "#CBD5E0"
 
+# ── Couleurs de marque (charte client validée juin 2026) ──
+# Chaque concurrent a sa couleur propre, alignée sur son identité visuelle.
+BRAND_COLORS = {
+    "Betclic":     "#C0392B",  # rouge Betclic
+    "1XBET":       "#2BB6F0",  # bleu cyan
+    "BetMomo":     "#0D1B4D",  # bleu marine
+    "Melbet":      "#F5D547",  # jaune
+    "MELBET":      "#F5D547",  # alias casse
+    "Sportcash":   "#E89320",  # orange
+    "SportCash":   "#E89320",  # alias casse
+    "AkwaBet":     "#1E5A3E",  # vert foncé
+    "Akwabet":     "#1E5A3E",
+    "Paripesa":    "#2E54E0",  # bleu royal
+    "PARIPESA":    "#2E54E0",
+    "Premier Bet": "#9B59B6",
+    "PremierBet":  "#9B59B6",
+    "Betwinner":   "#2BAE5A",  # vert émeraude
+    "BETWINNER":   "#2BAE5A",
+    "Bet365":      "#000000",  # noir
+    "bet365":      "#000000",
+    "Afropari":    "#7D3C98",
+    "BetPawa":     "#FF6B35",
+    "YellowBet":   "#F1C40F",
+    "Chopbet":     "#A93226",
+    "Betway":      "#00A551",
+}
+
+
+def brand_color(brand: str, default: str = "#94A3B8") -> str:
+    """Retourne la couleur d'une marque (charte client). Fallback gris neutre."""
+    if brand in BRAND_COLORS:
+        return BRAND_COLORS[brand]
+    # Recherche insensible à la casse
+    for k, v in BRAND_COLORS.items():
+        if k.lower() == str(brand).lower():
+            return v
+    return default
+
 LAYOUT_DEFAULTS = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -79,11 +117,19 @@ def _apply_layout(fig, title="", height=400):
     return fig
 
 
-def bar_chart_brands(data: dict, title: str = "", highlight: str = "Betclic", height=400):
+def bar_chart_brands(data: dict, title: str = "", highlight: str = "Betclic", height=400, use_brand_colors: bool = True):
+    """Bar chart horizontal par marque. Couleurs : charte client par défaut.
+
+    Si use_brand_colors=False, repli sur l'ancien comportement (Betclic rouge,
+    autres gris) — utile pour les charts non-concurrentiels (canaux, irritants).
+    """
     sorted_data = dict(sorted(data.items(), key=lambda x: x[1], reverse=True))
     brands = list(sorted_data.keys())
     values = list(sorted_data.values())
-    colors = [BETCLIC_RED if b == highlight else BAR_INACTIVE for b in brands]
+    if use_brand_colors:
+        colors = [brand_color(b, default=BAR_INACTIVE) for b in brands]
+    else:
+        colors = [BETCLIC_RED if b == highlight else BAR_INACTIVE for b in brands]
 
     fig = go.Figure(go.Bar(
         y=brands, x=values, orientation="h",

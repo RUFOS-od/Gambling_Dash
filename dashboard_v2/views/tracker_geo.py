@@ -9,7 +9,7 @@ from data.loader import (
     CITIES, VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
-from components.charts import heatmap_cities, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
+from components.charts import heatmap_cities, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color
 
 
 def render():
@@ -280,7 +280,7 @@ def render():
             text=[_fmt(v) for v in vals],
             textposition="outside",
             textfont=dict(size=9),
-            marker_color=BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)],
+            marker_color=brand_color(b),
         ))
 
     if has_any:
@@ -438,7 +438,7 @@ def render():
                 y=[pen_betclic.get(c, 0) for c in sorted_communes],
                 text=[f"{pen_betclic.get(c, 0):.0f}%" for c in sorted_communes],
                 textposition="outside",
-                marker_color=BETCLIC_RED,
+                marker_color=brand_color("Betclic"),
             ))
             fig_cmp_c.add_trace(go.Bar(
                 name="1XBET",
@@ -446,7 +446,7 @@ def render():
                 y=[pen_1xbet.get(c, 0) for c in sorted_communes],
                 text=[f"{pen_1xbet.get(c, 0):.0f}%" for c in sorted_communes],
                 textposition="outside",
-                marker_color="#2980B9",
+                marker_color=brand_color("1XBET"),
             ))
             fig_cmp_c.update_layout(
                 barmode="group",

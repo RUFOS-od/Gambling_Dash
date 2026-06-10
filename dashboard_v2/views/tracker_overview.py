@@ -17,7 +17,7 @@ from data.loader import (
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import (
     line_chart_evolution, funnel_chart, multi_line_chart,
-    BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ,
+    BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color,
 )
 
 
@@ -88,7 +88,7 @@ def render():
     # ── Row 2: Secondary KPIs ──
     col1, col2, col3, col4, col5 = st.columns(5)
     _render_kpi(col1, "Considération", consid_v)
-    _render_kpi(col2, "Préférence (PDM Vol.)", pref_v)
+    _render_kpi(col2, "Marque Principale", pref_v)
     _render_kpi(col3, "PDM Volume", pdm_v)
     _render_kpi(col4, "Wallet Share", wallet_v, suffix=" F CFA", currency=True)
     _render_kpi(col5, "Rappel Pub", rappel_v)
@@ -125,8 +125,8 @@ def render():
     pen_all = calc_penetration_all_brands(df_latest)
     mp_all = calc_marque_principale_all(df_latest)
 
-    # Helper : bar chart simple par marque, trié décroissant, Betclic toujours rouge
-    def _brand_bar(data: dict, title: str, accent_color: str, height: int = 330):
+    # Helper : bar chart simple par marque, trié décroissant, couleurs charte client
+    def _brand_bar(data: dict, title: str, height: int = 330):
         sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
         vals = [data.get(b, 0) for b in sorted_brands]
         fig = go.Figure(go.Bar(
@@ -135,7 +135,7 @@ def render():
             text=[f"{v:.1f}%" for v in vals],
             textposition="outside",
             textfont=dict(size=12),
-            marker_color=[BETCLIC_RED if b == "Betclic" else accent_color for b in sorted_brands],
+            marker_color=[brand_color(b) for b in sorted_brands],
         ))
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
@@ -152,15 +152,15 @@ def render():
     # 4 charts séparés (un par KPI), disposés sur 2 lignes de 2 colonnes
     row1_l, row1_r = st.columns(2)
     with row1_l:
-        st.plotly_chart(_brand_bar(tom_all, "Top of Mind (Q1A)", "#2980B9"), width='stretch')
+        st.plotly_chart(_brand_bar(tom_all, "Top of Mind (Q1A)"), width='stretch')
     with row1_r:
-        st.plotly_chart(_brand_bar(not_all, "Notoriété Totale (Q1A+Q1B+Q1C)", "#7FB3D5"), width='stretch')
+        st.plotly_chart(_brand_bar(not_all, "Notoriété Totale (Q1A+Q1B+Q1C)"), width='stretch')
 
     row2_l, row2_r = st.columns(2)
     with row2_l:
-        st.plotly_chart(_brand_bar(pen_all, "Pénétration (Q5)", "#94A3B8"), width='stretch')
+        st.plotly_chart(_brand_bar(pen_all, "Pénétration (Q5)"), width='stretch')
     with row2_r:
-        st.plotly_chart(_brand_bar(mp_all, "Marque Principale (Q6)", OPINIONWAY_PURPLE), width='stretch')
+        st.plotly_chart(_brand_bar(mp_all, "Marque Principale (Q6)"), width='stretch')
 
     # Comparative table for precise reading
     table_rows = []

@@ -12,7 +12,7 @@ from data.loader import (
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import (
     bar_chart_brands, line_chart_evolution, donut_chart, funnel_chart,
-    multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
+    multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color
 )
 import plotly.graph_objects as go
 
@@ -114,8 +114,8 @@ def render():
     mp_all = calc_marque_principale_all(df_latest)
     pdm_vol_all = calc_pdm_volume_all_brands(df_latest)
 
-    # Helper pour bar charts simples par marque
-    def _brand_bar(data: dict, title: str, color: str, height: int = 380):
+    # Helper pour bar charts simples par marque — couleurs charte client
+    def _brand_bar(data: dict, title: str, height: int = 380):
         sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
         vals = [data.get(b, 0) for b in sorted_brands]
         fig = go.Figure(go.Bar(
@@ -124,7 +124,7 @@ def render():
             text=[f"{v:.1f}%" for v in vals],
             textposition="outside",
             textfont=dict(size=12),
-            marker_color=[BETCLIC_RED if b == "Betclic" else color for b in sorted_brands],
+            marker_color=[brand_color(b) for b in sorted_brands],
         ))
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
@@ -140,13 +140,13 @@ def render():
 
     # 1) Pénétrations groupées (toutes les marques côte à côte)
     st.plotly_chart(
-        _brand_bar(pen_all, "Pénétration par marque (Q5 · a déjà parié sur)", "#94A3B8"),
+        _brand_bar(pen_all, "Pénétration par marque (Q5 · a déjà parié sur)"),
         width='stretch',
     )
 
     # 2) Marques principales groupées (toutes les marques côte à côte)
     st.plotly_chart(
-        _brand_bar(mp_all, "Marque Principale par marque (Q6)", OPINIONWAY_PURPLE),
+        _brand_bar(mp_all, "Marque Principale par marque (Q6)"),
         width='stretch',
     )
 
@@ -159,7 +159,7 @@ def render():
     ), unsafe_allow_html=True)
 
     st.plotly_chart(
-        _brand_bar(pdm_vol_all, "PDM Volume par marque", BETCLIC_RED, height=420),
+        _brand_bar(pdm_vol_all, "PDM Volume par marque", height=420),
         width='stretch',
     )
 

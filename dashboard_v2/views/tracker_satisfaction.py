@@ -11,7 +11,7 @@ from data.loader import (
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import (
     nps_gauge, line_chart_evolution, donut_chart, bar_chart_brands,
-    BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ
+    BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color
 )
 import plotly.graph_objects as go
 
@@ -239,8 +239,7 @@ def render():
                 y=[sat_all.get(b, 0) for b in eligible],
                 text=[f"{sat_all.get(b, 0):.2f}/5" for b in eligible],
                 textposition="outside",
-                marker_color=[BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)]
-                              for i, b in enumerate(eligible)],
+                marker_color=[brand_color(b) for b in eligible],
             ))
             fig_sat.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
@@ -261,8 +260,7 @@ def render():
                 y=[nps_all.get(b, 0) for b in eligible],
                 text=[f"{nps_all.get(b, 0):.0f}" for b in eligible],
                 textposition="outside",
-                marker_color=[BETCLIC_RED if b == "Betclic" else COLORS_SEQ[i % len(COLORS_SEQ)]
-                              for i, b in enumerate(eligible)],
+                marker_color=[brand_color(b) for b in eligible],
             ))
             min_nps = min(nps_all.get(b, 0) for b in eligible)
             max_nps = max(nps_all.get(b, 0) for b in eligible)
