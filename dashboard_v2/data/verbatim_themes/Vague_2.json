@@ -1,0 +1,120 @@
+{
+  "wave": "Vague 2",
+  "generated_at": "2026-06-23T08:37:19",
+  "model": "claude-opus-4-7",
+  "detractors": {
+    "n_total": 7,
+    "themes": [
+      {
+        "label": "Mise à jour trop fréquente/lourde",
+        "count": 2,
+        "share_pct": 28.6,
+        "illustrative_quotes": [
+          "j'aurais pu donner 9 ou 10 mais la mise a jour est trop",
+          "si vrai qu'elle est rapide dans les retraits et l'utilisation, mais la mise à jour est de trop"
+        ]
+      },
+      {
+        "label": "Pertes financières / jeu de hasard",
+        "count": 2,
+        "share_pct": 28.6,
+        "illustrative_quotes": [
+          "trop de pertes",
+          "Ce sont les jeux au hasard, donc je ne suis pas trop partante"
+        ]
+      },
+      {
+        "label": "Bonus insuffisants",
+        "count": 1,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "Parce qu'il donne pas assez de bonus"
+        ]
+      },
+      {
+        "label": "Cotes compétitives appréciées",
+        "count": 1,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "côtes compétitives sur de nouveaux événements sportifs"
+        ]
+      },
+      {
+        "label": "Fiabilité de la plateforme",
+        "count": 1,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "parce que c'est fiable et aussi un jeux gagnant gagnant"
+        ]
+      }
+    ]
+  },
+  "promoters": {
+    "n_total": 60,
+    "themes": [
+      {
+        "label": "Dépôts et retraits rapides/faciles",
+        "count": 24,
+        "share_pct": 40.0,
+        "illustrative_quotes": [
+          "parce que c'est rapide et fiable pour les dépôts et retraits et les cashout sont permanent",
+          "LA RAPIDITÉ DES RETRAITS ET DÉPÔTS"
+        ]
+      },
+      {
+        "label": "Fiabilité et sécurité perçues",
+        "count": 16,
+        "share_pct": 26.7,
+        "illustrative_quotes": [
+          "c'est très fiable et sécurisé et propose des bonus",
+          "juste que c'est un opérateur qui m’inspire confiance"
+        ]
+      },
+      {
+        "label": "Application simple et fluide",
+        "count": 9,
+        "share_pct": 15.0,
+        "illustrative_quotes": [
+          "l'application est facile à manier et simple à utiliser",
+          "BETCLIC EST SÉCURISÉ FLUIDE ET EFFICACE"
+        ]
+      },
+      {
+        "label": "Cash-out attractif et différenciant",
+        "count": 4,
+        "share_pct": 6.7,
+        "illustrative_quotes": [
+          "LES CASH-OUT",
+          "un service de qualité mais surtout pour le cashout qui est meilleur que ses concurrents"
+        ]
+      },
+      {
+        "label": "Bonus généreux vs concurrents",
+        "count": 4,
+        "share_pct": 6.7,
+        "illustrative_quotes": [
+          "betclic donne assez de bonus pra rapport aux autres",
+          "car elle propose des bonus"
+        ]
+      },
+      {
+        "label": "Bonnes cotes proposées",
+        "count": 2,
+        "share_pct": 3.3,
+        "illustrative_quotes": [
+          "il propose des bonnes côtes de bon match",
+          "PROPOSE DE BONNE COTE ET DE DEPOTS RETRAITS FACILES"
+        ]
+      },
+      {
+        "label": "Jeu responsable et protection",
+        "count": 2,
+        "share_pct": 3.3,
+        "illustrative_quotes": [
+          "c'est un jeu responsable parce que l'inscription se fait avec la pièce",
+          "l'application est simple engagés pour le jeudi responsable qui empêchés les mineur du jouer contrairement aux autres applications"
+        ]
+      }
+    ]
+  }
+}
