@@ -1,118 +1,136 @@
 {
   "wave": "Vague 2",
-  "generated_at": "2026-06-23T08:37:19",
+  "generated_at": "2026-06-24T09:22:25",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 7,
+    "n_total": 17,
     "themes": [
       {
+        "label": "Taux de perte trop élevé",
+        "count": 5,
+        "share_pct": 29.4,
+        "illustrative_quotes": [
+          "trop de pertes",
+          "le taux de perdre trop élevé"
+        ]
+      },
+      {
         "label": "Mise à jour trop fréquente/lourde",
-        "count": 2,
-        "share_pct": 28.6,
+        "count": 3,
+        "share_pct": 17.6,
         "illustrative_quotes": [
           "j'aurais pu donner 9 ou 10 mais la mise a jour est trop",
           "si vrai qu'elle est rapide dans les retraits et l'utilisation, mais la mise à jour est de trop"
         ]
       },
       {
-        "label": "Pertes financières / jeu de hasard",
-        "count": 2,
-        "share_pct": 28.6,
+        "label": "Application fluide et rapide",
+        "count": 3,
+        "share_pct": 17.6,
         "illustrative_quotes": [
-          "trop de pertes",
-          "Ce sont les jeux au hasard, donc je ne suis pas trop partante"
+          "pour sa rapidité",
+          "parce que l'application est fluide, les dépôts et retraits sont rapides et les cashouts sont permanent"
+        ]
+      },
+      {
+        "label": "Fiabilité et sécurité perçues",
+        "count": 3,
+        "share_pct": 17.6,
+        "illustrative_quotes": [
+          "parce que c'est fiable et aussi un jeux gagnant gagnant",
+          "PARCE QUE JE JOUE SUR L'APPLICATION ET ELE EST SECRISER POUR NOS GAINS"
+        ]
+      },
+      {
+        "label": "Rejet du jeu de hasard",
+        "count": 2,
+        "share_pct": 11.8,
+        "illustrative_quotes": [
+          "Ce sont les jeux au hasard, donc je ne suis pas trop partante",
+          "je ne veux les encourager à jouer"
         ]
       },
       {
         "label": "Bonus insuffisants",
         "count": 1,
-        "share_pct": 14.3,
+        "share_pct": 5.9,
         "illustrative_quotes": [
           "Parce qu'il donne pas assez de bonus"
         ]
       },
       {
-        "label": "Cotes compétitives appréciées",
+        "label": "Offre événements/cotes appréciée",
         "count": 1,
-        "share_pct": 14.3,
+        "share_pct": 5.9,
         "illustrative_quotes": [
           "côtes compétitives sur de nouveaux événements sportifs"
-        ]
-      },
-      {
-        "label": "Fiabilité de la plateforme",
-        "count": 1,
-        "share_pct": 14.3,
-        "illustrative_quotes": [
-          "parce que c'est fiable et aussi un jeux gagnant gagnant"
         ]
       }
     ]
   },
   "promoters": {
-    "n_total": 60,
+    "n_total": 98,
     "themes": [
       {
         "label": "Dépôts et retraits rapides/faciles",
-        "count": 24,
-        "share_pct": 40.0,
+        "count": 38,
+        "share_pct": 38.8,
         "illustrative_quotes": [
-          "parce que c'est rapide et fiable pour les dépôts et retraits et les cashout sont permanent",
-          "LA RAPIDITÉ DES RETRAITS ET DÉPÔTS"
+          "LA RAPIDITÉ DES RETRAITS ET DÉPÔTS",
+          "Les dépôts et retraits sont instantané"
         ]
       },
       {
         "label": "Fiabilité et sécurité perçues",
-        "count": 16,
-        "share_pct": 26.7,
+        "count": 22,
+        "share_pct": 22.4,
         "illustrative_quotes": [
-          "c'est très fiable et sécurisé et propose des bonus",
-          "juste que c'est un opérateur qui m’inspire confiance"
+          "le jeu est sécurisé",
+          "c'est très fiable et sécurisé et propose des bonus"
         ]
       },
       {
         "label": "Application simple et fluide",
-        "count": 9,
-        "share_pct": 15.0,
+        "count": 15,
+        "share_pct": 15.3,
         "illustrative_quotes": [
-          "l'application est facile à manier et simple à utiliser",
-          "BETCLIC EST SÉCURISÉ FLUIDE ET EFFICACE"
+          "BETCLIC EST SÉCURISÉ FLUIDE ET EFFICACE",
+          "Car elle a une application très facile a utiliser"
         ]
       },
       {
-        "label": "Cash-out attractif et différenciant",
-        "count": 4,
-        "share_pct": 6.7,
+        "label": "Cash-out attractifs et élevés",
+        "count": 10,
+        "share_pct": 10.2,
         "illustrative_quotes": [
-          "LES CASH-OUT",
+          "LES CASH-OUT SONT TOUJOURS ÉLEVÉ",
           "un service de qualité mais surtout pour le cashout qui est meilleur que ses concurrents"
+        ]
+      },
+      {
+        "label": "Cotes compétitives et promotions",
+        "count": 8,
+        "share_pct": 8.2,
+        "illustrative_quotes": [
+          "il propose des bonnes côtes de bon match",
+          "Les cotes sont élevées"
         ]
       },
       {
         "label": "Bonus généreux vs concurrents",
         "count": 4,
-        "share_pct": 6.7,
+        "share_pct": 4.1,
         "illustrative_quotes": [
           "betclic donne assez de bonus pra rapport aux autres",
-          "car elle propose des bonus"
+          "car elle propose assez de bonus"
         ]
       },
       {
-        "label": "Bonnes cotes proposées",
-        "count": 2,
-        "share_pct": 3.3,
+        "label": "Satisfaction globale / meilleure plateforme",
+        "count": 1,
+        "share_pct": 1.0,
         "illustrative_quotes": [
-          "il propose des bonnes côtes de bon match",
-          "PROPOSE DE BONNE COTE ET DE DEPOTS RETRAITS FACILES"
-        ]
-      },
-      {
-        "label": "Jeu responsable et protection",
-        "count": 2,
-        "share_pct": 3.3,
-        "illustrative_quotes": [
-          "c'est un jeu responsable parce que l'inscription se fait avec la pièce",
-          "l'application est simple engagés pour le jeudi responsable qui empêchés les mineur du jouer contrairement aux autres applications"
+          "ELLE S'INSCRIT COMME LA MEILLEUR APPLICATION ZLORS JE NE PEU QUELE SUGGERE AU VUE DE MON EXPERIENCE"
         ]
       }
     ]
