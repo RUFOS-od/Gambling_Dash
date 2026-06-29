@@ -1,14 +1,14 @@
 {
   "wave": "Vague 2",
-  "generated_at": "2026-06-26T09:42:29",
+  "generated_at": "2026-06-29T06:45:13",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 19,
+    "n_total": 23,
     "themes": [
       {
         "label": "Pertes financières trop fréquentes",
-        "count": 6,
-        "share_pct": 31.6,
+        "count": 7,
+        "share_pct": 30.4,
         "illustrative_quotes": [
           "trop de pertes",
           "c'est un jeu hasard qui fait perdre beaucoup d'argent"
@@ -17,120 +17,114 @@
       {
         "label": "Application fluide et sécurisée",
         "count": 4,
-        "share_pct": 21.1,
+        "share_pct": 17.4,
         "illustrative_quotes": [
           "PARCE QUE JE JOUE SUR L'APPLICATION ET ELE EST SECRISER POUR NOS GAINS",
           "parce que l'application est fluide, les dépôts et retraits sont rapides et les cashouts sont permanent"
         ]
       },
       {
-        "label": "Mise à jour problématique",
-        "count": 2,
-        "share_pct": 10.5,
+        "label": "Fiabilité et qualité perçues moyennes",
+        "count": 4,
+        "share_pct": 17.4,
         "illustrative_quotes": [
-          "j'aurais pu donner 9 ou 10 mais la mise a jour est trop",
-          "la mise à jour est de trop"
+          "un peu fiables",
+          "un peu bon"
         ]
       },
       {
-        "label": "Rejet des jeux de hasard",
-        "count": 2,
-        "share_pct": 10.5,
+        "label": "Offre/options limitées et bonus insuffisants",
+        "count": 3,
+        "share_pct": 13.0,
+        "illustrative_quotes": [
+          "Parce qu'il donne pas assez de bonus",
+          "IL Y A PEU D’OPTIONS"
+        ]
+      },
+      {
+        "label": "Rejet du jeu de hasard / non-encouragement",
+        "count": 3,
+        "share_pct": 13.0,
         "illustrative_quotes": [
           "Ce sont les jeux au hasard, donc je ne suis pas trop partante",
           "je ne veux les encourager à jouer"
         ]
       },
       {
-        "label": "Cashouts appréciés",
-        "count": 1,
-        "share_pct": 5.3,
+        "label": "Mise à jour applicative pénible",
+        "count": 2,
+        "share_pct": 8.7,
         "illustrative_quotes": [
-          "à cause des cashouts qui sont regulier"
-        ]
-      },
-      {
-        "label": "Bonus insuffisants",
-        "count": 1,
-        "share_pct": 5.3,
-        "illustrative_quotes": [
-          "Parce qu'il donne pas assez de bonus"
-        ]
-      },
-      {
-        "label": "Disponibilité limitée sur applications",
-        "count": 1,
-        "share_pct": 5.3,
-        "illustrative_quotes": [
-          "il est limité dans les applications"
+          "j'aurais pu donner 9 ou 10 mais la mise a jour est trop",
+          "la mise à jour est de trop"
         ]
       }
     ]
   },
   "promoters": {
-    "n_total": 165,
+    "n_total": 206,
     "themes": [
       {
         "label": "Retraits et dépôts rapides/faciles",
-        "count": 58,
-        "share_pct": 35.2,
+        "count": 70,
+        "share_pct": 34.0,
         "illustrative_quotes": [
-          "LES DÉPÔTS ET RETRAIT SONT TRÈS SIMPLE ET SÉCURISÉ",
-          "L'application est très fluide, le retrait et dépôt sont tellement rapide"
+          "LA RAPIDITÉ DES RETRAITS ET DÉPÔTS",
+          "Les dépôts et retraits sont instantané"
         ]
       },
       {
-        "label": "Fiabilité et sécurité perçues fortes",
-        "count": 47,
-        "share_pct": 28.5,
+        "label": "Fiabilité et sécurité perçues",
+        "count": 55,
+        "share_pct": 26.7,
         "illustrative_quotes": [
-          "c'est très fiable et sécurisé et propose des bonus",
-          "il est fiable sûre facile à utiliser et sécurisé"
+          "le jeu est sécurisé",
+          "fiable et sécurisé"
         ]
       },
       {
-        "label": "Application simple et fluide à utiliser",
-        "count": 25,
-        "share_pct": 15.2,
+        "label": "Application simple et fluide",
+        "count": 30,
+        "share_pct": 14.6,
         "illustrative_quotes": [
           "l'application est facile à manier et simple à utiliser",
-          "LA FLUIDITÉ DE L'APPLICATION BETCLIC"
+          "la fluidité de l'application"
         ]
       },
       {
-        "label": "Cash-out élevés et avantageux",
-        "count": 14,
-        "share_pct": 8.5,
+        "label": "Cash-out attractifs et élevés",
+        "count": 18,
+        "share_pct": 8.7,
         "illustrative_quotes": [
-          "LES CASH-OUT ÉLEVÉ ET LES DÉPÔTS ET RETRAIT FACILE",
+          "LES CASH-OUT SONT TOUJOURS ÉLEVÉ",
           "un service de qualité mais surtout pour le cashout qui est meilleur que ses concurrents"
         ]
       },
       {
-        "label": "Cotes élevées et compétitives",
-        "count": 11,
-        "share_pct": 6.7,
+        "label": "Bonnes cotes et bonus attractifs",
+        "count": 16,
+        "share_pct": 7.8,
         "illustrative_quotes": [
-          "il propose des bonnes côtes de bon match",
-          "les côtes sont élevé bien sécurisé l'application est fluide"
+          "BONUS ET BONNE COTES",
+          "Les cotes sont élevées"
         ]
       },
       {
-        "label": "Meilleure plateforme / leader du marché",
-        "count": 8,
-        "share_pct": 4.8,
+        "label": "Meilleure plateforme / leader perçu",
+        "count": 10,
+        "share_pct": 4.9,
         "illustrative_quotes": [
           "la meilleure application de parie en côte d'ivoire",
-          "ELLE S'INSCRIT COMME LA MEILLEUR APPLICATION ZLORS JE NE PEU QUELE SUGGERE AU VUE DE MON EXPERIENCE"
+          "Ils sont les plus professionnel en côte d'ivoire ils répondent a tous les critères des maisons de paris"
         ]
       },
       {
-        "label": "Bonus et promotions attractifs",
+        "label": "Diversité des options et propositions",
         "count": 7,
-        "share_pct": 4.2,
+        "share_pct": 3.4,
         "illustrative_quotes": [
-          "betclic donne assez de bonus pra rapport aux autres",
-          "BONUS ET BONNE COTES"
+          "Large eventail de jeux",
+          "satisfait des options de jeux proposé par Betclic"
         ]
       }
     ]
