@@ -15,9 +15,9 @@ VAGUE_FOLDERS = {
 }
 
 VAGUE_META = {
-    "Vague 1": {"mois": "Janvier 2026", "color": "#C0392B"},
-    "Vague 2": {"mois": "Février 2026", "color": "#6C3483"},
-    "Vague 3": {"mois": "Mars 2026", "color": "#2980B9"},
+    "Vague 1": {"mois": "Mai 2026", "color": "#C0392B"},
+    "Vague 2": {"mois": "Juin 2026", "color": "#6C3483"},
+    "Vague 3": {"mois": "Juillet 2026", "color": "#2980B9"},
 }
 
 CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
@@ -28,6 +28,7 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 # (ex: "Abj_yop_220526.jpg" → Abidjan ; "BK_220526.jpg" → Bouaké)
 CITY_PREFIXES = {
     "abj":  "Abidjan",
+    "abi":  "Abidjan",
     "bk":   "Bouaké",
     "bke":  "Bouaké",
     "dal":  "Daloa",
