@@ -32,9 +32,14 @@ COMPETITORS = [
 # (basé sur le top notoriété + part de marché sur le marché ivoirien)
 MAIN_COMPETITORS = ["Betclic", "1XBET", "Sportcash", "Melbet", "BetMomo"]
 
-VAGUE_LABELS = {"Vague 1": "V1 (Mai 2026)"}
-VAGUE_SHORT = {"Vague 1": "V1"}
-VAGUE_MONTHS = {"Vague 1": "Mai 2026"}
+# Calendrier de collecte (préseedé pour respecter le cycle réel, qui saute Juillet)
+VAGUE_LABELS = {
+    "Vague 1": "V1 (Mai 2026)",
+    "Vague 2": "V2 (Juin 2026)",
+    "Vague 3": "V3 (Août 2026)",
+}
+VAGUE_SHORT = {"Vague 1": "V1", "Vague 2": "V2", "Vague 3": "V3"}
+VAGUE_MONTHS = {"Vague 1": "Mai 2026", "Vague 2": "Juin 2026", "Vague 3": "Août 2026"}
 
 
 def _build_dynamic_vague_labels(vagues_list):
