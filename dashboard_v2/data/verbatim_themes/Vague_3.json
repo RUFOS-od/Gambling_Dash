@@ -1,109 +1,137 @@
 {
   "wave": "Vague 3",
-  "generated_at": "2026-08-24T13:55:11",
+  "generated_at": "2026-08-26T08:19:43",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 8,
+    "n_total": 21,
     "themes": [
       {
         "label": "Refus de promouvoir jeux de hasard",
-        "count": 3,
-        "share_pct": 37.5,
+        "count": 9,
+        "share_pct": 42.9,
         "illustrative_quotes": [
           "on recommande pas les jeux de hasard à quelqu'un",
           "je conseille pas à quelqu'un de jouer au pari sportif"
         ]
       },
       {
-        "label": "Paris sportifs ruinent / incitent au vol",
+        "label": "Retraits/dépôts difficiles et lents",
+        "count": 3,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "PLUS DE COMPLICATIONS SUR LES RETRAITS ET LES DÉPÔTS",
+          "parce que souvent on me demande de patienter pendant 1 jour lorsque je lance un retrait"
+        ]
+      },
+      {
+        "label": "Pertes financières importantes",
+        "count": 3,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "tu perds trop d'argent",
+          "parce que je perds beaucoup"
+        ]
+      },
+      {
+        "label": "Satisfaction/fiabilité perçue",
+        "count": 3,
+        "share_pct": 14.3,
+        "illustrative_quotes": [
+          "car c'est un jeux très fiable",
+          "6 pour sa qualitilé"
+        ]
+      },
+      {
+        "label": "Risque de dépendance au jeu",
         "count": 2,
-        "share_pct": 25.0,
+        "share_pct": 9.5,
         "illustrative_quotes": [
-          "parce que les paris sportifs ruinent, ça peut engendrer des voleurs",
-          "parce que les paris sportifs ruines _x000D_\n_x000D_\nengendre aussi des voleurs"
+          "tne pas etre trop dependant du jeu... dans l’ensemble ca va",
+          "les jeu hasard sont dangereux quand il y a pas la maitrise"
         ]
       },
       {
-        "label": "Retraits et dépôts compliqués",
-        "count": 2,
-        "share_pct": 25.0,
-        "illustrative_quotes": [
-          "fiabilité des retraites",
-          "PLUS DE COMPLICATIONS SUR LES RETRAITS ET LES DÉPÔTS"
-        ]
-      },
-      {
-        "label": "Peur de faire perdre de l'argent aux autres",
+        "label": "Cotes peu compétitives",
         "count": 1,
-        "share_pct": 12.5,
+        "share_pct": 4.8,
         "illustrative_quotes": [
-          "au risque de ne pas faire dépenser autrui dans les paris sportifs"
+          "Les côtes sont moins élevée"
         ]
       },
       {
-        "label": "Refus responsabilité échec d'autrui",
+        "label": "Manque de bonus",
         "count": 1,
-        "share_pct": 12.5,
+        "share_pct": 4.8,
         "illustrative_quotes": [
-          "je ne veux pas être responsable de l'échec car c'est un jeux hasard"
+          "ils doivent proposer plus de bonus"
         ]
       }
     ]
   },
   "promoters": {
-    "n_total": 39,
+    "n_total": 90,
     "themes": [
       {
-        "label": "Sécurité et fiabilité perçues",
-        "count": 15,
-        "share_pct": 38.5,
+        "label": "Fiabilité & sécurité de la plateforme",
+        "count": 42,
+        "share_pct": 46.7,
         "illustrative_quotes": [
-          "c'est sécurisé et plus rassurant",
-          "L APPLOCATION EST FIABLE ET SECURISE"
+          "l'application est sécurisée et les paiements sont fiables",
+          "betclic est fiable et sécurisée"
         ]
       },
       {
-        "label": "Dépôts/retraits rapides et faciles",
-        "count": 11,
-        "share_pct": 28.2,
+        "label": "Dépôts & retraits rapides",
+        "count": 30,
+        "share_pct": 33.3,
         "illustrative_quotes": [
-          "LA FIABILITÉ DES PAYEMENT ET RETRAIT",
-          "L APPLICATION EST FIABLE ,LES DEPOTS ET RETRAITS SONT RAPIDE"
+          "la sécurité, dépôt retrait facile et rapide, présence du cash Out",
+          "TRÈS FIABLE POUR LE RETRAIT DES GAINS"
         ]
       },
       {
-        "label": "Application simple et fluide",
-        "count": 7,
-        "share_pct": 17.9,
+        "label": "Cotes élevées & compétitives",
+        "count": 13,
+        "share_pct": 14.4,
+        "illustrative_quotes": [
+          "les côtes sont élevées,le retrait rapide et facile,ils proposent beaucoup de Cash out",
+          "pour une bonne proposition au niveau des cotes"
+        ]
+      },
+      {
+        "label": "Simplicité & ergonomie de l'app",
+        "count": 12,
+        "share_pct": 13.3,
         "illustrative_quotes": [
           "l'application est facile à manipuler",
-          "LA FLUIDITÉ DE L'APPLICATION"
+          "c’est une application simple et facile à utiliser"
         ]
       },
       {
-        "label": "Offre de paris riche et cotes attractives",
-        "count": 4,
-        "share_pct": 10.3,
-        "illustrative_quotes": [
-          "c'est fiable ,il y a plusieurs options de paris, changement rapide des côtes lors des matchs en direct, retrait rapide, côtes élevés",
-          "variété des sports"
-        ]
-      },
-      {
-        "label": "Cash Out et fonctionnalités bonus",
-        "count": 2,
-        "share_pct": 5.1,
+        "label": "Cash Out attractif",
+        "count": 7,
+        "share_pct": 7.8,
         "illustrative_quotes": [
           "cash out a tout moment, pour les free bet, simple et sécurisée",
-          "les paiements sont rapides et _x000D_\non reçoit des bonus souvent"
+          "Cash Out élevé, côtes Booster, dépôt retrait rapide"
         ]
       },
       {
-        "label": "Verbatims inexploitables",
-        "count": 1,
-        "share_pct": 2.6,
+        "label": "Bonus & promotions attractifs",
+        "count": 7,
+        "share_pct": 7.8,
         "illustrative_quotes": [
-          "ffffujg"
+          "ELLE PROPOSE DES BONUS",
+          "c’est une application facile à utiliser et il y’a des bonus presque toujours"
+        ]
+      },
+      {
+        "label": "Variété des paris & sports",
+        "count": 5,
+        "share_pct": 5.6,
+        "illustrative_quotes": [
+          "variété des sports",
+          "c'est fiable ,il y a plusieurs options de paris, changement rapide des côtes lors des matchs en direct, retrait rapide, côtes élevés"
         ]
       }
     ]
