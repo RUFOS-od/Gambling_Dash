@@ -1,137 +1,139 @@
 {
   "wave": "Vague 3",
-  "generated_at": "2026-08-26T08:19:43",
+  "generated_at": "2026-08-27T09:28:37",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 21,
+    "n_total": 29,
     "themes": [
       {
         "label": "Refus de promouvoir jeux de hasard",
-        "count": 9,
-        "share_pct": 42.9,
+        "count": 8,
+        "share_pct": 27.6,
         "illustrative_quotes": [
           "on recommande pas les jeux de hasard à quelqu'un",
-          "je conseille pas à quelqu'un de jouer au pari sportif"
+          "pour ne pas encourager les amis a jouer parceque c'est addictifs"
         ]
       },
       {
-        "label": "Retraits/dépôts difficiles et lents",
+        "label": "Pertes financières fréquentes",
+        "count": 6,
+        "share_pct": 20.7,
+        "illustrative_quotes": [
+          "je perds beaucoup trop d'argent lorsque je paris",
+          "il y a plus de pertes que de gains et difficulté des retraits des gains obtenus"
+        ]
+      },
+      {
+        "label": "Retraits difficiles / délais longs",
         "count": 3,
-        "share_pct": 14.3,
+        "share_pct": 10.3,
         "illustrative_quotes": [
           "PLUS DE COMPLICATIONS SUR LES RETRAITS ET LES DÉPÔTS",
           "parce que souvent on me demande de patienter pendant 1 jour lorsque je lance un retrait"
         ]
       },
       {
-        "label": "Pertes financières importantes",
+        "label": "Cotes peu compétitives / faussées",
         "count": 3,
-        "share_pct": 14.3,
+        "share_pct": 10.3,
         "illustrative_quotes": [
-          "tu perds trop d'argent",
-          "parce que je perds beaucoup"
-        ]
-      },
-      {
-        "label": "Satisfaction/fiabilité perçue",
-        "count": 3,
-        "share_pct": 14.3,
-        "illustrative_quotes": [
-          "car c'est un jeux très fiable",
-          "6 pour sa qualitilé"
-        ]
-      },
-      {
-        "label": "Risque de dépendance au jeu",
-        "count": 2,
-        "share_pct": 9.5,
-        "illustrative_quotes": [
-          "tne pas etre trop dependant du jeu... dans l’ensemble ca va",
-          "les jeu hasard sont dangereux quand il y a pas la maitrise"
-        ]
-      },
-      {
-        "label": "Cotes peu compétitives",
-        "count": 1,
-        "share_pct": 4.8,
-        "illustrative_quotes": [
+          "souvent ils donnent des fausses côtes",
           "Les côtes sont moins élevée"
         ]
       },
       {
-        "label": "Manque de bonus",
-        "count": 1,
-        "share_pct": 4.8,
+        "label": "Fiabilité et sécurité perçues",
+        "count": 3,
+        "share_pct": 10.3,
         "illustrative_quotes": [
+          "car c'est tellement fiable",
+          "c'est fiable plus c'est bien sécurisé"
+        ]
+      },
+      {
+        "label": "Problèmes techniques et procédures",
+        "count": 3,
+        "share_pct": 10.3,
+        "illustrative_quotes": [
+          "ils demandent trop de mise a jour",
+          "les weekends pour parié les réseaux sont lents"
+        ]
+      },
+      {
+        "label": "Bonus et gains insuffisants",
+        "count": 2,
+        "share_pct": 6.9,
+        "illustrative_quotes": [
+          "ils coupent  les pourcentages dans les gains",
           "ils doivent proposer plus de bonus"
         ]
       }
     ]
   },
   "promoters": {
-    "n_total": 90,
+    "n_total": 118,
     "themes": [
       {
-        "label": "Fiabilité & sécurité de la plateforme",
-        "count": 42,
-        "share_pct": 46.7,
+        "label": "Fiabilité et sécurité de la plateforme",
+        "count": 52,
+        "share_pct": 44.1,
         "illustrative_quotes": [
           "l'application est sécurisée et les paiements sont fiables",
           "betclic est fiable et sécurisée"
         ]
       },
       {
-        "label": "Dépôts & retraits rapides",
-        "count": 30,
-        "share_pct": 33.3,
+        "label": "Dépôts et retraits rapides",
+        "count": 45,
+        "share_pct": 38.1,
         "illustrative_quotes": [
-          "la sécurité, dépôt retrait facile et rapide, présence du cash Out",
-          "TRÈS FIABLE POUR LE RETRAIT DES GAINS"
+          "les retraits sont très très rapide",
+          "PARCEQUE BETCLIC EST RAPIDE DANS LES PAIEMENTS ET LES DÉPÔTS"
         ]
       },
       {
-        "label": "Cotes élevées & compétitives",
+        "label": "Application simple et facile à utiliser",
+        "count": 15,
+        "share_pct": 12.7,
+        "illustrative_quotes": [
+          "l'application est facile à manipuler",
+          "c'est simple et facile à utiliser"
+        ]
+      },
+      {
+        "label": "Cotes élevées et compétitives",
         "count": 13,
-        "share_pct": 14.4,
+        "share_pct": 11.0,
         "illustrative_quotes": [
           "les côtes sont élevées,le retrait rapide et facile,ils proposent beaucoup de Cash out",
           "pour une bonne proposition au niveau des cotes"
         ]
       },
       {
-        "label": "Simplicité & ergonomie de l'app",
-        "count": 12,
-        "share_pct": 13.3,
-        "illustrative_quotes": [
-          "l'application est facile à manipuler",
-          "c’est une application simple et facile à utiliser"
-        ]
-      },
-      {
         "label": "Cash Out attractif",
-        "count": 7,
-        "share_pct": 7.8,
+        "count": 9,
+        "share_pct": 7.6,
         "illustrative_quotes": [
-          "cash out a tout moment, pour les free bet, simple et sécurisée",
-          "Cash Out élevé, côtes Booster, dépôt retrait rapide"
+          "LES CASH-OUT SONT ÉLEVÉ",
+          "c'est simple et facile,il propose les Cash out rapidement"
         ]
       },
       {
-        "label": "Bonus & promotions attractifs",
+        "label": "Bonus et promotions généreux",
         "count": 7,
-        "share_pct": 7.8,
+        "share_pct": 5.9,
         "illustrative_quotes": [
-          "ELLE PROPOSE DES BONUS",
+          "ils donnent des bonus",
           "c’est une application facile à utiliser et il y’a des bonus presque toujours"
         ]
       },
       {
-        "label": "Variété des paris & sports",
-        "count": 5,
-        "share_pct": 5.6,
+        "label": "Variété de jeux et options de paris",
+        "count": 6,
+        "share_pct": 5.1,
         "illustrative_quotes": [
           "variété des sports",
-          "c'est fiable ,il y a plusieurs options de paris, changement rapide des côtes lors des matchs en direct, retrait rapide, côtes élevés"
+          "Betclic est fiable et a plus d'options"
         ]
       }
     ]
