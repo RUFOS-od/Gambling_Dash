@@ -1,68 +1,68 @@
 {
   "wave": "Vague 3",
-  "generated_at": "2026-08-28T08:25:38",
+  "generated_at": "2026-09-01T10:15:26",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 36,
+    "n_total": 39,
     "themes": [
       {
         "label": "Refus de promouvoir jeux de hasard",
         "count": 12,
-        "share_pct": 33.3,
+        "share_pct": 30.8,
         "illustrative_quotes": [
           "on recommande pas les jeux de hasard à quelqu'un",
-          "on doit en aucun cas recommandé un site de paris en ligne à une personne"
+          "c'est pas bon de conseiller les jeux de hasard à qui que ce soit"
         ]
       },
       {
         "label": "Pertes financières fréquentes",
         "count": 7,
-        "share_pct": 19.4,
+        "share_pct": 17.9,
         "illustrative_quotes": [
           "je perds beaucoup trop d'argent lorsque je paris",
           "il y a plus de perte que de gains"
         ]
       },
       {
-        "label": "Risques d'addiction et dangers",
+        "label": "Retraits/dépôts difficiles et lents",
         "count": 6,
-        "share_pct": 16.7,
-        "illustrative_quotes": [
-          "dépendance au  jeu...",
-          "il ne faut pas être trop accro cela peut créer d'autres agissements négatifs"
-        ]
-      },
-      {
-        "label": "Retraits et dépôts problématiques",
-        "count": 4,
-        "share_pct": 11.1,
+        "share_pct": 15.4,
         "illustrative_quotes": [
           "PLUS DE COMPLICATIONS SUR LES RETRAITS ET LES DÉPÔTS",
           "parce que souvent on me demande de patienter pendant 1 jour lorsque je lance un retrait"
         ]
       },
       {
-        "label": "Cotes peu compétitives / faussées",
-        "count": 3,
-        "share_pct": 8.3,
+        "label": "Risque d'addiction et dépendance",
+        "count": 5,
+        "share_pct": 12.8,
         "illustrative_quotes": [
-          "souvent ils donnent des fausses côtes",
+          "dépendance au  jeu...",
+          "pour ne pas encourager les amis a jouer parceque c'est addictifs"
+        ]
+      },
+      {
+        "label": "Cotes et gains peu compétitifs",
+        "count": 4,
+        "share_pct": 10.3,
+        "illustrative_quotes": [
+          "ils coupent  les pourcentages dans les gains",
           "Les côtes sont moins élevée"
         ]
       },
       {
-        "label": "Bonus et frais insuffisants",
+        "label": "Bonus et options insuffisants",
         "count": 3,
-        "share_pct": 8.3,
+        "share_pct": 7.7,
         "illustrative_quotes": [
           "ils doivent proposer plus de bonus",
-          "ILS DOIVENT ÉLIMINER LES FRAIS SUR LES TRANSACTIONS"
+          "PARCEQUE BETCLIC N’A PAS ASSEZ D’OPTIONS POUR POUVOIR GAGNÉ"
         ]
       },
       {
-        "label": "Problèmes techniques et procédures",
-        "count": 3,
-        "share_pct": 8.3,
+        "label": "Ergonomie et performance appli",
+        "count": 2,
+        "share_pct": 5.1,
         "illustrative_quotes": [
           "ils demandent trop de mise a jour",
           "les weekends pour parié les réseaux sont lents"
@@ -71,69 +71,60 @@
     ]
   },
   "promoters": {
-    "n_total": 145,
+    "n_total": 185,
     "themes": [
       {
-        "label": "Fiabilité & sécurité de la plateforme",
-        "count": 58,
-        "share_pct": 40.0,
+        "label": "Fiabilité et sécurité de l'application",
+        "count": 62,
+        "share_pct": 33.5,
         "illustrative_quotes": [
           "l'application est sécurisée et les paiements sont fiables",
           "betclic est fiable et sécurisée"
         ]
       },
       {
-        "label": "Dépôts & retraits rapides et faciles",
-        "count": 45,
-        "share_pct": 31.0,
+        "label": "Dépôts et retraits rapides",
+        "count": 55,
+        "share_pct": 29.7,
         "illustrative_quotes": [
           "la sécurité, dépôt retrait facile et rapide, présence du cash Out",
-          "PARCEQUE BETCLIC EST RAPIDE DANS LES PAIEMENTS ET LES DÉPÔTS"
+          "les retraits sont très très rapide"
         ]
       },
       {
-        "label": "Simplicité & ergonomie de l'application",
-        "count": 20,
-        "share_pct": 13.8,
+        "label": "Simplicité et facilité d'utilisation",
+        "count": 22,
+        "share_pct": 11.9,
         "illustrative_quotes": [
           "l'application est facile à manipuler",
           "c'est une application simple et facile à utiliser"
         ]
       },
       {
-        "label": "Cotes élevées & Cash Out attractifs",
+        "label": "Cotes élevées et compétitives",
         "count": 18,
-        "share_pct": 12.4,
+        "share_pct": 9.7,
         "illustrative_quotes": [
           "les côtes sont élevées,le retrait rapide et facile,ils proposent beaucoup de Cash out",
-          "pour une bonne proposition au niveau des cotes"
+          "propose des cotes élevé"
         ]
       },
       {
-        "label": "Satisfaction globale & gains",
-        "count": 12,
-        "share_pct": 8.3,
+        "label": "Qualité et fluidité de l'application",
+        "count": 15,
+        "share_pct": 8.1,
         "illustrative_quotes": [
-          "Je suis satisfait sur tous les plans",
-          "on peut gagner beaucoup d'argent"
+          "LA QUALITÉ ET LA FLUIDITÉ DE L'APPLICATION",
+          "l'application est très fluide, on peut suivre le match en ligne et puis je n'ai jamais eu de problème de paiement.  et surtout il propose de bonne quote"
         ]
       },
       {
-        "label": "Bonus & promotions attractifs",
-        "count": 10,
-        "share_pct": 6.9,
+        "label": "Bonus, freebets et cash out attractifs",
+        "count": 13,
+        "share_pct": 7.0,
         "illustrative_quotes": [
-          "ils donnent des bonus",
-          "c’est une application facile à utiliser et il y’a des bonus presque toujours"
-        ]
-      },
-      {
-        "label": "Variété de jeux & options de paris",
-        "count": 8,
-        "share_pct": 5.5,
-        "illustrative_quotes": [
-          "variété des sports",
-          "l'application est ivoirienne et offrent une large game de jeux"
+          "betclic m'offre des freebets chaque weekend",
+          "ils donnent des bonus"
         ]
       }
     ]
