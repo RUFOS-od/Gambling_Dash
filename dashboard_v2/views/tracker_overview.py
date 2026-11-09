@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from data.loader import (
+    sort_vagues,
     apply_filters, calc_tom, calc_notoriete_totale, calc_notoriete_aidee,
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
     calc_consideration, calc_rappel_campagne,
@@ -15,6 +16,7 @@ from data.loader import (
     VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
+from components.narrative import trend_word, signed, prev_wave_label, leader_of
 from components.charts import (
     line_chart_evolution, funnel_chart, multi_line_chart,
     BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color,
@@ -30,6 +32,7 @@ def render():
     ages = st.session_state.get("selected_ages", [])
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
+    _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
 
     st.markdown(section_header(
         "Scorecard Exécutif · Betclic Brand Pulse",
@@ -98,14 +101,35 @@ def render():
     latest_tom = get_latest_vague(tom_v)
     latest_pen = get_latest_vague(pen_v)
     latest_nps = get_latest_vague(nps_v)
-    delta_tom, dir_tom = calc_delta(get_latest_vague(tom_v), tom_v.get("Vague 1"))
-    delta_pen, _ = calc_delta(get_latest_vague(pen_v), pen_v.get("Vague 1"))
+    latest_pdm = get_latest_vague(pdm_v)
+    d_tom, _ = calc_delta(latest_tom, get_previous_vague(tom_v))
+    d_pen, _ = calc_delta(latest_pen, get_previous_vague(pen_v))
+    d_nps, _ = calc_delta(latest_nps, get_previous_vague(nps_v))
+    prev_lbl = prev_wave_label(tom_v)
+    vs_prev = f" vs {prev_lbl}" if prev_lbl else ""
+
+    # Positionnement TOM / PDM vs le premier concurrent (vague la plus récente)
+    _lv = sort_vagues([k for k, v in tom_v.items() if v is not None])
+    _df_lv = df[df["Vague"] == _lv[-1]] if _lv else df
+    tom_lead, tom_lead_v = leader_of(calc_tom_all_brands(_df_lv), exclude="Betclic")
+    pdm_lead, pdm_lead_v = leader_of(calc_pdm_volume_all_brands(_df_lv), exclude="Betclic")
+
+    if tom_lead and latest_tom is not None and tom_lead_v > latest_tom:
+        tom_txt = (f"Betclic est cité en premier par <strong>{latest_tom}%</strong> des répondants "
+                   f"({signed(d_tom)}{vs_prev}), derrière <strong>{tom_lead}</strong> ({tom_lead_v}%).")
+    else:
+        tom_txt = (f"Betclic est la marque la plus citée en premier avec <strong>{latest_tom}%</strong> "
+                   f"de Top of Mind ({signed(d_tom)}{vs_prev}).")
+    if pdm_lead and latest_pdm is not None and pdm_lead_v > latest_pdm:
+        pdm_txt = (f" En PDM Volume, <strong>{pdm_lead}</strong> passe devant ({pdm_lead_v}% vs "
+                   f"{latest_pdm}% pour Betclic).")
+    else:
+        pdm_txt = f" Betclic reste leader en PDM Volume (<strong>{latest_pdm}%</strong>)."
 
     st.markdown(insight_box(
-        f"<strong>Betclic confirme son leadership</strong> avec un TOM de <strong>{latest_tom}%</strong> "
-        f"({delta_tom} pt depuis V1). La pénétration parieurs atteint <strong>{latest_pen}%</strong> "
-        f"({delta_pen} pt vs V1), portée par la hausse de la considération et du rappel campagne. "
-        f"Le NPS à <strong>{latest_nps} pts</strong> signale une base clients engagée et promotrice."
+        f"{tom_txt} La pénétration {trend_word(d_pen)} à <strong>{latest_pen}%</strong> "
+        f"({signed(d_pen)}{vs_prev}).{pdm_txt} Le NPS {trend_word(d_nps)} à "
+        f"<strong>{latest_nps} pts</strong> ({signed(d_nps, 'pts')}{vs_prev})."
     ), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -116,7 +140,7 @@ def render():
         "Comparaison Betclic vs principaux concurrents du marché ivoirien"
     ), unsafe_allow_html=True)
 
-    latest_vague_name = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
+    latest_vague_name = [v for v in _waves[::-1] if v in vagues]
     df_latest = df[df["Vague"] == latest_vague_name[0]] if latest_vague_name else df
 
     tom_all = calc_tom_all_brands(df_latest)
@@ -182,10 +206,10 @@ def render():
     with col_left:
         # Evolution chart
         kpi_evol = {
-            "TOM": {v: tom_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if tom_v.get(v) is not None},
-            "Pénétration": {v: pen_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if pen_v.get(v) is not None},
-            "Considération": {v: consid_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if consid_v.get(v) is not None},
-            "Préférence": {v: pref_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if pref_v.get(v) is not None},
+            "TOM": {v: tom_v.get(v, 0) for v in _waves if tom_v.get(v) is not None},
+            "Pénétration": {v: pen_v.get(v, 0) for v in _waves if pen_v.get(v) is not None},
+            "Considération": {v: consid_v.get(v, 0) for v in _waves if consid_v.get(v) is not None},
+            "Préférence": {v: pref_v.get(v, 0) for v in _waves if pref_v.get(v) is not None},
         }
         fig = multi_line_chart(kpi_evol, "Évolution des KPIs clés Betclic", height=420)
         st.plotly_chart(fig, width='stretch')
@@ -202,11 +226,11 @@ def render():
     # ── Évolution NPS + Satisfaction ──
     col_left, col_right = st.columns(2)
     with col_left:
-        nps_evol = {v: nps_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if nps_v.get(v) is not None}
+        nps_evol = {v: nps_v[v] for v in _waves if nps_v.get(v) is not None}
         fig = line_chart_evolution(nps_evol, "Évolution NPS", suffix=" pts", height=320)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        sat_evol = {v: sat_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if sat_v.get(v) is not None}
+        sat_evol = {v: sat_v[v] for v in _waves if sat_v.get(v) is not None}
         fig = line_chart_evolution(sat_evol, "Évolution Satisfaction /5", suffix="/5", height=320)
         st.plotly_chart(fig, width='stretch')

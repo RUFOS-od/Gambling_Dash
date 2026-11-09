@@ -2,6 +2,7 @@
 
 import streamlit as st
 from data.loader import (
+    sort_vagues,
     apply_filters, calc_tom, calc_tom_all_brands, calc_notoriete_totale,
     calc_notoriete_all_brands, calc_notoriete_aidee, calc_rappel_campagne,
     calc_ambassadeur_distribution, calc_canal_decouverte,
@@ -9,6 +10,7 @@ from data.loader import (
     COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
+from components.narrative import trend_word, signed, prev_wave_label
 from components.charts import (
     bar_chart_brands, grouped_bar_vagues, line_chart_evolution,
     donut_chart, BETCLIC_RED, OPINIONWAY_PURPLE
@@ -24,6 +26,7 @@ def render():
     ages = st.session_state.get("selected_ages", [])
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
+    _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
 
     st.markdown(section_header(
         "Notoriété & Visibilité",
@@ -56,7 +59,7 @@ def render():
     col_left, col_right = st.columns(2)
 
     with col_left:
-        latest_vague = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
+        latest_vague = [v for v in _waves[::-1] if v in vagues]
         if latest_vague:
             df_latest = df[df["Vague"] == latest_vague[0]]
         else:
@@ -93,7 +96,7 @@ def render():
     with col_right:
         # Notoriete evolution by vague for all brands
         not_by_vague = {}
-        for v in ["Vague 1", "Vague 2", "Vague 3"]:
+        for v in _waves:
             sub = df[df["Vague"] == v]
             if len(sub) > 0:
                 not_by_vague[v] = calc_notoriete_all_brands(sub)
@@ -109,17 +112,17 @@ def render():
     col_left, col_right = st.columns(2)
 
     with col_left:
-        rappel_evol = {v: rappel_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if rappel_v.get(v) is not None}
+        rappel_evol = {v: rappel_v[v] for v in _waves if rappel_v.get(v) is not None}
         fig = line_chart_evolution(rappel_evol, "Évolution Rappel Campagne Betclic", height=350)
         st.plotly_chart(fig, width='stretch')
 
         latest_rappel = get_latest_vague(rappel_v)
-        first_rappel = rappel_v.get("Vague 1")
-        d_rappel, _ = calc_delta(latest_rappel, first_rappel)
+        d_rappel, _ = calc_delta(latest_rappel, get_previous_vague(rappel_v))
+        _prev = prev_wave_label(rappel_v)
+        _vs = f" vs {_prev}" if _prev else ""
         st.markdown(insight_box(
-            f"Le rappel campagne progresse fortement : <strong>{latest_rappel}%</strong> "
-            f"({d_rappel} pt depuis V1). L'investissement média porte ses fruits avec une mémorisation "
-            f"croissante des campagnes Betclic."
+            f"Le rappel publicitaire spontané de Betclic {trend_word(d_rappel)} à "
+            f"<strong>{latest_rappel}%</strong> des parieurs ({signed(d_rappel)}{_vs})."
         ), unsafe_allow_html=True)
 
     with col_right:

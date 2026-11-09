@@ -9,6 +9,7 @@ The raw format is transformed into the normalized schema on load, so all
 downstream views/KPI functions keep using the same column names.
 """
 
+import re
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -21,11 +22,14 @@ DATA_DIR = Path(__file__).resolve().parent.parent.parent
 # REFERENCE LISTS · updated to match real V1 questionnaire
 # ──────────────────────────────────────────────
 
-# 14 competing sports betting brands tracked in the questionnaire
+# Marques suivies dans le questionnaire. V1-V3 : 14 marques (+ KifBet en V3).
+# V4 ajoute Bet 360, Betwinner et 1WIN. Une marque absente du questionnaire
+# d'une vague a ses colonnes à NaN pour cette vague (et non 0).
 COMPETITORS = [
     "Betclic", "Chopbet", "1XBET", "Sportcash", "BetPawa",
     "Melbet", "Premier Bet", "BetMomo", "AkwaBet", "YellowBet",
     "Betway", "Afropari", "Paripesa", "Bet365",
+    "KifBet", "Bet 360", "Betwinner", "1WIN",
 ]
 
 # Marques principales à afficher dans les comparaisons concurrentielles
@@ -37,9 +41,30 @@ VAGUE_LABELS = {
     "Vague 1": "V1 (Mai 2026)",
     "Vague 2": "V2 (Juin 2026)",
     "Vague 3": "V3 (Août 2026)",
+    "Vague 4": "V4 (Novembre 2026)",
 }
-VAGUE_SHORT = {"Vague 1": "V1", "Vague 2": "V2", "Vague 3": "V3"}
-VAGUE_MONTHS = {"Vague 1": "Mai 2026", "Vague 2": "Juin 2026", "Vague 3": "Août 2026"}
+VAGUE_SHORT = {"Vague 1": "V1", "Vague 2": "V2", "Vague 3": "V3", "Vague 4": "V4"}
+VAGUE_MONTHS = {
+    "Vague 1": "Mai 2026", "Vague 2": "Juin 2026",
+    "Vague 3": "Août 2026", "Vague 4": "Novembre 2026",
+}
+
+
+def vague_num(v) -> int:
+    """'Vague 4' -> 4 (999 si non numérique)."""
+    s = str(v).replace("Vague ", "")
+    return int(s) if s.isdigit() else 999
+
+
+def sort_vagues(vagues) -> list:
+    """Tri chronologique des vagues ('Vague 10' après 'Vague 9')."""
+    return sorted([v for v in vagues if v is not None and not (isinstance(v, float) and np.isnan(v))],
+                  key=vague_num)
+
+
+def vague_short(v) -> str:
+    """'Vague 4' -> 'V4'."""
+    return VAGUE_SHORT.get(v, f"V{vague_num(v)}" if vague_num(v) != 999 else str(v))
 
 
 def _build_dynamic_vague_labels(vagues_list):
@@ -78,30 +103,26 @@ IMAGE_ATTRIBUTES = {
     "Image_Jeu_Responsable": "Jeu responsable",
     "Image_Proximite": "Proximité locale CI",
     "Image_Cotes_Elevees": "Cotes élevées",
+    "Image_Cash_Out": "Cash out élevés",
 }
 
-CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
+CITIES =["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
 
 
 # ──────────────────────────────────────────────
 # RAW → NORMALIZED ADAPTER
 # ──────────────────────────────────────────────
 
-# Map raw index suffix (_1.._14) to brand name (as in COMPETITORS)
+# Fallback index -> marque (ordre réel du questionnaire V1-V3, vérifié sur les
+# libellés des cellules). En pratique l'ordre est relu dans chaque base via
+# `_detect_index_map`, car il a changé en V4 (KifBet, Bet 360, Betwinner, 1WIN).
 RAW_BRAND_BY_INDEX = {
     1: "Betclic", 2: "Chopbet", 3: "1XBET", 4: "Sportcash",
     5: "BetPawa", 6: "Melbet", 7: "Premier Bet", 8: "BetMomo",
-    9: "AkwaBet", 10: "YellowBet", 11: "Betway", 12: "Afropari",
-    13: "Paripesa", 14: "Bet365",
+    9: "AkwaBet", 10: "YellowBet", 11: "Afropari", 12: "Paripesa",
+    13: "Bet365", 14: "Betway",
 }
-# Map Q12 letter (A..N) to brand
-RAW_BRAND_BY_LETTER = {
-    "A": "Betclic", "B": "Chopbet", "C": "1XBET", "D": "Sportcash",
-    "E": "BetPawa", "F": "Melbet", "G": "Premier Bet", "H": "BetMomo",
-    "I": "AkwaBet", "J": "YellowBet", "K": "Betway", "L": "Afropari",
-    "M": "Paripesa", "N": "Bet365",
-}
-# Map Q12 attribute suffix (_1.._13) to normalized image column
+# Map Q12 attribute suffix (_1.._14) to normalized image column
 RAW_IMAGE_ATTRS = {
     1: "Image_Fiabilite_Paiement",
     2: "Image_Securite",
@@ -116,7 +137,21 @@ RAW_IMAGE_ATTRS = {
     11: "Image_Jeu_Responsable",
     12: "Image_Proximite",
     13: "Image_Cotes_Elevees",
+    14: "Image_Cash_Out",
 }
+
+# ── Casino en ligne (Section 5B, introduite en V4) ──
+CASINO_GAMES = {
+    1: "Machines à sous",
+    2: "Roulette",
+    3: "Blackjack / Baccarat",
+    4: "Poker",
+    5: "Casino live (croupier)",
+    6: "Jeux crash (type Aviator)",
+    7: "Jeux virtuels",
+    8: "Autres",
+}
+CASINO_STATUTS = ["Joueur actif (6 derniers mois)", "Ancien joueur (+6 mois)", "Non-joueur"]
 
 SPORT_MAP = {
     "A_Q11_1": "Football",
@@ -152,6 +187,79 @@ def _str_yes_no(series: pd.Series) -> pd.Series:
     # zero-like sentinels seen in real data: "0", "0.0", "", "nan", "<NA>"
     zero_like = s.isin(["0", "0.0", "", "nan", "NaN", "<NA>", "None"])
     return (not_null & ~zero_like).astype(int)
+
+
+# ── Résolution des marques à partir des libellés (robuste aux changements d'ordre) ──
+
+def _brand_key(label) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(label).lower())
+
+
+_BRAND_LOOKUP = {_brand_key(b): b for b in COMPETITORS}
+
+
+def _canonical_brand(label):
+    """Libellé brut ('1win', 'Bet 360', 'MELBET') -> marque canonique, sinon None."""
+    if label is None or (isinstance(label, float) and np.isnan(label)):
+        return None
+    return _BRAND_LOOKUP.get(_brand_key(label))
+
+
+def _column_brand(series: pd.Series):
+    """Marque portée par une colonne multi-réponse (libellé le plus fréquent hors '0')."""
+    s = series.dropna().astype(str).str.strip()
+    s = s[~s.isin(["0", "0.0", "", "nan", "NaN", "<NA>", "None"])]
+    if s.empty:
+        return None
+    return _canonical_brand(s.value_counts().index[0])
+
+
+_BRAND_LABEL_PREFIXES = ("A_Q1B", "A_Q1C", "A_Q5", "A_Q18", "A_Q19A", "A_QC4")
+
+
+def _detect_index_map(df_raw: pd.DataFrame) -> dict:
+    """Index -> marque pour CETTE base, lu dans les libellés des cellules.
+
+    L'export CAPI numérote les marques dans l'ordre du questionnaire de la
+    vague, et cet ordre a changé (ex. V4 : Betway passe en 11, 1WIN en 17).
+    On lit donc le libellé stocké dans A_Q1B_i / A_Q1C_i / A_Q5_i ... plutôt
+    que de supposer un ordre fixe.
+    """
+    idx_map = {}
+    for i in range(1, 40):
+        votes = {}
+        for p in _BRAND_LABEL_PREFIXES:
+            col = f"{p}_{i}"
+            if col in df_raw.columns:
+                b = _column_brand(df_raw[col])
+                if b:
+                    votes[b] = votes.get(b, 0) + 1
+        if votes:
+            idx_map[i] = max(votes, key=votes.get)
+    return idx_map or dict(RAW_BRAND_BY_INDEX)
+
+
+def _brand_columns(df_raw: pd.DataFrame, prefix: str, idx_map: dict) -> dict:
+    """{marque: colonne brute} pour un bloc par marque (A_Q5_1..N, A_Q18_1..N...)."""
+    out = {}
+    for i in range(1, 40):
+        col = f"{prefix}_{i}"
+        if col not in df_raw.columns:
+            continue
+        brand = _column_brand(df_raw[col]) or idx_map.get(i)
+        if brand and brand not in out:
+            out[brand] = col
+    return out
+
+
+def brands_in_scope(df: pd.DataFrame) -> list:
+    """Marques mesurées dans au moins une des vagues présentes dans df."""
+    out = []
+    for b in COMPETITORS:
+        col = f"Notoriete_Totale_{b}"
+        if col in df.columns and df[col].notna().any():
+            out.append(b)
+    return out
 
 
 def _nps_category(score) -> str:
@@ -212,6 +320,10 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df = pd.DataFrame()
     n = len(df_raw)
 
+    # Ordre des marques propre à cette base (cf. _detect_index_map)
+    idx_map = _detect_index_map(df_raw)
+    asked_brands = set(idx_map.values())
+
     # ── Identifiers & wave ──
     df["ID_Repondant"] = df_raw["SbjNum"]
     df["Vague"] = wave_name
@@ -228,12 +340,21 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Profession"] = df_raw.get("Q28", "")
 
     # ── Type respondant ──
-    type_rep = df_raw["Type_Rep"].astype(str).str.strip()
-    df["Type_Repondant"] = type_rep.map({
-        "PARIEUR": "Parieur",
-        "NON  PARIEUR": "Non-parieur",
-        "NON PARIEUR": "Non-parieur",
-    }).fillna(type_rep)
+    # V1-V3 : variable Type_Rep. V4 : supprimée de l'export, on la reconstruit
+    # depuis le filtre QF2 (Oui = parieur, Non = non-parieur), même règle.
+    if "Type_Rep" in df_raw.columns:
+        type_rep = df_raw["Type_Rep"].astype(str).str.strip()
+        df["Type_Repondant"] = type_rep.map({
+            "PARIEUR": "Parieur",
+            "NON  PARIEUR": "Non-parieur",
+            "NON PARIEUR": "Non-parieur",
+        }).fillna(type_rep)
+    else:
+        qf2 = df_raw.get("QF2", pd.Series([None] * n)).astype(str).str.strip()
+        df["Type_Repondant"] = np.where(
+            qf2.str.startswith("Oui"), "Parieur",
+            np.where(qf2.str.startswith("Non"), "Non-parieur", None),
+        )
     df["Segment_Parieur"] = df["Type_Repondant"]
     df["Frequence_Paris"] = df_raw.get("Q8", None)
     df["Frequence_Paris_Mois"] = df["Frequence_Paris"]
@@ -242,21 +363,25 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Montant_Mise_Mensuel_FCFA"] = df["Montant_Mise_Mensuel"].map(Q10_MIDPOINTS_FCFA)
 
     # ── TOM (Top of Mind) ──
-    tom_raw = df_raw["Q1A"].astype(str).str.strip()
-    df["TOM_Marque_Citee"] = tom_raw.where(tom_raw.isin(COMPETITORS), None)
+    q1a_brand = df_raw["Q1A"].map(_canonical_brand)
+    df["TOM_Marque_Citee"] = q1a_brand.values
 
     # ── Awareness per brand (TOM + spontaneous + aided + total) ──
     # User-validated formula:
     #   Notoriete Totale  = Q1A=brand OR A_Q1B_idx OR A_Q1C_idx   (Q1A + Q1B + Q1C)
     #   Notoriete Spont.  = Q1A=brand OR A_Q1B_idx                (Q1A + Q1B)
     #   Notoriete Aidee   = A_Q1C_idx only                        (Q1C alone)
-    q1a = df_raw["Q1A"].astype(str).str.strip()
-    for idx, brand in RAW_BRAND_BY_INDEX.items():
-        col_b = f"A_Q1B_{idx}"
-        col_c = f"A_Q1C_{idx}"
-        is_tom = (q1a == brand).astype(int).values
-        spont_b = _str_yes_no(df_raw[col_b]).values if col_b in df_raw.columns else np.zeros(n, dtype=int)
-        aided_c = _str_yes_no(df_raw[col_c]).values if col_c in df_raw.columns else np.zeros(n, dtype=int)
+    # Marque non présente dans le questionnaire de la vague -> NaN (non mesurée).
+    q1b_cols = _brand_columns(df_raw, "A_Q1B", idx_map)
+    q1c_cols = _brand_columns(df_raw, "A_Q1C", idx_map)
+    for brand in COMPETITORS:
+        if brand not in asked_brands:
+            for pfx in ("Notoriete_Spontanee_", "Notoriete_Aidee_", "Notoriete_Totale_"):
+                df[f"{pfx}{brand}"] = np.nan
+            continue
+        is_tom = (q1a_brand == brand).astype(int).values
+        spont_b = _str_yes_no(df_raw[q1b_cols[brand]]).values if brand in q1b_cols else np.zeros(n, dtype=int)
+        aided_c = _str_yes_no(df_raw[q1c_cols[brand]]).values if brand in q1c_cols else np.zeros(n, dtype=int)
         df[f"Notoriete_Spontanee_{brand}"] = ((is_tom == 1) | (spont_b == 1)).astype(int)
         df[f"Notoriete_Aidee_{brand}"] = aided_c
         df[f"Notoriete_Totale_{brand}"] = (
@@ -265,23 +390,29 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
 
     # ── Usage ──
     q6 = df_raw.get("Q6", pd.Series([None] * n))
-    df["Marque_Principale_Utilisee"] = q6
-    df["Utilise_Betclic"] = (q6.astype(str) == "Betclic").astype(int)
+    q6_brand = q6.map(_canonical_brand)
+    # Libellé canonique si c'est une marque suivie, sinon libellé brut ("Autres...")
+    df["Marque_Principale_Utilisee"] = q6_brand.where(q6_brand.notna(), q6).values
+    df["Utilise_Betclic"] = (q6_brand == "Betclic").astype(int).values
 
-    # Multi-app: count how many A_Q5_X are non-"0"
-    a_q5_cols = [f"A_Q5_{i}" for i in range(1, 15) if f"A_Q5_{i}" in df_raw.columns]
-    if a_q5_cols:
-        nb_apps = sum(_str_yes_no(df_raw[c]) for c in a_q5_cols)
+    # Per-brand "has bet on" flag (from A_Q5_X)
+    q5_cols = _brand_columns(df_raw, "A_Q5", idx_map)
+    for brand in COMPETITORS:
+        if brand in q5_cols:
+            df[f"A_Deja_Parie_{brand}"] = _str_yes_no(df_raw[q5_cols[brand]]).values
+        elif brand in asked_brands:
+            df[f"A_Deja_Parie_{brand}"] = 0
+        else:
+            df[f"A_Deja_Parie_{brand}"] = np.nan
+
+    # Multi-app: nombre de marques suivies sur lesquelles le répondant a parié
+    if q5_cols:
+        nb_apps = sum(_str_yes_no(df_raw[c]) for c in q5_cols.values())
         df["Nb_Apps_Utilisees"] = nb_apps.values
         df["Multi_Application"] = (nb_apps.values >= 2).astype(int)
     else:
         df["Nb_Apps_Utilisees"] = 0
         df["Multi_Application"] = 0
-
-    # Per-brand "has bet on" flag (from A_Q5_X)
-    for idx, brand in RAW_BRAND_BY_INDEX.items():
-        col = f"A_Q5_{idx}"
-        df[f"A_Deja_Parie_{brand}"] = _str_yes_no(df_raw[col]).values if col in df_raw.columns else 0
 
     # ── Sport préféré (Q11 multi-réponse) ──
     # 1 flag par sport pour permettre l'agrégation correcte
@@ -314,28 +445,44 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
 
     # ── Considération (user-validated): Q5 (a déjà parié) OU Q13 ∈ {Très/Probablement} ──
     # Per-row flag. A_Deja_Parie_Betclic was set above.
-    for brand in RAW_BRAND_BY_INDEX.values():
+    for brand in COMPETITORS:
+        if brand not in asked_brands:
+            df[f"Consideration_{brand}"] = np.nan
+            continue
         col = f"A_Deja_Parie_{brand}"
-        if col in df.columns:
-            df[f"Consideration_{brand}"] = (
-                (df[col] == 1) | (df["Intention_Recommande_Forte"] == 1)
-            ).astype(int)
-        else:
-            df[f"Consideration_{brand}"] = df["Intention_Recommande_Forte"]
+        df[f"Consideration_{brand}"] = (
+            (df[col] == 1) | (df["Intention_Recommande_Forte"] == 1)
+        ).astype(int)
     # ── Préférence (user-validated): Q6 == "Betclic" ──
     df["Preference_Betclic"] = df["Utilise_Betclic"]
 
-    # ── Image attributes for Betclic (Q12A) ──
-    for idx, attr_col in RAW_IMAGE_ATTRS.items():
-        raw_col = f"T_Q12A_{idx}"
-        df[attr_col] = pd.to_numeric(df_raw[raw_col], errors="coerce") if raw_col in df_raw.columns else None
+    # ── Image attributes (Q12), deux formats d'export :
+    #   V1-V3 : T_Q12{lettre}_{item}  (lettre A,B,C... = rang de la marque)
+    #   V4    : {Marque}_T_Q12_{item} (ex. "1XBET_T_Q12_3")
+    img_cols = {}  # {brand: {item_idx: raw_col}}
+    for raw_col in df_raw.columns:
+        m_old = re.match(r"^T_Q12([A-Z])_(\d+)$", str(raw_col))
+        m_new = re.match(r"^(.+)_T_Q12_(\d+)$", str(raw_col))
+        if m_old:
+            brand = idx_map.get(ord(m_old.group(1)) - 64)
+            item = int(m_old.group(2))
+        elif m_new:
+            brand = _canonical_brand(m_new.group(1))
+            item = int(m_new.group(2))
+        else:
+            continue
+        if brand and item in RAW_IMAGE_ATTRS:
+            img_cols.setdefault(brand, {})[item] = raw_col
 
-    # ── Image attributes per competitor (for radar/positioning views) ──
-    for letter, brand in RAW_BRAND_BY_LETTER.items():
-        for idx, attr_col in RAW_IMAGE_ATTRS.items():
-            raw_col = f"T_Q12{letter}_{idx}"
-            if raw_col in df_raw.columns:
-                df[f"{attr_col}_{brand}"] = pd.to_numeric(df_raw[raw_col], errors="coerce")
+    # Betclic : colonnes de base Image_X (utilisées par la majorité des vues)
+    for idx, attr_col in RAW_IMAGE_ATTRS.items():
+        raw_col = img_cols.get("Betclic", {}).get(idx)
+        df[attr_col] = pd.to_numeric(df_raw[raw_col], errors="coerce") if raw_col else np.nan
+
+    # Toutes les marques : colonnes suffixées Image_X_{Marque}
+    for brand, items in img_cols.items():
+        for idx, raw_col in items.items():
+            df[f"{RAW_IMAGE_ATTRS[idx]}_{brand}"] = pd.to_numeric(df_raw[raw_col], errors="coerce")
 
     # ── Importance (Q4) · used by some views ──
     importance_labels = list(RAW_IMAGE_ATTRS.values())
@@ -362,15 +509,20 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     df["Rappel_Pub_Generale"] = q17.str.startswith("Oui").astype(int)
 
     # Per-brand spontaneous ad recall (A_Q18_X)
-    for idx, brand in RAW_BRAND_BY_INDEX.items():
-        col = f"A_Q18_{idx}"
-        df[f"Rappel_Campagne_{brand}"] = (
-            _str_yes_no(df_raw[col]).values if col in df_raw.columns else 0
-        )
+    q18_cols = _brand_columns(df_raw, "A_Q18", idx_map)
+    for brand in COMPETITORS:
+        if brand in q18_cols:
+            df[f"Rappel_Campagne_{brand}"] = _str_yes_no(df_raw[q18_cols[brand]]).values
+        elif brand in asked_brands:
+            df[f"Rappel_Campagne_{brand}"] = 0
+        else:
+            df[f"Rappel_Campagne_{brand}"] = np.nan
 
-    # Q21 = recall World Cup campaign
-    q21 = df_raw.get("Q21", pd.Series([None] * n)).astype(str)
-    df["Rappel_CDM_Betclic"] = q21.str.startswith("Oui").astype(int)
+    # Q21 = recall World Cup campaign (section supprimée en V4 -> NaN)
+    if "Q21" in df_raw.columns:
+        df["Rappel_CDM_Betclic"] = df_raw["Q21"].astype(str).str.startswith("Oui").astype(int).values
+    else:
+        df["Rappel_CDM_Betclic"] = np.nan
 
     # ── Canal de découverte Betclic (Q19_O1..O10 multi-réponse) ──
     # Each Q19_OX stores the support label (Télévision, Facebook, etc.) if the
@@ -423,6 +575,47 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
                 return str(v).strip()
         return None
     df["Canal_Decouverte"] = df_raw.apply(first_canal, axis=1) if q19_cols else None
+
+    # ── Casino en ligne (Section 5B, à partir de V4) ──
+    # Colonnes absentes des vagues antérieures -> NaN après concaténation,
+    # ce qui permet à la vue Casino de ne retenir que les vagues concernées.
+    if "QC3" in df_raw.columns:
+        qc3 = df_raw["QC3"].astype(str).str.strip()
+        df["Casino_Statut"] = np.where(
+            qc3.str.contains("6 derniers mois"), CASINO_STATUTS[0],
+            np.where(qc3.str.startswith("Oui"), CASINO_STATUTS[1],
+                     np.where(qc3.str.startswith("Non"), CASINO_STATUTS[2], None)),
+        )
+        df["Casino_Joueur"] = qc3.str.startswith("Oui").astype(int).values
+        df["Casino_Joueur_Actif"] = qc3.str.contains("6 derniers mois").astype(int).values
+
+        # QC1 : la marque propose-t-elle du casino ? (même ordre de marques que Q1)
+        for i, brand in idx_map.items():
+            col = f"T_QC1_{i}"
+            if col in df_raw.columns:
+                df[f"Casino_Offre_{brand}"] = (
+                    df_raw[col].astype(str).str.strip() == "Propose du casino"
+                ).astype(int).values
+
+        # QC4 : a déjà joué au casino sur la marque (multi-réponse)
+        qc4_cols = _brand_columns(df_raw, "A_QC4", idx_map)
+        for brand, col in qc4_cols.items():
+            df[f"Casino_A_Joue_{brand}"] = _str_yes_no(df_raw[col]).values
+
+        # QC5 : marque casino principale
+        qc5 = df_raw.get("QC5", pd.Series([None] * n))
+        qc5_brand = qc5.map(_canonical_brand)
+        df["Casino_Marque_Principale"] = qc5_brand.where(qc5_brand.notna(), qc5).values
+
+        df["Casino_Frequence"] = df_raw.get("QC6", pd.Series([None] * n)).values
+        df["Casino_Pratique"] = df_raw.get("QC8", pd.Series([None] * n)).values
+        df["Casino_Decouverte_Betclic"] = df_raw.get("QC2", pd.Series([None] * n)).values
+
+        # QC7 : types de jeux (multi-réponse, 3 max)
+        for i in CASINO_GAMES:
+            col = f"A_QC7_{i}"
+            if col in df_raw.columns:
+                df[f"Casino_Jeu_{i}"] = _str_yes_no(df_raw[col]).values
 
     # ── Date column for export engine ──
     df["Date_Interview"] = pd.to_datetime(df_raw.get("Date_Inter"), errors="coerce")
@@ -573,7 +766,7 @@ def calc_tom_all_brands(df: pd.DataFrame) -> dict:
     total = len(df)
     if total == 0:
         return {b: 0.0 for b in COMPETITORS}
-    return {b: round((df["TOM_Marque_Citee"] == b).sum() / total * 100, 1) for b in COMPETITORS}
+    return {b: round((df["TOM_Marque_Citee"] == b).sum() / total * 100, 1) for b in brands_in_scope(df)}
 
 
 def calc_notoriete_totale(df: pd.DataFrame, brand: str = "Betclic") -> float:
@@ -587,7 +780,7 @@ def calc_notoriete_totale(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 
 def calc_notoriete_all_brands(df: pd.DataFrame) -> dict:
-    return {b: calc_notoriete_totale(df, b) for b in COMPETITORS}
+    return {b: calc_notoriete_totale(df, b) for b in brands_in_scope(df)}
 
 
 def calc_notoriete_aidee(df: pd.DataFrame, brand: str = "Betclic") -> float:
@@ -615,7 +808,7 @@ def calc_rappel_campagne(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 def calc_rappel_campagne_all_brands(df: pd.DataFrame) -> dict:
     """Rappel pub par marque (toutes les marques A_Q18_1..14). Base = parieurs."""
-    return {b: calc_rappel_campagne(df, b) for b in COMPETITORS}
+    return {b: calc_rappel_campagne(df, b) for b in brands_in_scope(df)}
 
 
 def calc_ambassadeur_distribution(df: pd.DataFrame) -> dict:
@@ -674,7 +867,7 @@ def calc_penetration(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 
 def calc_penetration_all_brands(df: pd.DataFrame) -> dict:
-    return {b: calc_penetration(df, b) for b in COMPETITORS}
+    return {b: calc_penetration(df, b) for b in brands_in_scope(df)}
 
 
 def calc_marque_principale(df: pd.DataFrame, brand: str = "Betclic") -> float:
@@ -692,7 +885,7 @@ def calc_marque_principale_all(df: pd.DataFrame) -> dict:
     total = len(parieurs)
     return {
         b: round((parieurs["Marque_Principale_Utilisee"] == b).sum() / total * 100, 1)
-        for b in COMPETITORS
+        for b in brands_in_scope(df)
     }
 
 
@@ -783,7 +976,7 @@ def calc_pdm_volume(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 def calc_pdm_volume_all_brands(df: pd.DataFrame) -> dict:
     """PDM Volume Q5 pour toutes les marques. Somme = 100%."""
-    return {b: calc_pdm_volume(df, b) for b in COMPETITORS}
+    return {b: calc_pdm_volume(df, b) for b in brands_in_scope(df)}
 
 
 def calc_pdm_valeur(df: pd.DataFrame, brand: str = "Betclic") -> float:
@@ -807,7 +1000,7 @@ def calc_pdm_valeur(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 def calc_pdm_valeur_all_brands(df: pd.DataFrame) -> dict:
     """PDM Valeur par marque (toutes marques COMPETITORS)."""
-    return {b: calc_pdm_valeur(df, b) for b in COMPETITORS}
+    return {b: calc_pdm_valeur(df, b) for b in brands_in_scope(df)}
 
 
 def calc_wallet_share_distribution(df: pd.DataFrame, brand: str = "Betclic") -> dict:
@@ -875,11 +1068,11 @@ def calc_image_scores(df: pd.DataFrame, brand: str = "Betclic") -> dict:
     result = {}
     for col, label in IMAGE_ATTRIBUTES.items():
         target_col = col if brand == "Betclic" else f"{col}_{brand}"
+        # Attribut non mesuré dans les vagues sélectionnées (ex. Cash out en V1/V2) : omis
         if target_col in aware.columns:
             vals = aware[target_col].dropna()
-            result[label] = round(vals.mean(), 2) if len(vals) > 0 else 0.0
-        else:
-            result[label] = 0.0
+            if len(vals) > 0:
+                result[label] = round(vals.mean(), 2)
     return result
 
 
@@ -909,7 +1102,7 @@ def calc_satisfaction(df: pd.DataFrame, brand: str = "Betclic") -> float:
 
 def calc_satisfaction_all_brands(df: pd.DataFrame) -> dict:
     """Satisfaction (/5) per brand. Base : parieurs dont Q6 = chaque marque."""
-    return {b: calc_satisfaction(df, b) for b in COMPETITORS}
+    return {b: calc_satisfaction(df, b) for b in brands_in_scope(df)}
 
 
 def calc_nps_by_brand(df: pd.DataFrame, brand: str = "Betclic") -> dict:
@@ -936,7 +1129,7 @@ def calc_nps_by_brand(df: pd.DataFrame, brand: str = "Betclic") -> dict:
 
 def calc_nps_all_brands(df: pd.DataFrame) -> dict:
     """NPS score par marque (uniquement le score, pas le détail)."""
-    return {b: calc_nps_by_brand(df, b)["nps"] for b in COMPETITORS}
+    return {b: calc_nps_by_brand(df, b)["nps"] for b in brands_in_scope(df)}
 
 
 def calc_nps(df: pd.DataFrame) -> dict:
@@ -1053,10 +1246,7 @@ def calc_intention_positive(df: pd.DataFrame) -> float:
 def calc_kpi_by_vague(df: pd.DataFrame, calc_func, **kwargs) -> dict:
     """Calculate a KPI for each vague separately."""
     result = {}
-    all_vagues = sorted(
-        df["Vague"].dropna().unique().tolist(),
-        key=lambda x: int(x.replace("Vague ", "")) if x.replace("Vague ", "").isdigit() else 999,
-    )
+    all_vagues = sort_vagues(df["Vague"].dropna().unique().tolist())
     _build_dynamic_vague_labels(all_vagues)
     for vague in all_vagues:
         sub = df[df["Vague"] == vague]
@@ -1181,3 +1371,205 @@ def calc_funnel_with_counts(df: pd.DataFrame, brand: str = "Betclic") -> list:
         {"step": step, "pct": value, "count": int(round(value / 100 * n)), "base": n}
         for step, value in pct.items()
     ]
+
+
+# ──────────────────────────────────────────────
+# CASINO EN LIGNE (Section 5B, à partir de V4)
+# ──────────────────────────────────────────────
+# Conventions de base (alignées sur les KPIs paris sportifs) :
+#   - Notoriété de l'offre, pénétration : base = échantillon total interrogé
+#   - Marque casino principale, fréquence, jeux : base = joueurs casino (QC3 = Oui)
+
+def get_casino_base(df: pd.DataFrame) -> pd.DataFrame:
+    """Répondants des vagues où la section casino a été posée."""
+    if "Casino_Statut" not in df.columns:
+        return df.iloc[0:0]
+    return df[df["Casino_Statut"].notna()]
+
+
+def get_casino_joueurs(df: pd.DataFrame) -> pd.DataFrame:
+    """Joueurs casino : ont déjà joué en ligne (actifs 6 mois + anciens)."""
+    base = get_casino_base(df)
+    return base[base["Casino_Joueur"] == 1]
+
+
+def casino_brands_in_scope(df: pd.DataFrame) -> list:
+    base = get_casino_base(df)
+    return [
+        b for b in COMPETITORS
+        if f"Casino_Offre_{b}" in base.columns and base[f"Casino_Offre_{b}"].notna().any()
+    ]
+
+
+def _pct(num, den) -> float:
+    return round(float(num) / float(den) * 100, 1) if den else 0.0
+
+
+def calc_casino_statut(df: pd.DataFrame) -> dict:
+    """Répartition QC3 (actif 6 mois / ancien / non-joueur). Base = échantillon total."""
+    base = get_casino_base(df)
+    n = len(base)
+    return {s: _pct((base["Casino_Statut"] == s).sum(), n) for s in CASINO_STATUTS} if n else {}
+
+
+def calc_casino_penetration(df: pd.DataFrame) -> float:
+    """% de l'échantillon ayant déjà joué au casino en ligne (QC3 = Oui)."""
+    base = get_casino_base(df)
+    return _pct(base["Casino_Joueur"].sum(), len(base)) if len(base) else 0.0
+
+
+def calc_casino_penetration_active(df: pd.DataFrame) -> float:
+    """% de l'échantillon ayant joué au casino en ligne au cours des 6 derniers mois."""
+    base = get_casino_base(df)
+    return _pct(base["Casino_Joueur_Actif"].sum(), len(base)) if len(base) else 0.0
+
+
+def calc_casino_offre_notoriete(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """QC1 : % de l'échantillon sachant que la marque propose du casino."""
+    base = get_casino_base(df)
+    col = f"Casino_Offre_{brand}"
+    if col not in base.columns or len(base) == 0:
+        return 0.0
+    return _pct(base[col].fillna(0).sum(), len(base))
+
+
+def calc_casino_offre_notoriete_all(df: pd.DataFrame) -> dict:
+    return {b: calc_casino_offre_notoriete(df, b) for b in casino_brands_in_scope(df)}
+
+
+def calc_casino_penetration_brand(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    """QC4 : % de l'échantillon ayant déjà joué au casino sur la marque."""
+    base = get_casino_base(df)
+    col = f"Casino_A_Joue_{brand}"
+    if col not in base.columns or len(base) == 0:
+        return 0.0
+    return _pct(base[col].fillna(0).sum(), len(base))
+
+
+def calc_casino_penetration_all(df: pd.DataFrame) -> dict:
+    return {b: calc_casino_penetration_brand(df, b) for b in casino_brands_in_scope(df)}
+
+
+def calc_casino_marque_principale_all(df: pd.DataFrame) -> dict:
+    """QC5 : marque sur laquelle les joueurs casino jouent le plus. Base = répondants QC5."""
+    joueurs = get_casino_joueurs(df)
+    if "Casino_Marque_Principale" not in joueurs.columns:
+        return {}
+    valid = joueurs["Casino_Marque_Principale"].dropna()
+    n = len(valid)
+    return {b: _pct((valid == b).sum(), n) for b in casino_brands_in_scope(df)} if n else {}
+
+
+def calc_casino_marque_principale(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    return calc_casino_marque_principale_all(df).get(brand, 0.0)
+
+
+def calc_casino_pdm_volume_all(df: pd.DataFrame) -> dict:
+    """PDM Volume casino : essais QC4 de la marque / somme des essais QC4 toutes marques."""
+    base = get_casino_base(df)
+    counts = {}
+    for b in casino_brands_in_scope(df):
+        col = f"Casino_A_Joue_{b}"
+        counts[b] = int(base[col].fillna(0).sum()) if col in base.columns else 0
+    total = sum(counts.values())
+    return {b: _pct(c, total) for b, c in counts.items()} if total else {}
+
+
+def calc_casino_pdm_volume(df: pd.DataFrame, brand: str = "Betclic") -> float:
+    return calc_casino_pdm_volume_all(df).get(brand, 0.0)
+
+
+CASINO_FREQ_ORDER = [
+    "Tous les jours ou presque", "Plusieurs fois par semaine", "Une fois par semaine",
+    "Plusieurs fois par mois", "Une fois par mois ou moins",
+]
+
+
+def calc_casino_frequence(df: pd.DataFrame) -> dict:
+    """QC6 : fréquence de jeu casino. Base = joueurs ayant répondu."""
+    joueurs = get_casino_joueurs(df)
+    if "Casino_Frequence" not in joueurs.columns:
+        return {}
+    valid = joueurs["Casino_Frequence"].dropna()
+    n = len(valid)
+    return {k: _pct((valid == k).sum(), n) for k in CASINO_FREQ_ORDER} if n else {}
+
+
+def calc_casino_jeux(df: pd.DataFrame) -> dict:
+    """QC7 : types de jeux (multi-réponse). Base = joueurs ayant répondu à QC7."""
+    joueurs = get_casino_joueurs(df)
+    cols = [f"Casino_Jeu_{i}" for i in CASINO_GAMES if f"Casino_Jeu_{i}" in joueurs.columns]
+    if not cols:
+        return {}
+    answered = joueurs[joueurs[cols].fillna(0).sum(axis=1) > 0]
+    n = len(answered)
+    if not n:
+        return {}
+    out = {
+        CASINO_GAMES[i]: _pct(answered[f"Casino_Jeu_{i}"].sum(), n)
+        for i in CASINO_GAMES if f"Casino_Jeu_{i}" in answered.columns
+    }
+    return dict(sorted(out.items(), key=lambda x: -x[1]))
+
+
+CASINO_PRATIQUE_LABELS = {
+    "Vous jouez surtout des paris sportifs, le casino de temps en temps": "Surtout paris sportifs",
+    "Vous jouez autant l'un que l'autre": "Autant l'un que l'autre",
+    "Vous jouez surtout du casino, les paris sportifs de temps en temps": "Surtout casino",
+}
+
+
+def calc_casino_pratique(df: pd.DataFrame) -> dict:
+    """QC8 : arbitrage paris sportifs / casino. Base = joueurs casino ayant répondu."""
+    joueurs = get_casino_joueurs(df)
+    if "Casino_Pratique" not in joueurs.columns:
+        return {}
+    valid = joueurs["Casino_Pratique"].dropna()
+    n = len(valid)
+    if not n:
+        return {}
+    return {lbl: _pct((valid == raw).sum(), n) for raw, lbl in CASINO_PRATIQUE_LABELS.items()}
+
+
+def calc_casino_funnel(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """Entonnoir casino de la marque (base = échantillon total, étapes emboîtées) :
+    notoriété de la marque, sait qu'elle propose du casino, a déjà joué, marque casino principale.
+    """
+    base = get_casino_base(df)
+    n = len(base)
+    if not n:
+        return {}
+    zeros = pd.Series(0, index=base.index)
+    notor = base.get(f"Notoriete_Totale_{brand}", zeros).fillna(0) == 1
+    offre = base.get(f"Casino_Offre_{brand}", zeros).fillna(0) == 1
+    joue = base.get(f"Casino_A_Joue_{brand}", zeros).fillna(0) == 1
+    princ = base.get("Casino_Marque_Principale", pd.Series(None, index=base.index)) == brand
+    return {
+        "Notoriété de la marque": _pct(notor.sum(), n),
+        "Sait que la marque propose du casino (QC1)": _pct((notor & offre).sum(), n),
+        "A déjà joué à son casino (QC4)": _pct((notor & offre & joue).sum(), n),
+        "Marque casino principale (QC5)": _pct((notor & offre & joue & princ).sum(), n),
+    }
+
+
+def calc_casino_cross_sell(df: pd.DataFrame, brand: str = "Betclic") -> dict:
+    """Passerelle paris sportifs vers casino pour une marque.
+
+    - taux_parieurs : parmi ceux qui ont déjà parié sur la marque (Q5),
+      % qui ont aussi joué à son casino (QC4).
+    - taux_conversion_offre : parmi ceux qui savent que la marque propose
+      du casino (QC1), % qui y ont joué (QC4).
+    """
+    base = get_casino_base(df)
+    if not len(base):
+        return {}
+    zeros = pd.Series(0, index=base.index)
+    paris = base.get(f"A_Deja_Parie_{brand}", zeros).fillna(0) == 1
+    offre = base.get(f"Casino_Offre_{brand}", zeros).fillna(0) == 1
+    joue = base.get(f"Casino_A_Joue_{brand}", zeros).fillna(0) == 1
+    return {
+        "n_parieurs": int(paris.sum()),
+        "taux_parieurs": _pct((paris & joue).sum(), paris.sum()),
+        "n_offre": int(offre.sum()),
+        "taux_conversion_offre": _pct((offre & joue).sum(), offre.sum()),
+    }

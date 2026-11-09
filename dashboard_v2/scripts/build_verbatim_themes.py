@@ -95,15 +95,51 @@ Réponds UNIQUEMENT en JSON valide selon ce schéma :
 """
 
 
+CASINO_PROMPT_TEMPLATE = """Tu es un analyste senior en études de marché pour OpinionWay
+qui audite la marque Betclic en Côte d'Ivoire.
+
+Voici les réponses ouvertes à la question QC2 : "Comment avez-vous entendu parler
+de Betclic Casino pour la première fois ?", posée aux répondants qui savent que
+Betclic propose des jeux de casino en ligne.
+
+Volume total : {n_total} réponses.
+
+RÉPONSES (une par ligne, numérotées) :
+{verbatims_block}
+
+TÂCHE : regroupe ces réponses en 4 à 7 canaux / circonstances de découverte.
+- Un thème = un canal ou une circonstance (ex : "Dans l'application Betclic",
+  "Bouche à oreille / amis", "Publicité TV", "Réseaux sociaux").
+- Le label doit être court (2-5 mots) et sans tiret long.
+- Les réponses vides de sens ("je ne sais pas", "aucune idée") vont dans un thème
+  "Ne sait plus / sans précision".
+- Pour chaque thème, donne le nombre exact de réponses (la somme doit être <= {n_total}).
+- Pour chaque thème, fournis 2 réponses illustratives VERBATIM (sans les modifier).
+- Trie les thèmes par count décroissant.
+
+Réponds UNIQUEMENT en JSON valide selon ce schéma :
+{{
+  "themes": [
+    {{
+      "label": "string",
+      "count": int,
+      "illustrative_quotes": ["réponse 1", "réponse 2"]
+    }}
+  ]
+}}
+"""
+
+
 def _build_verbatims_block(verbatims: list) -> str:
     return "\n".join(f"{i+1}. {v.strip()}" for i, v in enumerate(verbatims))
 
 
-def _call_claude(verbatims: list, nps_category: str, nps_range: str) -> dict:
+def _call_claude(verbatims: list, nps_category: str = "", nps_range: str = "",
+                 template: str = None) -> dict:
     import anthropic
 
     n_total = len(verbatims)
-    prompt = PROMPT_TEMPLATE.format(
+    prompt = (template or PROMPT_TEMPLATE).format(
         nps_category=nps_category,
         nps_range=nps_range,
         n_total=n_total,
@@ -170,6 +206,23 @@ def process_vague(df: pd.DataFrame, vague: str) -> dict:
             out[key] = {"n_total": n, "themes": [],
                         "error": f"{type(e).__name__}: {e}"}
             print(f"    ✗ Erreur: {e}")
+
+    # ── Casino (QC2, à partir de V4) : comment Betclic Casino a été découvert ──
+    if "Casino_Decouverte_Betclic" in df_v.columns:
+        verbatims = df_v["Casino_Decouverte_Betclic"].dropna().astype(str).str.strip().tolist()
+        verbatims = [v for v in verbatims if len(v) > 1 and v != "0"]
+        n = len(verbatims)
+        if n:
+            print(f"  → Casino QC2 : {n} réponses")
+            try:
+                result = _call_claude(verbatims, template=CASINO_PROMPT_TEMPLATE)
+                themes = _enrich_themes(result.get("themes", []), n)
+                out["casino_decouverte"] = {"n_total": n, "themes": themes}
+                print(f"    ✓ {len(themes)} thèmes identifiés")
+            except Exception as e:
+                out["casino_decouverte"] = {"n_total": n, "themes": [],
+                                            "error": f"{type(e).__name__}: {e}"}
+                print(f"    ✗ Erreur: {e}")
     return out
 
 

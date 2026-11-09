@@ -20,7 +20,7 @@ for _key in ("ANTHROPIC_API_KEY", "YOUTUBE_API_KEY", "META_ACCESS_TOKEN"):
         os.environ[_key] = st.secrets[_key]
 
 from components.styles import inject_css
-from data.loader import load_raw_data, apply_filters, VAGUE_LABELS, CITIES, COMPETITORS
+from data.loader import load_raw_data, apply_filters, sort_vagues, vague_short, VAGUE_LABELS, CITIES, COMPETITORS
 
 
 def _load_image_b64(path: Path) -> str:
@@ -85,7 +85,7 @@ with st.sidebar:
 
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
 
-    all_vagues = sorted(data["Vague"].unique().tolist())
+    all_vagues = sort_vagues(data["Vague"].unique().tolist())
 
     if module == "Brand Health Tracker":
         # ── Global filters (tracker only) ──
@@ -224,7 +224,7 @@ st.session_state["data"] = data
 # MAIN CONTENT ROUTING
 # ──────────────────────────────────────────────
 if module == "Brand Health Tracker":
-    from views import tracker_overview, tracker_notoriete, tracker_usage, tracker_image, tracker_satisfaction, tracker_geo, tracker_pivot, banque_images
+    from views import tracker_overview, tracker_notoriete, tracker_usage, tracker_image, tracker_satisfaction, tracker_casino, tracker_geo, tracker_pivot, banque_images
 
     # ── Détection OpinionWay : onglet Tableau Croisé visible uniquement
     # pour l'équipe interne (domaines email autorisés).
@@ -244,6 +244,7 @@ if module == "Brand Health Tracker":
         "Usage & Pénétration",
         "Attributs Fonctionnels",
         "Satisfaction & Fidélité",
+        "Casino en ligne",
         "Analyse Géographique",
         "Banque des Images",
     ]
@@ -252,6 +253,19 @@ if module == "Brand Health Tracker":
         tab_labels = base_tabs[:-1] + ["Tableau Croisé", base_tabs[-1]]
     else:
         tab_labels = base_tabs
+
+    # Bandeau "terrain en cours" : la dernière vague sélectionnée a une base
+    # nettement plus faible que la précédente -> résultats provisoires.
+    _sel = sort_vagues(st.session_state["selected_vagues"])
+    if len(_sel) >= 2:
+        _n_last = int((data["Vague"] == _sel[-1]).sum())
+        _n_prev = int((data["Vague"] == _sel[-2]).sum())
+        if _n_prev and _n_last < 0.8 * _n_prev:
+            st.warning(
+                f"Terrain {vague_short(_sel[-1])} en cours : n = {_n_last} répondants à date "
+                f"(vs {_n_prev} en {vague_short(_sel[-2])}). Les résultats {vague_short(_sel[-1])} sont "
+                f"provisoires et peuvent évoluer avec la suite de la collecte (répartition par ville incomplète)."
+            )
 
     tabs = st.tabs(tab_labels)
 
@@ -262,6 +276,7 @@ if module == "Brand Health Tracker":
         "Usage & Pénétration": tracker_usage.render,
         "Attributs Fonctionnels": tracker_image.render,
         "Satisfaction & Fidélité": tracker_satisfaction.render,
+        "Casino en ligne": tracker_casino.render,
         "Analyse Géographique": tracker_geo.render,
         "Tableau Croisé": tracker_pivot.render,
         "Banque des Images": banque_images.render,

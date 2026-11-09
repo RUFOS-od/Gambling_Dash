@@ -12,15 +12,19 @@ VAGUE_FOLDERS = {
     "Vague 1": "Vague_1",
     "Vague 2": "Vague_2",
     "Vague 3": "Vague_3",
+    "Vague 4": "Vague_4",
 }
 
 VAGUE_META = {
     "Vague 1": {"mois": "Mai 2026", "color": "#C0392B"},
     "Vague 2": {"mois": "Juin 2026", "color": "#6C3483"},
     "Vague 3": {"mois": "Août 2026", "color": "#2980B9"},
+    "Vague 4": {"mois": "Novembre 2026", "color": "#16A085"},
 }
 
 CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San Pedro", "Daloa", "Korhogo", "Abengourou"]
+
+UNKNOWN_CITY = "Ville non précisée"
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
@@ -56,7 +60,7 @@ def _detect_city(stem: str) -> str:
     for c in CITIES:
         if c.lower() in lower:
             return c
-    return "—"
+    return UNKNOWN_CITY
 
 
 def _scan_local_photos(vague: str) -> list:
@@ -158,7 +162,7 @@ def _render_wave_gallery(vague: str):
         </div>
         """, unsafe_allow_html=True)
     with col3:
-        cities_count = len(set(p["city"] for p in photos if p["city"] != "—"))
+        cities_count = len(set(p["city"] for p in photos if p["city"] != UNKNOWN_CITY))
         st.markdown(f"""
         <div class="wave-stat">
             <div class="wave-stat-label">Villes couvertes</div>
@@ -175,7 +179,7 @@ def _render_wave_gallery(vague: str):
     with fc1:
         city_filter = st.multiselect(
             "Filtrer par ville",
-            sorted(set(p["city"] for p in photos if p["city"] != "—")),
+            sorted(set(p["city"] for p in photos if p["city"] != UNKNOWN_CITY)),
             default=[],
             key=f"photo_city_{vague}",
         )
@@ -344,16 +348,9 @@ def render():
         "Photos prises sur le terrain, organisées par vague de collecte"
     ), unsafe_allow_html=True)
 
-    # Sub-tabs per vague
-    t1, t2, t3 = st.tabs([
-        "Vague 1 (Janvier 2026)",
-        "Vague 2 (Février 2026)",
-        "Vague 3 (Mars 2026)",
-    ])
-
-    with t1:
-        _render_wave_gallery("Vague 1")
-    with t2:
-        _render_wave_gallery("Vague 2")
-    with t3:
-        _render_wave_gallery("Vague 3")
+    # Sub-tabs per vague (vague la plus récente en premier)
+    waves = list(VAGUE_META.keys())[::-1]
+    tabs = st.tabs([f"{v} ({VAGUE_META[v]['mois']})" for v in waves])
+    for tab, v in zip(tabs, waves):
+        with tab:
+            _render_wave_gallery(v)

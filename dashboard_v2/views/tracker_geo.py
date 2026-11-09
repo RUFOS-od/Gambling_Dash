@@ -3,6 +3,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 from data.loader import (
+    sort_vagues,
     apply_filters, calc_tom, calc_notoriete_totale, calc_penetration,
     calc_satisfaction, calc_nps, calc_preference, calc_consideration,
     calc_kpi_by_city, calc_kpi_by_commune, get_communes_in_data,
@@ -21,6 +22,7 @@ def render():
     ages = st.session_state.get("selected_ages", [])
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
+    _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
 
     st.markdown(section_header(
         "Analyse Géographique",
@@ -28,7 +30,7 @@ def render():
     ), unsafe_allow_html=True)
 
     # Get latest vague data
-    latest_vague = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
+    latest_vague = [v for v in _waves[::-1] if v in vagues]
     if latest_vague:
         df_latest = df[df["Vague"] == latest_vague[0]]
     else:

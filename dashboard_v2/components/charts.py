@@ -13,7 +13,14 @@ SLATE = "#2C3E50"
 TEXT_COLOR = "#1A1D23"
 TEXT_MUTED = "#4A5568"
 GRID_COLOR = "rgba(0,0,0,0.06)"
-COLORS_VAGUES = {"Vague 1": "#E74C3C", "Vague 2": "#F39C12", "Vague 3": "#27AE60"}
+COLORS_VAGUES = {"Vague 1": "#E74C3C", "Vague 2": "#F39C12", "Vague 3": "#27AE60", "Vague 4": "#2980B9",
+                 "Vague 5": "#8E44AD", "Vague 6": "#16A085"}
+
+
+def _wave_label(v) -> str:
+    """'Vague 4' -> 'V4' (laisse les autres libellés intacts)."""
+    s = str(v)
+    return "V" + s.replace("Vague ", "") if s.startswith("Vague ") else s
 COLORS_SEQ = ["#C0392B", "#6C3483", "#2980B9", "#27AE60", "#F39C12", "#E67E22", "#1ABC9C", "#8E44AD", "#34495E"]
 BAR_INACTIVE = "#CBD5E0"
 
@@ -42,6 +49,9 @@ BRAND_COLORS = {
     "YellowBet":   "#F1C40F",
     "Chopbet":     "#A93226",
     "Betway":      "#00A551",
+    "1WIN":        "#1D5AE6",  # bleu 1win
+    "Bet 360":     "#00897B",  # sarcelle
+    "KifBet":      "#D35400",  # orange brûlé
 }
 
 
@@ -162,7 +172,7 @@ def grouped_bar_vagues(data_by_vague: dict, title: str = "", height=400):
 def line_chart_evolution(vague_values: dict, title: str = "", suffix="%", height=350):
     vagues = list(vague_values.keys())
     values = list(vague_values.values())
-    labels = ["V1", "V2", "V3"][:len(vagues)]
+    labels = [_wave_label(v) for v in vagues]
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -182,13 +192,16 @@ def line_chart_evolution(vague_values: dict, title: str = "", suffix="%", height
 def multi_line_chart(data: dict, title: str = "", suffix="%", height=400):
     fig = go.Figure()
     colors = [BETCLIC_RED, OPINIONWAY_PURPLE, "#2980B9", "#27AE60", "#F39C12", "#E67E22"]
-    labels = ["V1", "V2", "V3"]
-
     for i, (name, values) in enumerate(data.items()):
-        vals = list(values.values()) if isinstance(values, dict) else values
+        if isinstance(values, dict):
+            x_labels = [_wave_label(v) for v in values.keys()]
+            vals = list(values.values())
+        else:
+            vals = list(values)
+            x_labels = [f"V{k + 1}" for k in range(len(vals))]
         color = colors[i % len(colors)]
         fig.add_trace(go.Scatter(
-            x=labels[:len(vals)], y=vals,
+            x=x_labels, y=vals,
             name=name,
             mode="lines+markers",
             line=dict(color=color, width=2.5),

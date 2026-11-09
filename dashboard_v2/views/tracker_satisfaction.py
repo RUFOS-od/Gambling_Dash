@@ -2,6 +2,7 @@
 
 import streamlit as st
 from data.loader import (
+    sort_vagues,
     apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
     calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
     calc_irritants, calc_motifs_satisfaction, load_verbatim_themes,
@@ -9,6 +10,7 @@ from data.loader import (
     get_utilisateurs_betclic, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
+from components.narrative import trend_word, signed, prev_wave_label
 from components.charts import (
     nps_gauge, line_chart_evolution, donut_chart, bar_chart_brands,
     BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color
@@ -25,6 +27,7 @@ def render():
     ages = st.session_state.get("selected_ages", [])
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
+    _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
 
     st.markdown(section_header(
         "Satisfaction & Fidélité",
@@ -81,7 +84,7 @@ def render():
         st.plotly_chart(fig, width='stretch')
 
         # NPS breakdown
-        latest_vague = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
+        latest_vague = [v for v in _waves[::-1] if v in vagues]
         if latest_vague:
             df_latest = df[df["Vague"] == latest_vague[0]]
             nps_data = calc_nps(df_latest)
@@ -95,8 +98,8 @@ def render():
 
     with col_right:
         # NPS + Satisfaction evolution · affiché seulement si au moins 2 vagues disponibles
-        nps_evol = {v: nps_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if nps_v.get(v) is not None}
-        sat_evol = {v: sat_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if sat_v.get(v) is not None}
+        nps_evol = {v: nps_v[v] for v in _waves if nps_v.get(v) is not None}
+        sat_evol = {v: sat_v[v] for v in _waves if sat_v.get(v) is not None}
 
         if len(nps_evol) >= 2:
             fig = line_chart_evolution(nps_evol, "Évolution NPS", suffix=" pts", height=300)
@@ -106,16 +109,24 @@ def render():
             st.plotly_chart(fig, width='stretch')
         if len(nps_evol) < 2 and len(sat_evol) < 2:
             st.info(
-                "📊 Les courbes d'évolution apparaîtront dès la collecte de la Vague 2."
+                "📊 Les courbes d'évolution s'affichent dès que 2 vagues au moins sont sélectionnées."
             )
 
     # Insight
     latest_sat = get_latest_vague(sat_v)
-    delta_nps, _ = calc_delta(get_latest_vague(nps_v), nps_v.get("Vague 1"))
+    prev_sat = get_previous_vague(sat_v)
+    d_sat = round(latest_sat - prev_sat, 2) if (latest_sat is not None and prev_sat is not None) else None
+    latest_nps_v = get_latest_vague(nps_v)
+    delta_nps, _ = calc_delta(latest_nps_v, get_previous_vague(nps_v))
+    _prev = prev_wave_label(nps_v)
+    _vs = f" vs {_prev}" if _prev else ""
+    _nps_detail = calc_nps(df[df["Vague"] == latest_vague[0]]) if latest_vague else {}
+    _sat_delta_txt = f" ({d_sat:+.2f}{_vs})" if d_sat is not None else ""
     st.markdown(insight_box(
-        f"Satisfaction stable à <strong>{latest_sat}/5</strong>. Le NPS progresse de <strong>{delta_nps} pts</strong> "
-        f"depuis V1, porté par la hausse des promoteurs et la baisse des détracteurs. "
-        f"La base clients Betclic est de plus en plus engagée et recommandatrice."
+        f"La satisfaction {trend_word(d_sat, threshold=0.05)} à <strong>{latest_sat}/5</strong>{_sat_delta_txt}. "
+        f"Le NPS {trend_word(delta_nps)} à <strong>{latest_nps_v} pts</strong> ({signed(delta_nps, 'pts')}{_vs}) : "
+        f"{_nps_detail.get('promoteurs', 0)}% de promoteurs pour "
+        f"{_nps_detail.get('detracteurs', 0)}% de détracteurs."
     ), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -136,7 +147,7 @@ def render():
                 st.plotly_chart(fig, width='stretch')
 
         # Churn evolution · affiché seulement si au moins 2 vagues
-        churn_evol = {v: churn_v[v] for v in ["Vague 1", "Vague 2", "Vague 3"] if churn_v.get(v) is not None}
+        churn_evol = {v: churn_v[v] for v in _waves if churn_v.get(v) is not None}
         if len(churn_evol) >= 2:
             fig = line_chart_evolution(churn_evol, "Évolution Churn Élevé (%)", height=300)
             st.plotly_chart(fig, width='stretch')
@@ -203,7 +214,7 @@ def render():
                 else:
                     st.info(
                         "Thèmes non encore générés pour cette vague. "
-                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague 1`."
+                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague N`."
                     )
             with t_sat:
                 if themes_data:
@@ -212,7 +223,7 @@ def render():
                 else:
                     st.info(
                         "Thèmes non encore générés pour cette vague. "
-                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague 1`."
+                        "Exécuter `python dashboard_v2/scripts/build_verbatim_themes.py --vague N`."
                     )
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

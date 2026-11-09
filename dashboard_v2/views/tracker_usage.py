@@ -2,6 +2,7 @@
 
 import streamlit as st
 from data.loader import (
+    sort_vagues,
     apply_filters, calc_penetration, calc_marque_principale, calc_marque_principale_all,
     calc_penetration_all_brands, calc_pdm_volume_all_brands,
     calc_multi_app, calc_consideration, calc_preference,
@@ -10,6 +11,7 @@ from data.loader import (
     calc_funnel, get_parieurs, VAGUE_SHORT, MAIN_COMPETITORS
 )
 from components.styles import kpi_card, section_header, insight_box, styled_divider
+from components.narrative import trend_word, signed, prev_wave_label
 from components.charts import (
     bar_chart_brands, line_chart_evolution, donut_chart, funnel_chart,
     multi_line_chart, BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, brand_color
@@ -26,6 +28,7 @@ def render():
     ages = st.session_state.get("selected_ages", [])
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
+    _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
 
     st.markdown(section_header(
         "Usage & Pénétration",
@@ -63,8 +66,8 @@ def render():
     col_left, col_right = st.columns(2)
 
     with col_left:
-        latest_vague = [v for v in ["Vague 3", "Vague 2", "Vague 1"] if v in vagues]
-        lv = latest_vague[0] if latest_vague else "Vague 3"
+        latest_vague = [v for v in _waves[::-1] if v in vagues]
+        lv = latest_vague[0] if latest_vague else (_waves[-1] if _waves else None)
         df_latest = df[df["Vague"] == lv]
         funnel_data = calc_funnel(df_latest)
         fig = funnel_chart(funnel_data, f"Funnel Betclic ({VAGUE_SHORT.get(lv, lv)})", height=420)
@@ -72,21 +75,24 @@ def render():
 
     with col_right:
         kpi_evol = {
-            "Pénétration": {v: pen_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if pen_v.get(v) is not None},
-            "Considération": {v: consid_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if consid_v.get(v) is not None},
-            "Préférence": {v: pref_v.get(v, 0) for v in ["Vague 1", "Vague 2", "Vague 3"] if pref_v.get(v) is not None},
+            "Pénétration": {v: pen_v.get(v, 0) for v in _waves if pen_v.get(v) is not None},
+            "Considération": {v: consid_v.get(v, 0) for v in _waves if consid_v.get(v) is not None},
+            "Préférence": {v: pref_v.get(v, 0) for v in _waves if pref_v.get(v) is not None},
         }
         fig = multi_line_chart(kpi_evol, "Évolution Funnel Betclic", height=420)
         st.plotly_chart(fig, width='stretch')
 
     # Insight
     latest_pen = get_latest_vague(pen_v)
-    delta_pen, _ = calc_delta(latest_pen, pen_v.get("Vague 1"))
+    delta_pen, _ = calc_delta(latest_pen, get_previous_vague(pen_v))
     latest_consid = get_latest_vague(consid_v)
+    delta_consid, _ = calc_delta(latest_consid, get_previous_vague(consid_v))
+    _prev = prev_wave_label(pen_v)
+    _vs = f" vs {_prev}" if _prev else ""
     st.markdown(insight_box(
-        f"La pénétration Betclic s'accélère à <strong>{latest_pen}%</strong> des parieurs "
-        f"({delta_pen} pt depuis V1). La considération atteint <strong>{latest_consid}%</strong>, "
-        f"signe que le recrutement de nouveaux utilisateurs reste dynamique."
+        f"La pénétration Betclic {trend_word(delta_pen)} à <strong>{latest_pen}%</strong> de l'échantillon "
+        f"({signed(delta_pen)}{_vs}). La considération {trend_word(delta_consid)} à "
+        f"<strong>{latest_consid}%</strong> des parieurs ({signed(delta_consid)}{_vs})."
     ), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
