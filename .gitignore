@@ -38,3 +38,6 @@ Thumbs.db
 venv/
 env/
 .venv/
+
+# Aperçus d'exports générés localement
+Exports_apercu/

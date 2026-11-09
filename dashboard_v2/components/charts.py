@@ -49,9 +49,10 @@ BRAND_COLORS = {
     "YellowBet":   "#F1C40F",
     "Chopbet":     "#A93226",
     "Betway":      "#00A551",
-    "1WIN":        "#1D5AE6",  # bleu 1win
-    "Bet 360":     "#00897B",  # sarcelle
-    "KifBet":      "#D35400",  # orange brûlé
+    # Relevées sur les sites officiels CI (novembre 2026)
+    "1WIN":        "#0075FF",  # 1win.ci : bleu primaire de la marque
+    "Bet 360":     "#DD0905",  # bet360.ci : rouge du logo
+    "KifBet":      "#E22532",  # kifbet.ci : rouge du logo (fond marine #253673)
 }
 
 

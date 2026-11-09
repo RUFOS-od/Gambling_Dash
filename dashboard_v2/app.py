@@ -148,37 +148,48 @@ with st.sidebar:
         if selected_marques:
             _df_export = _df_export[_df_export["Marque_Principale_Utilisee"].isin(selected_marques)]
 
-        # Lazy import of export engine
-        from components.export_engine import generate_pptx, generate_pdf, generate_excel
+        # Description du périmètre (reprise en couverture des rapports)
+        _parts = []
+        if selected_vagues and len(selected_vagues) < len(all_vagues):
+            _parts.append("Vagues " + ", ".join(vague_short(v) for v in sort_vagues(selected_vagues)))
+        for _lbl, _sel in [("Villes", selected_villes), ("Genre", selected_genres),
+                           ("Âge", selected_ages), ("Segment", selected_segments),
+                           ("Marque utilisée", selected_marques)]:
+            if _sel:
+                _parts.append(f"{_lbl} : {', '.join(map(str, _sel))}")
+        _filters_desc = " · ".join(_parts) if _parts else "Aucun filtre (échantillon complet)"
 
-        col_e1, col_e2, col_e3 = st.columns(3)
-        with col_e1:
-            pptx_data = generate_pptx(_df_export, _vagues)
-            st.download_button(
-                "PPTX",
-                pptx_data,
-                "Betclic_BrandPulse_Report.pptx",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                width='stretch',
-            )
-        with col_e2:
-            pdf_data = generate_pdf(_df_export, _vagues)
-            st.download_button(
-                "PDF",
-                pdf_data,
-                "Betclic_BrandPulse_Report.pdf",
-                "application/pdf",
-                width='stretch',
-            )
-        with col_e3:
-            xlsx_data = generate_excel(_df_export, _vagues)
-            st.download_button(
-                "Excel",
-                xlsx_data,
-                "Betclic_BrandPulse_Report.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                width='stretch',
-            )
+        # Génération à la demande : les rapports ne sont construits qu'au clic
+        # (et invalidés dès qu'un filtre change), pas à chaque interaction.
+        _sig = (tuple(_vagues), tuple(selected_villes), tuple(selected_genres), tuple(selected_ages),
+                tuple(selected_segments), tuple(selected_marques), len(data))
+        if st.session_state.get("_export_sig") != _sig:
+            st.session_state.pop("_export_files", None)
+        if st.button("Préparer les rapports", width="stretch",
+                     help="PowerPoint, PDF et Excel sur le périmètre filtré (environ 10 secondes)"):
+            from components.export_engine import generate_pptx, generate_pdf, generate_excel
+            with st.spinner("Génération des rapports..."):
+                _lv = vague_short(sort_vagues(_df_export["Vague"].dropna().unique().tolist())[-1])                     if len(_df_export) else "V"
+                st.session_state["_export_files"] = {
+                    "pptx": (generate_pptx(_df_export, _vagues, _filters_desc), f"Betclic_BrandPulse_{_lv}.pptx"),
+                    "pdf": (generate_pdf(_df_export, _vagues, _filters_desc), f"Betclic_BrandPulse_{_lv}.pdf"),
+                    "xlsx": (generate_excel(_df_export, _vagues, _filters_desc), f"Betclic_BrandPulse_{_lv}.xlsx"),
+                }
+                st.session_state["_export_sig"] = _sig
+
+        _files = st.session_state.get("_export_files")
+        if _files:
+            col_e1, col_e2, col_e3 = st.columns(3)
+            with col_e1:
+                st.download_button("PPTX", _files["pptx"][0], _files["pptx"][1],
+                                   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                   width='stretch')
+            with col_e2:
+                st.download_button("PDF", _files["pdf"][0], _files["pdf"][1], "application/pdf", width='stretch')
+            with col_e3:
+                st.download_button("Excel", _files["xlsx"][0], _files["xlsx"][1],
+                                   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                   width='stretch')
 
         st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
 
