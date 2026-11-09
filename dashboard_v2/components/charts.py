@@ -134,7 +134,11 @@ def bar_chart_brands(data: dict, title: str = "", highlight: str = "Betclic", he
     Si use_brand_colors=False, repli sur l'ancien comportement (Betclic rouge,
     autres gris) — utile pour les charts non-concurrentiels (canaux, irritants).
     """
-    sorted_data = dict(sorted(data.items(), key=lambda x: x[1], reverse=True))
+    # "Autres marques" (agrégat) toujours en dernier, en gris
+    others = {k: v for k, v in data.items() if str(k).startswith("Autres")}
+    main = {k: v for k, v in data.items() if k not in others}
+    sorted_data = dict(sorted(main.items(), key=lambda x: x[1], reverse=True))
+    sorted_data.update(others)
     brands = list(sorted_data.keys())
     values = list(sorted_data.values())
     if use_brand_colors:
@@ -148,23 +152,34 @@ def bar_chart_brands(data: dict, title: str = "", highlight: str = "Betclic", he
         text=[f"{v}%" for v in values],
         textposition="outside",
         textfont=dict(size=13, color=TEXT_COLOR),
+        cliponaxis=False,
     ))
     fig.update_yaxes(autorange="reversed")
-    return _apply_layout(fig, title, height)
+    fig = _apply_layout(fig, title, height)
+    if values:
+        # marge à droite pour que l'étiquette de la plus grande barre ne soit pas coupée
+        fig.update_xaxes(range=[0, max(values) * 1.15 if max(values) > 0 else 1])
+    return fig
 
 
-def grouped_bar_vagues(data_by_vague: dict, title: str = "", height=400):
+def grouped_bar_vagues(data_by_vague: dict, title: str = "", height=400, order=None):
+    """Barres groupées marque x vague. Ordre des marques commun à toutes les vagues
+    (celui fourni, sinon décroissant sur la dernière vague)."""
     fig = go.Figure()
+    if order is None and data_by_vague:
+        last = list(data_by_vague.values())[-1]
+        order = [k for k, _ in sorted(last.items(), key=lambda x: x[1], reverse=True)]
     for vague, data in data_by_vague.items():
-        sorted_data = dict(sorted(data.items(), key=lambda x: x[1], reverse=True))
+        cats = [b for b in order if b in data]
         fig.add_trace(go.Bar(
-            name=vague,
-            x=list(sorted_data.keys()),
-            y=list(sorted_data.values()),
+            name=_wave_label(vague),
+            x=cats,
+            y=[data[b] for b in cats],
             marker_color=COLORS_VAGUES.get(vague, SLATE),
-            text=[f"{v}%" for v in sorted_data.values()],
+            text=[f"{data[b]:.0f}%" for b in cats],
             textposition="outside",
             textfont=dict(size=11),
+            cliponaxis=False,
         ))
     fig.update_layout(barmode="group")
     return _apply_layout(fig, title, height)
@@ -190,7 +205,8 @@ def line_chart_evolution(vague_values: dict, title: str = "", suffix="%", height
     return _apply_layout(fig, title, height)
 
 
-def multi_line_chart(data: dict, title: str = "", suffix="%", height=400):
+def multi_line_chart(data: dict, title: str = "", suffix="%", height=400, use_brand_colors: bool = False):
+    """Courbes par série. use_brand_colors=True : séries = marques, couleur de la charte."""
     fig = go.Figure()
     colors = [BETCLIC_RED, OPINIONWAY_PURPLE, "#2980B9", "#27AE60", "#F39C12", "#E67E22"]
     for i, (name, values) in enumerate(data.items()):
@@ -200,7 +216,7 @@ def multi_line_chart(data: dict, title: str = "", suffix="%", height=400):
         else:
             vals = list(values)
             x_labels = [f"V{k + 1}" for k in range(len(vals))]
-        color = colors[i % len(colors)]
+        color = brand_color(name, colors[i % len(colors)]) if use_brand_colors else colors[i % len(colors)]
         fig.add_trace(go.Scatter(
             x=x_labels, y=vals,
             name=name,

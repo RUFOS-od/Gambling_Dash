@@ -25,10 +25,10 @@ from fpdf import FPDF
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 
-from data.loader import MAIN_COMPETITORS, vague_short
+from data.loader import vague_short, keep_brands
 from components.charts import brand_color
 from components.report_data import (
-    build_report, fr, fmt_value, fmt_delta, DEFINITIONS, CASINO_BRANDS,
+    build_report, fr, fmt_value, fmt_delta, DEFINITIONS,
 )
 
 APP_DIR = Path(__file__).resolve().parent.parent
@@ -479,9 +479,9 @@ def _pptx_comp(ctx, R):
                f"{R['lv_s']} · TOM, notoriété et pénétration : échantillon total · marque principale, PDM et "
                f"rappel : parieurs")
     metrics = list(R["comp"].keys())
-    series = [(b, [R["comp"][m].get(b) for m in metrics], _brand_hex(b)) for b in MAIN_COMPETITORS]
+    series = [(b, [R["comp"][m].get(b) for m in metrics], _brand_hex(b)) for b in R["main"]]
     _bar(s, X0, Y0, XW, Inches(3.4), metrics, series, fmt='0', max_val=110, gap=70, font=10)
-    rows = [[b] + [fr(R["comp"][m].get(b)) for m in metrics] for b in MAIN_COMPETITORS]
+    rows = [[b] + [fr(R["comp"][m].get(b)) for m in metrics] for b in R["main"]]
     _table(s, X0, Y0 + Inches(3.55), XW, ["Marque (%)"] + metrics, rows, [1.6] + [1] * len(metrics),
            row_h=Inches(0.27), font=9, bold_rows=(0,),
            colors={(0, c): HEX["red"] for c in range(len(metrics) + 1)})
@@ -491,10 +491,9 @@ def _pptx_pdm(ctx, R):
     s = _slide(ctx, "Part de marché", R["titles"]["pdm"],
                f"PDM Volume = essais de la marque (Q5) / total des essais · base parieurs {R['lv_s']} "
                f"(n = {R['n_parieurs']})")
-    items = _sorted_brands(R["comp"]["PDM Volume"], R["brands_scope"])
-    top = items[:8]
-    rest = sum(v for _, v in items[8:])
-    if rest > 0:
+    top = _sorted_brands(R["comp"]["PDM Volume"], R["main"])
+    rest = round(100 - sum(v for _, v in top), 1)
+    if rest > 0.05:
         top.append(("Autres marques", rest))
     _bar(s, X0, Y0, Inches(7.4), Inches(5.1), [b for b, _ in top],
          [("PDM Volume", [v for _, v in top], [_brand_hex(b) for b, _ in top])],
@@ -515,7 +514,7 @@ def _pptx_notoriete(ctx, R):
     for i, (metric, title, top) in enumerate([("Notoriété totale", "Notoriété totale (Q1A+Q1B+Q1C)", 10),
                                               ("Rappel pub", "Rappel publicitaire spontané (Q18)", 8)]):
         x = X0 + (half + Inches(0.43)) * i
-        items = _sorted_brands(R["comp"][metric], R["brands_scope"], top)
+        items = _sorted_brands(R["comp"][metric], R["main"])
         _chart_label(s, x, Y0, half, title)
         _bar(s, x, Y0 + Inches(0.35), half, Inches(4.8), [b for b, _ in items],
              [(metric, [v for _, v in items], [_brand_hex(b) for b, _ in items])],
@@ -637,10 +636,10 @@ def _pptx_casino(ctx, R):
                "Notoriété de l'offre et pénétration : échantillon total · marque principale : joueurs casino · "
                "PDM : part des essais QC4")
     metrics = list(C["comp"].keys())
-    series = [(b, [C["comp"][m].get(b) for m in metrics], _brand_hex(b)) for b in CASINO_BRANDS]
+    series = [(b, [C["comp"][m].get(b) for m in metrics], _brand_hex(b)) for b in C["main"]]
     _bar(s, X0, Y0, XW, Inches(3.4), metrics, series, fmt='0', max_val=max(
         max((v or 0) for v in C["comp"][m].values()) for m in metrics) * 1.2, gap=70)
-    rows = [[b] + [fr(C["comp"][m].get(b)) for m in metrics] for b in CASINO_BRANDS]
+    rows = [[b] + [fr(C["comp"][m].get(b)) for m in metrics] for b in C["main"]]
     _table(s, X0, Y0 + Inches(3.55), XW, ["Marque (%)"] + metrics, rows, [1.6] + [1] * len(metrics),
            row_h=Inches(0.25), font=9, bold_rows=(0,), colors={(0, c): HEX["red"] for c in range(len(metrics) + 1)})
 
@@ -1035,8 +1034,8 @@ def generate_pdf(df, vagues_list=None, filters_desc: str = "") -> bytes:
                        "TOM, notoriété, pénétration : échantillon total · marque principale, PDM, rappel : parieurs")
     metrics = list(R["comp"].keys())
     y = pdf.gbars(M, y, W, metrics, [(b, [R["comp"][m].get(b) for m in metrics], _brand_hex(b))
-                                     for b in MAIN_COMPETITORS], vmax=100, h=85)
-    rows = [[b] + [fr(R["comp"][m].get(b)) for m in metrics] for b in MAIN_COMPETITORS]
+                                     for b in R["main"]], vmax=100, h=85)
+    rows = [[b] + [fr(R["comp"][m].get(b)) for m in metrics] for b in R["main"]]
     pdf.table(M, y + 2, [40] + [(W - 40) / len(metrics)] * len(metrics), ["Marque (%)"] + metrics, rows,
               bold_rows=(0,), colors={(0, c): "red" for c in range(len(metrics) + 1)})
 
@@ -1044,14 +1043,13 @@ def generate_pdf(df, vagues_list=None, filters_desc: str = "") -> bytes:
     y = pdf.page_title("Part de marché & notoriété", R["titles"]["pdm"],
                        f"PDM Volume : base parieurs (n = {R['n_parieurs']}) · notoriété : échantillon total "
                        f"(n = {R['n']})")
-    items = _sorted_brands(R["comp"]["PDM Volume"], R["brands_scope"])
-    top = items[:8]
-    rest = sum(v for _, v in items[8:])
-    if rest > 0:
+    top = _sorted_brands(R["comp"]["PDM Volume"], R["main"])
+    rest = round(100 - sum(v for _, v in top), 1)
+    if rest > 0.05:
         top.append(("Autres marques", rest))
     pdf.hbars(M, y, 125, top, [_brand_hex(b) for b, _ in top], fmt=lambda v: f"{fr(v)} %", label_w=32,
               bar_h=10, gap=5.5, title="PDM Volume (%)")
-    items = _sorted_brands(R["comp"]["Notoriété totale"], R["brands_scope"], 10)
+    items = _sorted_brands(R["comp"]["Notoriété totale"], R["main"])
     pdf.hbars(M + 140, y, W - 140, items, [_brand_hex(b) for b, _ in items], fmt=lambda v: f"{fr(v)} %",
               vmax=100, label_w=32, bar_h=9, gap=5, title="Notoriété totale (%)")
 
@@ -1113,7 +1111,7 @@ def generate_pdf(df, vagues_list=None, filters_desc: str = "") -> bytes:
                            "Offre et pénétration : échantillon total · marque principale, jeux, fréquence : joueurs casino")
         metrics = list(C["comp"].keys())
         y = pdf.gbars(M, y, W, metrics, [(b, [C["comp"][m].get(b) for m in metrics], _brand_hex(b))
-                                         for b in CASINO_BRANDS], h=55)
+                                         for b in C["main"]], h=55)
         third = (W - 16) / 3
         for i, (title, dist, color, srt) in enumerate([("Types de jeux (QC7)", C["jeux"], "#2563EB", True),
                                                        ("Fréquence (QC6)", C["frequence"], "#7C3AED", False),
@@ -1314,14 +1312,14 @@ def generate_excel(df, vagues_list=None, filters_desc: str = "") -> bytes:
     ws.write(4, 1, "Marque", f_head_l)
     for j, m in enumerate(metrics):
         ws.write(4, 2 + j, m, f_head)
-    brands = [b for b, _ in _sorted_brands(R["comp"]["Notoriété totale"], R["brands_scope"])]
+    brands = [b for b, _ in _sorted_brands(R["comp"]["Notoriété totale"], R["main"])]
     for i, b in enumerate(brands):
         bold = b == "Betclic"
         ws.write(5 + i, 1, b, f_lab_b if bold else f_lab)
         for j, m in enumerate(metrics):
             ws.write(5 + i, 2 + j, pct(R["comp"][m].get(b)), f_pct_b if bold else f_pct)
     ch = wb.add_chart({"type": "column"})
-    for b in MAIN_COMPETITORS:
+    for b in R["main"]:
         if b in brands:
             i = brands.index(b)
             ch.add_series({"name": ["Concurrence", 5 + i, 1],
@@ -1448,7 +1446,7 @@ def generate_excel(df, vagues_list=None, filters_desc: str = "") -> bytes:
         ws.write(r + 1, 1, "Marque", f_head_l)
         for j, m in enumerate(metrics):
             ws.write(r + 1, 2 + j, m, f_head)
-        cb = [b for b in CASINO_BRANDS]
+        cb = [b for b in C["main"]]
         for i, b in enumerate(cb):
             bold = b == "Betclic"
             ws.write(r + 2 + i, 1, b, f_lab_b if bold else f_lab)

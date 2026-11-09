@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 from data.loader import (
-    sort_vagues, vague_short,
+    sort_vagues, get_main_competitors, keep_brands, vague_short,
     apply_filters, calc_image_scores, calc_image_scores_main_brands,
     calc_kpi_by_vague,
     calc_delta, get_latest_vague, get_previous_vague,
@@ -25,6 +25,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Attributs Fonctionnels Betclic",
@@ -140,7 +141,7 @@ def render():
         "Scores par attribut pour Betclic vs principaux concurrents (parmi ceux qui connaissent chaque marque)"
     ), unsafe_allow_html=True)
 
-    image_by_brand = calc_image_scores_main_brands(df)
+    image_by_brand = calc_image_scores_main_brands(df, main_brands)
     # Filter to brands that have at least some data
     image_by_brand = {b: scores for b, scores in image_by_brand.items()
                       if any(v > 0 for v in scores.values())}

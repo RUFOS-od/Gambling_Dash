@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from data.loader import (
-    apply_filters, sort_vagues, vague_short, VAGUE_MONTHS, MAIN_COMPETITORS,
+    apply_filters, sort_vagues, vague_short, VAGUE_MONTHS, get_casino_main_brands,
     calc_kpi_by_vague, calc_delta, get_latest_vague, get_previous_vague,
     get_casino_base, get_casino_joueurs, load_verbatim_themes,
     calc_casino_statut, calc_casino_penetration, calc_casino_penetration_active,
@@ -19,12 +19,8 @@ from data.loader import (
 from components.styles import kpi_card, section_header, insight_box, styled_divider
 from components.charts import funnel_chart, donut_chart, brand_color, BETCLIC_RED, OPINIONWAY_PURPLE
 
-# 1WIN est ajouté aux marques principales : acteur très orienté casino.
-CASINO_BRANDS = MAIN_COMPETITORS + ["1WIN"]
-
-
-def _brand_bar(data: dict, title: str, height: int = 340, suffix: str = "%"):
-    brands = sorted([b for b in CASINO_BRANDS if b in data], key=lambda b: -data.get(b, 0))
+def _brand_bar(data: dict, title: str, brand_list, height: int = 340, suffix: str = "%"):
+    brands = sorted([b for b in brand_list if b in data], key=lambda b: -data.get(b, 0))
     vals = [data.get(b, 0) for b in brands]
     fig = go.Figure(go.Bar(
         x=brands, y=vals,
@@ -141,6 +137,7 @@ def render():
     base = get_casino_base(df_lv)
     joueurs = get_casino_joueurs(df_lv)
     n_base, n_joueurs = len(base), len(joueurs)
+    casino_brands = get_casino_main_brands(df_lv)  # recalculées sur les données
 
     st.caption(
         f"Vague {vague_short(lv)} ({VAGUE_MONTHS.get(lv, '')}) · base échantillon total : n = {n_base} · "
@@ -242,22 +239,22 @@ def render():
     # ── Comparatif concurrentiel ──
     st.markdown(section_header(
         "Comparatif concurrentiel casino",
-        "Betclic vs principaux concurrents (1WIN ajouté, acteur orienté casino)"
+        "Betclic vs principaux concurrents casino (sélection recalculée : notoriété de l'offre + pénétration casino)"
     ), unsafe_allow_html=True)
     pen_all = calc_casino_penetration_all(df_lv)
     r1l, r1r = st.columns(2)
     with r1l:
-        st.plotly_chart(_brand_bar(offre_all, "Sait que la marque propose du casino (QC1)"), width='stretch')
+        st.plotly_chart(_brand_bar(offre_all, "Sait que la marque propose du casino (QC1)", casino_brands), width='stretch')
     with r1r:
-        st.plotly_chart(_brand_bar(pen_all, "A déjà joué au casino sur la marque (QC4)"), width='stretch')
+        st.plotly_chart(_brand_bar(pen_all, "A déjà joué au casino sur la marque (QC4)", casino_brands), width='stretch')
     r2l, r2r = st.columns(2)
     with r2l:
-        st.plotly_chart(_brand_bar(mp_all, "Marque casino principale (QC5 · base joueurs)"), width='stretch')
+        st.plotly_chart(_brand_bar(mp_all, "Marque casino principale (QC5 · base joueurs)", casino_brands), width='stretch')
     with r2r:
-        st.plotly_chart(_brand_bar(pdm_all, "PDM Volume casino (QC4 marque / total QC4)"), width='stretch')
+        st.plotly_chart(_brand_bar(pdm_all, "PDM Volume casino (QC4 marque / total QC4)", casino_brands), width='stretch')
 
     rows = []
-    for b in sorted(CASINO_BRANDS, key=lambda b: -pdm_all.get(b, 0)):
+    for b in sorted(casino_brands, key=lambda b: -pdm_all.get(b, 0)):
         cs = calc_casino_cross_sell(df_lv, b)
         rows.append({
             "Marque": b,

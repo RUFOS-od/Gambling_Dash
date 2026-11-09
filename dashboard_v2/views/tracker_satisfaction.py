@@ -2,7 +2,7 @@
 
 import streamlit as st
 from data.loader import (
-    sort_vagues,
+    sort_vagues, get_main_competitors, keep_brands,
     apply_filters, calc_satisfaction, calc_satisfaction_all_brands,
     calc_nps, calc_nps_by_brand, calc_nps_all_brands, calc_churn_risk,
     calc_irritants, calc_motifs_satisfaction, load_verbatim_themes,
@@ -28,6 +28,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Satisfaction & Fidélité",
@@ -239,8 +240,8 @@ def render():
     nps_all = calc_nps_all_brands(df_eval)
 
     # Keep only brands with at least 10 respondents for reliable scores
-    base_per_brand = {b: int((df_eval["Marque_Principale_Utilisee"] == b).sum()) for b in MAIN_COMPETITORS}
-    eligible = [b for b in MAIN_COMPETITORS if base_per_brand[b] >= 10]
+    base_per_brand = {b: int((df_eval["Marque_Principale_Utilisee"] == b).sum()) for b in main_brands}
+    eligible = [b for b in main_brands if base_per_brand[b] >= 10]
 
     if eligible:
         col_l, col_r = st.columns(2)

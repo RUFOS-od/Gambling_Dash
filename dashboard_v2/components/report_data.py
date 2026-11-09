@@ -11,7 +11,8 @@ from decimal import Decimal, ROUND_HALF_UP
 import pandas as pd
 
 from data.loader import (
-    sort_vagues, vague_short, VAGUE_LABELS, VAGUE_MONTHS, MAIN_COMPETITORS, CITIES,
+    sort_vagues, vague_short, VAGUE_LABELS, VAGUE_MONTHS, CITIES,
+    get_main_competitors, get_casino_main_brands, keep_brands,
     get_parieurs, brands_in_scope, load_verbatim_themes,
     calc_tom, calc_notoriete_totale, calc_penetration, calc_consideration,
     calc_marque_principale, calc_pdm_volume, calc_rappel_campagne, calc_satisfaction, calc_nps,
@@ -29,7 +30,6 @@ from data.loader import (
     calc_casino_funnel, calc_casino_cross_sell,
 )
 
-CASINO_BRANDS = MAIN_COMPETITORS + ["1WIN"]
 
 # (clé, libellé, fonction, unité, décimales, base)
 KPI_DEFS = [
@@ -171,6 +171,8 @@ def build_report(df: pd.DataFrame, vagues_list=None, filters_desc: str = ""):
     }
     R["comp"] = {m: {b: _f(v) for b, v in d.items()} for m, d in comp.items()}
     R["brands_scope"] = brands_in_scope(d_lv)
+    # Principaux concurrents recalculés sur le périmètre (Betclic + 4)
+    R["main"] = get_main_competitors(df)
     R["pdm_by_wave"] = {
         b: {v: _f(x) for v, x in calc_kpi_by_vague(df, calc_pdm_volume, brand=b).items()}
         for b in ["Betclic", "1XBET"]
@@ -194,7 +196,7 @@ def build_report(df: pd.DataFrame, vagues_list=None, filters_desc: str = ""):
 
     # ── Satisfaction / NPS par marque ──
     sat_rows = []
-    for b in MAIN_COMPETITORS:
+    for b in R["main"]:
         nb = calc_nps_by_brand(d_lv, b)
         if nb["n"] >= 10:
             sat_rows.append({
@@ -242,7 +244,8 @@ def _build_casino(df, d_lv):
         return None
     cw = sort_vagues(get_casino_base(df)["Vague"].dropna().unique().tolist())
     d_cas = df[df["Vague"].isin(cw)]
-    C = {"n": len(get_casino_base(d_lv)), "n_joueurs": len(get_casino_joueurs(d_lv))}
+    C = {"n": len(get_casino_base(d_lv)), "n_joueurs": len(get_casino_joueurs(d_lv)),
+         "main": get_casino_main_brands(d_lv)}
     tiles = [
         ("Ont déjà joué au casino en ligne", calc_casino_penetration, {}, "Échantillon total"),
         ("Joueurs actifs (6 derniers mois)", calc_casino_penetration_active, {}, "Échantillon total"),

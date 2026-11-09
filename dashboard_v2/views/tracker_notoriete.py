@@ -2,7 +2,7 @@
 
 import streamlit as st
 from data.loader import (
-    sort_vagues,
+    sort_vagues, get_main_competitors, keep_brands,
     apply_filters, calc_tom, calc_tom_all_brands, calc_notoriete_totale,
     calc_notoriete_all_brands, calc_notoriete_aidee, calc_rappel_campagne,
     calc_ambassadeur_distribution, calc_canal_decouverte,
@@ -27,6 +27,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Notoriété & Visibilité",
@@ -64,23 +65,22 @@ def render():
             df_latest = df[df["Vague"] == latest_vague[0]]
         else:
             df_latest = df
-        tom_all = calc_tom_all_brands(df_latest)
-        fig = bar_chart_brands(tom_all, f"Top-of-Mind par marque ({latest_vague[0] if latest_vague else 'Total'})", height=400)
+        tom_all = keep_brands(calc_tom_all_brands(df_latest), main_brands)
+        fig = bar_chart_brands(tom_all, f"Top-of-Mind · principaux concurrents ({latest_vague[0] if latest_vague else 'Total'})",
+                               height=400)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        # TOM evolution for top 3 brands
-        tom_betclic = calc_kpi_by_vague(df, calc_tom, brand="Betclic")
-        tom_1xbet = calc_kpi_by_vague(df, calc_tom, brand="1XBET")
-        tom_sport = calc_kpi_by_vague(df, calc_tom, brand="Sportcash")
-
-        data_evol = {
-            "Betclic": tom_betclic,
-            "1XBET": tom_1xbet,
-            "Sportcash": tom_sport,
-        }
+        # Évolution TOM des principaux concurrents (couleurs de la charte)
+        data_evol = {}
+        for b in main_brands:
+            by_v = {v: x for v, x in calc_kpi_by_vague(df, calc_tom, brand=b).items()
+                    if x is not None and f"Notoriete_Totale_{b}" in df.columns
+                    and df.loc[df["Vague"] == v, f"Notoriete_Totale_{b}"].notna().any()}
+            if by_v:
+                data_evol[b] = by_v
         from components.charts import multi_line_chart
-        fig = multi_line_chart(data_evol, "Évolution TOM · Top 3 marques")
+        fig = multi_line_chart(data_evol, "Évolution TOM · principaux concurrents", use_brand_colors=True)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -89,8 +89,8 @@ def render():
     col_left, col_right = st.columns(2)
 
     with col_left:
-        not_all = calc_notoriete_all_brands(df_latest)
-        fig = bar_chart_brands(not_all, "Notoriété Totale par marque", height=400)
+        not_all = keep_brands(calc_notoriete_all_brands(df_latest), main_brands)
+        fig = bar_chart_brands(not_all, "Notoriété totale · principaux concurrents", height=400)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
@@ -99,9 +99,10 @@ def render():
         for v in _waves:
             sub = df[df["Vague"] == v]
             if len(sub) > 0:
-                not_by_vague[v] = calc_notoriete_all_brands(sub)
+                not_by_vague[v] = keep_brands(calc_notoriete_all_brands(sub), main_brands)
         if not_by_vague:
-            fig = grouped_bar_vagues(not_by_vague, "Notoriété Totale · Évolution par vague", height=400)
+            fig = grouped_bar_vagues(not_by_vague, "Notoriété totale · évolution par vague", height=400,
+                                     order=main_brands)
             st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

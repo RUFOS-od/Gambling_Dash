@@ -1076,11 +1076,57 @@ def calc_image_scores(df: pd.DataFrame, brand: str = "Betclic") -> dict:
     return result
 
 
-def calc_image_scores_main_brands(df: pd.DataFrame) -> dict:
+def calc_image_scores_main_brands(df: pd.DataFrame, brands=None) -> dict:
     """Image scores per brand for the main competitors. Returns {brand: {attr: score}}."""
     out = {}
-    for b in MAIN_COMPETITORS:
+    for b in (brands or get_main_competitors(df)):
         out[b] = calc_image_scores(df, b)
+    return out
+
+
+# ──────────────────────────────────────────────
+# PRINCIPAUX CONCURRENTS (sélection dynamique)
+# ──────────────────────────────────────────────
+N_MAIN_COMPETITORS = 5  # Betclic + 4 concurrents
+
+
+def _rank(scores: dict) -> dict:
+    return {b: i for i, b in enumerate(sorted(scores, key=lambda x: -(scores[x] or 0)))}
+
+
+def get_main_competitors(df: pd.DataFrame, n: int = N_MAIN_COMPETITORS) -> list:
+    """Betclic + les n-1 concurrents les plus forts, recalculés sur les données.
+
+    Calcul sur la vague la plus récente du périmètre filtré : on classe les
+    marques par notoriété totale et par pénétration (Q5), on additionne les deux
+    rangs et on garde les mieux placées. La liste suit donc le marché : une
+    marque qui monte (ex. 1WIN) entre automatiquement dans les comparatifs.
+    """
+    if df is None or not len(df) or "Vague" not in df.columns:
+        return list(MAIN_COMPETITORS)
+    waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    d = df[df["Vague"] == waves[-1]] if waves else df
+    brands = [b for b in brands_in_scope(d) if b != "Betclic"]
+    if not brands:
+        return list(MAIN_COMPETITORS)
+    notor = {b: calc_notoriete_totale(d, b) for b in brands}
+    pen = {b: calc_penetration(d, b) for b in brands}
+    rn, rp = _rank(notor), _rank(pen)
+    ordered = sorted(brands, key=lambda b: (rn[b] + rp[b], -pen[b], -notor[b]))
+    return ["Betclic"] + ordered[: max(n - 1, 0)]
+
+
+def keep_brands(scores: dict, brands, others_label: Optional[str] = None, total: float = 100.0) -> dict:
+    """Restreint {marque: valeur} aux marques retenues (dans leur ordre).
+
+    others_label : ajoute une ligne "Autres marques" = total - somme des marques
+    retenues, pour les indicateurs qui somment à 100 % (PDM, marque principale).
+    """
+    out = {b: scores[b] for b in brands if b in scores and scores[b] is not None}
+    if others_label:
+        rest = round(total - sum(out.values()), 1)
+        if rest > 0.05:
+            out[others_label] = rest
     return out
 
 
@@ -1573,3 +1619,27 @@ def calc_casino_cross_sell(df: pd.DataFrame, brand: str = "Betclic") -> dict:
         "n_offre": int(offre.sum()),
         "taux_conversion_offre": _pct((offre & joue).sum(), offre.sum()),
     }
+
+
+def get_casino_main_brands(df: pd.DataFrame, n: int = N_MAIN_COMPETITORS + 1) -> list:
+    """Betclic + les principaux concurrents casino, recalculés sur les données.
+
+    Même logique que get_main_competitors, sur la vague casino la plus récente :
+    somme des rangs en notoriété de l'offre casino (QC1) et en pénétration
+    casino (QC4). Une marque de plus que pour les paris, le casino comptant des
+    acteurs spécialisés (ex. 1WIN).
+    """
+    base = get_casino_base(df)
+    if not len(base):
+        return ["Betclic"]
+    waves = sort_vagues(base["Vague"].dropna().unique().tolist())
+    d = df[df["Vague"] == waves[-1]]
+    offre = calc_casino_offre_notoriete_all(d)
+    pen = calc_casino_penetration_all(d)
+    brands = [b for b in offre if b != "Betclic"]
+    if not brands:
+        return ["Betclic"]
+    ro = _rank({b: offre[b] for b in brands})
+    rp = _rank({b: pen.get(b, 0) for b in brands})
+    ordered = sorted(brands, key=lambda b: (ro[b] + rp[b], -pen.get(b, 0), -offre[b]))
+    return ["Betclic"] + ordered[: max(n - 1, 0)]

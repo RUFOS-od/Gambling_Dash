@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from data.loader import (
-    sort_vagues,
+    sort_vagues, get_main_competitors, keep_brands,
     apply_filters, calc_tom, calc_notoriete_totale, calc_notoriete_aidee,
     calc_penetration, calc_satisfaction, calc_nps, calc_preference,
     calc_consideration, calc_rappel_campagne,
@@ -33,6 +33,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Scorecard Exécutif · Betclic Brand Pulse",
@@ -150,7 +151,7 @@ def render():
 
     # Helper : bar chart simple par marque, trié décroissant, couleurs charte client
     def _brand_bar(data: dict, title: str, height: int = 330):
-        sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
+        sorted_brands = sorted(main_brands, key=lambda b: -data.get(b, 0))
         vals = [data.get(b, 0) for b in sorted_brands]
         fig = go.Figure(go.Bar(
             x=sorted_brands,
@@ -187,7 +188,7 @@ def render():
 
     # Comparative table for precise reading
     table_rows = []
-    for b in sorted(MAIN_COMPETITORS, key=lambda b: -tom_all.get(b, 0)):
+    for b in sorted(main_brands, key=lambda b: -tom_all.get(b, 0)):
         table_rows.append({
             "Marque": b,
             "TOM (%)": tom_all.get(b, 0),

@@ -2,7 +2,7 @@
 
 import streamlit as st
 from data.loader import (
-    sort_vagues,
+    sort_vagues, get_main_competitors, keep_brands,
     apply_filters, calc_penetration, calc_marque_principale, calc_marque_principale_all,
     calc_penetration_all_brands, calc_pdm_volume_all_brands,
     calc_multi_app, calc_consideration, calc_preference,
@@ -29,6 +29,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Usage & Pénétration",
@@ -109,7 +110,7 @@ def render():
 
     # Helper pour bar charts simples par marque — couleurs charte client
     def _brand_bar(data: dict, title: str, height: int = 380):
-        sorted_brands = sorted(MAIN_COMPETITORS, key=lambda b: -data.get(b, 0))
+        sorted_brands = sorted(main_brands, key=lambda b: -data.get(b, 0))
         vals = [data.get(b, 0) for b in sorted_brands]
         fig = go.Figure(go.Bar(
             x=sorted_brands,
@@ -159,7 +160,7 @@ def render():
     # Tableau récap
     import pandas as _pd
     table_rows = []
-    for b in sorted(MAIN_COMPETITORS, key=lambda b: -pdm_vol_all.get(b, 0)):
+    for b in sorted(main_brands, key=lambda b: -pdm_vol_all.get(b, 0)):
         table_rows.append({
             "Marque": b,
             "Pénétration Q5 (%)": pen_all.get(b, 0),
@@ -168,8 +169,8 @@ def render():
         })
     st.dataframe(_pd.DataFrame(table_rows).set_index("Marque"), width='stretch', height=240)
     st.caption(
-        f"📊 Somme PDM Volume sur l'ensemble des marques · {sum(pdm_vol_all.values()):.0f}% "
-        "(léger écart possible dû aux arrondis)."
+        "Principaux concurrents recalculés à chaque mise à jour (notoriété totale + pénétration, "
+        "vague la plus récente). Les autres marques sont regroupées dans les graphiques de répartition."
     )
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
@@ -177,11 +178,13 @@ def render():
     # ── Marque principale / PDM Volume (toutes marques) ──
     col_left, col_right = st.columns(2)
     with col_left:
-        fig = bar_chart_brands(mp_all, "Marque Principale des parieurs (toutes marques)", height=380)
+        fig = bar_chart_brands(keep_brands(mp_all, main_brands, "Autres marques"),
+                               "Marque principale des parieurs (Q6) · répartition", height=380)
         st.plotly_chart(fig, width='stretch')
 
     with col_right:
-        fig = bar_chart_brands(pdm_vol_all, "PDM Volume · toutes marques", height=380)
+        fig = bar_chart_brands(keep_brands(pdm_vol_all, main_brands, "Autres marques"),
+                               "PDM Volume · répartition du marché", height=380)
         st.plotly_chart(fig, width='stretch')
 
     st.markdown(styled_divider(), unsafe_allow_html=True)

@@ -3,7 +3,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 from data.loader import (
-    sort_vagues,
+    sort_vagues, get_main_competitors, keep_brands,
     apply_filters, calc_tom, calc_notoriete_totale, calc_penetration,
     calc_satisfaction, calc_nps, calc_preference, calc_consideration,
     calc_kpi_by_city, calc_kpi_by_commune, get_communes_in_data,
@@ -23,6 +23,7 @@ def render():
 
     df = apply_filters(data, vagues, villes or None, genres or None, segments or None, ages=ages or None)
     _waves = sort_vagues(df["Vague"].dropna().unique().tolist())
+    main_brands = get_main_competitors(df)  # Betclic + 4 concurrents, selon les données
 
     st.markdown(section_header(
         "Analyse Géographique",
@@ -135,7 +136,7 @@ def render():
     def _per_brand_per_city_pct(df_in, col_template):
         """Returns {brand: {city: pct}} for binary indicator columns like A_Deja_Parie_{brand}."""
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             col = col_template.format(brand=b)
             for city in CITIES:
@@ -149,7 +150,7 @@ def render():
 
     def _tom_per_brand_per_city(df_in):
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             for city in CITIES:
                 sub = df_in[df_in["Ville"] == city]
@@ -162,7 +163,7 @@ def render():
 
     def _pref_per_brand_per_city(df_in):
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             for city in CITIES:
                 sub = df_in[(df_in["Ville"] == city) & (df_in["Type_Repondant"] == "Parieur")]
@@ -175,7 +176,7 @@ def render():
 
     def _consid_per_brand_per_city(df_in):
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             col = f"Consideration_{b}"
             for city in CITIES:
@@ -190,7 +191,7 @@ def render():
     def _sat_per_brand_per_city(df_in):
         """Satisfaction mean (/5) per city, for parieurs whose Q6 = brand."""
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             for city in CITIES:
                 sub = df_in[(df_in["Ville"] == city) & (df_in["Marque_Principale_Utilisee"] == b)]
@@ -205,7 +206,7 @@ def render():
     def _nps_per_brand_per_city(df_in):
         """NPS per city per brand (parieurs Q6=brand). Requires n>=10 to display."""
         out = {}
-        for b in MAIN_COMPETITORS:
+        for b in main_brands:
             per_city = {}
             for city in CITIES:
                 sub = df_in[(df_in["Ville"] == city) & (df_in["Marque_Principale_Utilisee"] == b)]
@@ -269,7 +270,7 @@ def render():
 
     fig_geo = go.Figure()
     has_any = False
-    for i, b in enumerate(MAIN_COMPETITORS):
+    for i, b in enumerate(main_brands):
         vals = [data_per_brand.get(b, {}).get(c) for c in CITIES]
         # Skip if all values are None for this brand
         if all(v is None for v in vals):
@@ -288,7 +289,7 @@ def render():
 
     if has_any:
         # Adjust Y-axis range based on data
-        all_vals = [v for b in MAIN_COMPETITORS for v in data_per_brand.get(b, {}).values() if v is not None]
+        all_vals = [v for b in main_brands for v in data_per_brand.get(b, {}).values() if v is not None]
         if all_vals:
             y_min = min(0, min(all_vals) - 5)
             y_max = max(all_vals) * 1.18
@@ -313,7 +314,7 @@ def render():
         table_rows = []
         for c in CITIES:
             row = {"Ville": c}
-            for b in MAIN_COMPETITORS:
+            for b in main_brands:
                 v = data_per_brand.get(b, {}).get(c)
                 row[b] = _fmt(v) if v is not None else "—"
             table_rows.append(row)
