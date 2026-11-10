@@ -109,14 +109,15 @@ def render():
     for city in CITIES:
         row = {"Ville": city}
         for kpi_name, city_data in kpis_geo.items():
-            row[kpi_name] = city_data.get(city, "—")
+            row[kpi_name] = city_data.get(city)
         table_data.append(row)
 
-    df_table = pd.DataFrame(table_data)
+    df_table = pd.DataFrame(table_data).set_index("Ville").apply(pd.to_numeric, errors="coerce")
+    _fmts = {c: ("{:.2f}" if "/5" in c else "{:.1f}") for c in df_table.columns}
 
-    # Style the dataframe
+    # Style the dataframe (villes non enquêtées sur la vague : n.d.)
     st.dataframe(
-        df_table.set_index("Ville"),
+        df_table.style.format(_fmts, na_rep="n.d."),
         width='stretch',
         height=320,
     )
@@ -316,7 +317,7 @@ def render():
             row = {"Ville": c}
             for b in main_brands:
                 v = data_per_brand.get(b, {}).get(c)
-                row[b] = _fmt(v) if v is not None else "—"
+                row[b] = _fmt(v) if v is not None else "n.d."
             table_rows.append(row)
         st.dataframe(pd.DataFrame(table_rows).set_index("Ville"), width='stretch', height=300)
 

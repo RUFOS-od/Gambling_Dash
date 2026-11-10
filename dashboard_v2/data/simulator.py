@@ -97,7 +97,7 @@ def generate_risk_levels():
     for brand in COMPETITORS:
         s = strength.get(brand, 10)
         if brand == "Betclic":
-            data[brand] = {"level": "—", "score": 0, "trend": "Leader"}
+            data[brand] = {"level": "Marque suivie", "score": 0, "trend": "Leader"}
         elif s > 40:
             data[brand] = {"level": "Élevé", "score": round(min(95, s * 1.2 + np.random.normal(0, 5)), 0), "trend": "En hausse"}
         elif s > 20:

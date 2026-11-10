@@ -21,7 +21,9 @@ def to_num(delta):
 def trend_word(delta, threshold=0.5) -> str:
     """Verbe d'évolution : 'progresse', 'recule', 'est stable'."""
     d = to_num(delta)
-    if d is None or abs(d) < threshold:
+    if d is None:
+        return "s'établit"  # pas de vague de comparaison sélectionnée
+    if abs(d) < threshold:
         return "reste stable"
     return "progresse" if d > 0 else "recule"
 
@@ -30,7 +32,7 @@ def signed(delta, unit="pt") -> str:
     """'+6.7 pt' / '-5.0 pt' / 'stable'."""
     d = to_num(delta)
     if d is None:
-        return "n.d."
+        return "sans vague de comparaison"
     if d == 0:
         return f"0 {unit}"
     return f"{d:+.1f} {unit}"

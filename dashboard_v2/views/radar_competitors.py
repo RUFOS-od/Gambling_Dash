@@ -61,7 +61,7 @@ def render():
     with col4:
         st.markdown(kpi_card("Intensité Pub", f"{ad_intensity.get(selected, 0)}/100"), unsafe_allow_html=True)
     with col5:
-        level = risk.get("level", "—")
+        level = risk.get("level", "n.d.")
         color_map = {"Élevé": "down", "Modéré": "neutral", "Faible": "up"}
         st.markdown(kpi_card("Niveau Risque", level, risk.get("trend", ""), color_map.get(level, "neutral")), unsafe_allow_html=True)
 

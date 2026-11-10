@@ -269,8 +269,8 @@ def render():
     # ── Render ──
     if viz_type == "Tableau":
         # Style the dataframe
-        styled = pivot.style.format("{:.1f}", na_rep="—").format(
-            {"Base (n)": "{:.0f}"}, na_rep="—"
+        styled = pivot.style.format("{:.1f}", na_rep="n.d.").format(
+            {"Base (n)": "{:.0f}"}, na_rep="n.d."
         )
 
         # Highlight max/min for non-base columns
