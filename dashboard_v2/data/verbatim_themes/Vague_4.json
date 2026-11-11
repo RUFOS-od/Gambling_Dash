@@ -1,207 +1,198 @@
 {
   "wave": "Vague 4",
-  "generated_at": "2026-11-10T15:30:14",
+  "generated_at": "2026-11-11T10:54:06",
   "model": "claude-opus-4-7",
   "detractors": {
-    "n_total": 36,
+    "n_total": 41,
     "themes": [
       {
-        "label": "Pertes financières excessives",
-        "count": 11,
-        "share_pct": 30.6,
+        "label": "Pertes financières fréquentes",
+        "count": 13,
+        "share_pct": 31.7,
         "illustrative_quotes": [
           "TROP DE PERTES",
-          "parceque ça finit l'argent et tu perds vite"
+          "on perd beaucoup d'argent en jouant"
         ]
       },
       {
-        "label": "Refus de recommander les paris sportifs",
-        "count": 7,
-        "share_pct": 19.4,
+        "label": "Refus de promouvoir paris sportifs",
+        "count": 9,
+        "share_pct": 22.0,
         "illustrative_quotes": [
-          "J'EVITE DE CONSEILLER QUELQU'UN EN MATIERE DE DE PARIS SPORTIF",
-          "JE TROUVE QUE CHAQU'UN DE NOUS EST RESPONSABLE DE SES PROPRES CHOIX DONC J'EVITE DE RECOMMENDER UNE SOCIETE DE PARIS SPORTIFS A UN PROCHE"
+          "J’EVITE DE CONSEILLER QUELQU’UN EN MATIERE DE DE PARIS SPORTIF",
+          "MOI J’EVITE DE RECOMMANDER QUELQU’UN DANS LES SITES DE PARIS SPORTIFS"
         ]
       },
       {
-        "label": "Jeu addictif / dangereux",
+        "label": "Jeu addictif et dangereux",
         "count": 6,
-        "share_pct": 16.7,
+        "share_pct": 14.6,
         "illustrative_quotes": [
           "Ça bouffe l'argent des gens c'est devenu comme une drogue",
-          "MOI J'EVITE DE RECOMMANDER LES SOCIETE DE PARIS A MES PROCHES CAR TROP ADDICTIF"
+          "NE CONSEILLE PAS DE JEUX DE HASARD PARCEQUE TROP ADDICTIF"
+        ]
+      },
+      {
+        "label": "Insatisfaction générale / offre limitée",
+        "count": 4,
+        "share_pct": 9.8,
+        "illustrative_quotes": [
+          "pas très satisfait",
+          "Betclic n'a pas beaucoup d'options"
         ]
       },
       {
         "label": "Cotes peu compétitives",
-        "count": 4,
-        "share_pct": 11.1,
+        "count": 3,
+        "share_pct": 7.3,
         "illustrative_quotes": [
           "LES CÔTES DOIVENT ÊTRE ÉLEVÉES POUR BOOSTER LE GAIN DU PARIEUR",
           "leur cote ne sont pas elevé"
         ]
       },
       {
-        "label": "Bonus insuffisants / peu fiables",
+        "label": "Bonus insuffisants ou non tenus",
         "count": 3,
-        "share_pct": 8.3,
+        "share_pct": 7.3,
         "illustrative_quotes": [
           "Ils ne sont pas fidèle au bonus qu'ils donnent.",
           "Betclic ne fait pas assez de bonus"
         ]
       },
       {
-        "label": "Insatisfaction générale / mauvaise expérience",
+        "label": "Problèmes techniques et réclamations",
         "count": 3,
-        "share_pct": 8.3,
+        "share_pct": 7.3,
         "illustrative_quotes": [
-          "il a eu de mauvaises expérience",
-          "pas très satisfait"
-        ]
-      },
-      {
-        "label": "Problèmes techniques et SAV (débit sans ticket)",
-        "count": 2,
-        "share_pct": 5.6,
-        "illustrative_quotes": [
-          "J'AI ÉTÉ DÉBITÉ UNE FOIS MAIS J'AI PAS PU AVOIR DE TICKET ET LA RÉCLAMATION N'A PAS ABOUTIT J'USQU' AUJOURD'HUI .",
-          "ils sont pas trop sécurisé"
+          "J'AI ÉTÉ DÉBITÉ UNE FOIS MAIS J'AI PAS PU AVOIR DE TICKET ET LA RÉCLAMATION N’A PAS ABOUTIT J’USQU’ AUJOURD'HUI .",
+          "J'ai souvent du mal à entrer dans l'application."
         ]
       }
     ]
   },
   "promoters": {
-    "n_total": 104,
+    "n_total": 136,
     "themes": [
       {
-        "label": "Fiabilité et sécurité de la plateforme",
-        "count": 35,
-        "share_pct": 33.7,
+        "label": "Dépôts et retraits rapides",
+        "count": 42,
+        "share_pct": 30.9,
+        "illustrative_quotes": [
+          "parce que l’application est fiable et rapide dans les depots et retraits",
+          "LES DÉPÔTS ET RETRAIT FACILE"
+        ]
+      },
+      {
+        "label": "Fiabilité de la marque / plateforme",
+        "count": 32,
+        "share_pct": 23.5,
         "illustrative_quotes": [
           "JE TROUVE QUE BETCLIC EST FIABLE",
           "pour leurs fiabilité et honnêteté, bonne structure de pari"
         ]
       },
       {
-        "label": "Dépôts et retraits rapides et faciles",
-        "count": 28,
-        "share_pct": 26.9,
-        "illustrative_quotes": [
-          "LES DÉPÔTS ET RETRAIT FACILE",
-          "Les opérations de dépôt et de retrait sont rapides et fiable"
-        ]
-      },
-      {
         "label": "Qualité et fluidité de l'application",
+        "count": 20,
+        "share_pct": 14.7,
+        "illustrative_quotes": [
+          "LA QUALITÉ DE L'APPLICATION",
+          "LA FLUIDITÉ DE L'APPLICATION"
+        ]
+      },
+      {
+        "label": "Cash out et cotes élevées",
+        "count": 18,
+        "share_pct": 13.2,
+        "illustrative_quotes": [
+          "parce que betclic est fiable et propose de grosse cote tres elévé aussi le cadh out est tres eleve",
+          "FACILE À UTILISER, TRANSPARENT, ET CASH OUT ÉLEVÉS"
+        ]
+      },
+      {
+        "label": "Sécurité du compte et des données",
         "count": 15,
-        "share_pct": 14.4,
+        "share_pct": 11.0,
         "illustrative_quotes": [
-          "LA QUALITÉ DE L'APPLICATION BETCLIC",
-          "JE TROUVE QUE BETCLIC A UN APPLICATION FLUIDE"
+          "pour la sécurité de l'opérateur",
+          "parce que mes données personnelles sont très protégé."
         ]
       },
       {
-        "label": "Cotes élevées et cash out attractifs",
-        "count": 14,
-        "share_pct": 13.5,
-        "illustrative_quotes": [
-          "FACILE À  UTILISER,  TRANSPARENT,  ET CASH OUT ÉLEVÉS",
-          "parce que les cash out sont elévé aussi parce que les cotes sont elévé"
-        ]
-      },
-      {
-        "label": "Bonus et avantages offerts",
-        "count": 7,
-        "share_pct": 6.7,
+        "label": "Bonus et avantages proposés",
+        "count": 9,
+        "share_pct": 6.6,
         "illustrative_quotes": [
           "ELLE OFFRE ASSEZ DE BONUS",
           "parce que betclic offres beaucoup de bonus"
-        ]
-      },
-      {
-        "label": "Facilité d'utilisation et d'inscription",
-        "count": 3,
-        "share_pct": 2.9,
-        "illustrative_quotes": [
-          "C'EST facile à s'inscrire",
-          "Parce que c'est facile à comprendre"
-        ]
-      },
-      {
-        "label": "Diversité des sports et matchs en direct",
-        "count": 2,
-        "share_pct": 1.9,
-        "illustrative_quotes": [
-          "elle propose plusieurs matchs en direct",
-          "parce que betclic offres des bonus et une varieté de sport avec des cote élévé"
         ]
       }
     ]
   },
   "casino_decouverte": {
-    "n_total": 317,
+    "n_total": 381,
     "themes": [
       {
-        "label": "Bouche à oreille / amis et proches",
-        "count": 120,
-        "share_pct": 37.9,
+        "label": "Bouche à oreille / proches",
+        "count": 136,
+        "share_pct": 35.7,
         "illustrative_quotes": [
           "un ami m'en a parlé",
-          "J’AI ENTENDU PARLER DE BETCLIC CASINO POUR LA PREMIERE FOIS PAR MES PROCHES"
+          "J'AI ENTENDU PARLER DE BETCLIC CASINO POUR LA PREMIERE FOIS PAR MES PROCHES"
         ]
       },
       {
         "label": "Dans l'application Betclic",
-        "count": 80,
-        "share_pct": 25.2,
+        "count": 95,
+        "share_pct": 24.9,
         "illustrative_quotes": [
-          "je l'ai découvert sur l'application",
-          "J'AI VU SUR L’APPLICATION BETCLIC"
+          "SUR L'APPLICATION",
+          "je l'ai découvert sur l'application"
         ]
       },
       {
         "label": "Publicité TV",
-        "count": 32,
-        "share_pct": 10.1,
+        "count": 42,
+        "share_pct": 11.0,
         "illustrative_quotes": [
           "À LA TÉLÉVISION",
           "J'AI VUE LA PUBLICITÉ À LA TÉLÉVISION"
         ]
       },
       {
-        "label": "Réseaux sociaux",
-        "count": 22,
-        "share_pct": 6.9,
-        "illustrative_quotes": [
-          "SUR LES RÉSEAUX SOCIAUX",
-          "J'AI VUE ÇA SUR FACEBOOK"
-        ]
-      },
-      {
-        "label": "Publicité (générique, affichage, influenceur)",
-        "count": 22,
-        "share_pct": 6.9,
-        "illustrative_quotes": [
-          "par les publicités",
-          "PAR UN PANNEAU D'AFFICHAGE"
-        ]
-      },
-      {
         "label": "Ne sait plus / sans précision",
-        "count": 21,
-        "share_pct": 6.6,
+        "count": 35,
+        "share_pct": 9.2,
         "illustrative_quotes": [
           "c'est bon",
-          "elle est facile à parier"
+          "la fiabilité des données"
         ]
       },
       {
-        "label": "Recherches personnelles / curiosité / internet",
-        "count": 20,
-        "share_pct": 6.3,
+        "label": "Publicité (générique) et affichage",
+        "count": 30,
+        "share_pct": 7.9,
+        "illustrative_quotes": [
+          "par les panneaux publicitaires , de bouche à oreille",
+          "PAR UNE PUBLICITÉ"
+        ]
+      },
+      {
+        "label": "Réseaux sociaux",
+        "count": 25,
+        "share_pct": 6.6,
+        "illustrative_quotes": [
+          "SUR FACEBOOK",
+          "À TRAVERS UNE PUBLICITÉ SUR LES RÉSEAUX SOCIAUX"
+        ]
+      },
+      {
+        "label": "Recherches personnelles / internet",
+        "count": 18,
+        "share_pct": 4.7,
         "illustrative_quotes": [
           "par mes propres recherches",
-          "PAR CURIOSITE"
+          "J’AI ENTENDU PARLER DE BETCLIC CASINO POUR LA PREMIER FOIS PAR MON MOTEUR DE RECHERCHE GOOGLE"
         ]
       }
     ]
