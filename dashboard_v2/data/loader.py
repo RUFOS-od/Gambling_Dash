@@ -618,7 +618,15 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
                 df[f"Casino_Jeu_{i}"] = _str_yes_no(df_raw[col]).values
 
     # ── Date column for export engine ──
-    df["Date_Interview"] = pd.to_datetime(df_raw.get("Date_Inter"), errors="coerce")
+    # Date_Inter est saisie par l'enquêteur ; si elle s'écarte de plus de 7 jours de
+    # l'horodatage CAPI (colonne Date), c'est une erreur de saisie (ex. jour/mois
+    # inversés) : on retient alors la date système.
+    d_inter = pd.to_datetime(df_raw.get("Date_Inter"), errors="coerce")
+    if "Date" in df_raw.columns:
+        d_sys = pd.to_datetime(df_raw["Date"], errors="coerce").dt.normalize()
+        bad = d_sys.notna() & (d_inter.isna() | ((d_inter - d_sys).abs() > pd.Timedelta(days=7)))
+        d_inter = d_inter.where(~bad, d_sys)
+    df["Date_Interview"] = d_inter.values
 
     return df
 
