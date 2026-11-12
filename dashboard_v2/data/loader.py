@@ -641,9 +641,34 @@ def detect_available_waves() -> list:
     return detect_wave_files(DATA_DIR)
 
 
-@st.cache_data(ttl=3600)
+def _data_signature() -> tuple:
+    """Signature (nom, taille, date de modification) des bases et du loader.
+
+    Sert de clé au cache : dès qu'une base est remplacée (git pull sur Streamlit
+    Cloud) ou que le code de transformation change, le cache est invalidé et les
+    nouvelles données s'affichent immédiatement, sans attendre l'expiration (ttl).
+    """
+    paths = [wf["path"] for wf in detect_available_waves()]
+    paths += sorted(DATA_DIR.glob("Bases_Betclic_BrandPulse_Tracker_V*.xlsx"))
+    paths.append(Path(__file__))
+    sig = []
+    for p in sorted(set(Path(p) for p in paths)):
+        try:
+            s = p.stat()
+            sig.append((p.name, s.st_size, s.st_mtime_ns))
+        except OSError:
+            continue
+    return tuple(sig)
+
+
 def load_raw_data() -> pd.DataFrame:
     """Load and concatenate all available tracker bases (auto-detects format)."""
+    return _load_raw_data_cached(_data_signature())
+
+
+@st.cache_data(ttl=3600, max_entries=3)
+def _load_raw_data_cached(data_sig: tuple) -> pd.DataFrame:
+    """Version mise en cache, indexée par la signature des fichiers (data_sig)."""
     wave_files = detect_available_waves()
     if not wave_files:
         # Fallback legacy : explicit V1/V2/V3 lookup
@@ -699,9 +724,13 @@ def load_raw_data() -> pd.DataFrame:
     return data
 
 
-@st.cache_data(ttl=3600)
 def load_waves_individually() -> dict:
     """Load each wave separately (for validation reports)."""
+    return _load_waves_individually_cached(_data_signature())
+
+
+@st.cache_data(ttl=3600, max_entries=3)
+def _load_waves_individually_cached(data_sig: tuple) -> dict:
     wave_files = detect_available_waves()
     waves = {}
     for wf in wave_files:
