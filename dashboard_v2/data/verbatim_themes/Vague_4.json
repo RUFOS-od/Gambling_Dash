@@ -1,6 +1,6 @@
 {
   "wave": "Vague 4",
-  "generated_at": "2026-11-16T07:53:49",
+  "generated_at": "2026-11-16T15:03:25",
   "model": "claude-opus-4-7",
   "detractors": {
     "n_total": 50,
@@ -15,12 +15,12 @@
         ]
       },
       {
-        "label": "Refus de promouvoir les paris sportifs",
-        "count": 10,
-        "share_pct": 20.0,
+        "label": "Refus de recommander les paris sportifs",
+        "count": 11,
+        "share_pct": 22.0,
         "illustrative_quotes": [
-          "J'EVITE DE CONSEILLER QUELQU'UN EN MATIERE DE DE PARIS SPORTIF",
-          "MOI J'EVITE DE RECOMMANDER LES SOCIETE DE PARIS A MES PROCHES CAR TROP ADDICTIF"
+          "J'EVITE DE CONSEILLER QUELQU'UN EN MATIERE DE DE PARIS SPORTIFS",
+          "MOI J'EVITE DE RECOMMANDER QUELQU'UN DANS LES SITES DE PARIS SPORTIFS"
         ]
       },
       {
@@ -33,36 +33,36 @@
         ]
       },
       {
-        "label": "Gains rares / insuffisants",
+        "label": "Jeu addictif et dangereux",
         "count": 6,
         "share_pct": 12.0,
         "illustrative_quotes": [
-          "je ne gagne jamais",
-          "parceque je gagne rarement dinc je ne peut pas les recommander"
+          "Ça bouffe l'argent des gens c'est devenu comme une drogue",
+          "NE CONSEILLE PAS DE JEUX DE HASARD PARCEQUE TROP ADDICTIF"
         ]
       },
       {
-        "label": "Application compliquée / peu innovante",
-        "count": 6,
-        "share_pct": 12.0,
+        "label": "Application complexe / manque d'options",
+        "count": 5,
+        "share_pct": 10.0,
         "illustrative_quotes": [
-          "J'ai souvent du mal à entrer dans l'application.",
-          "Betclic n'inove pas et risque de se faire dépasser par les autres marques. Les autres cherchent à évoluer alors que cette application ne propose rien de nouveaux."
+          "Betclic n'a pas beaucoup d'options",
+          "parceque betclic est une application un peu compliquée et elle demande des informations personnelles"
         ]
       },
       {
-        "label": "Problèmes de fiabilité / sécurité / litiges",
-        "count": 4,
-        "share_pct": 8.0,
+        "label": "Problèmes de fiabilité et paiements",
+        "count": 5,
+        "share_pct": 10.0,
         "illustrative_quotes": [
           "J'AI ÉTÉ DÉBITÉ UNE FOIS MAIS J'AI PAS PU AVOIR DE TICKET ET LA RÉCLAMATION N'A PAS ABOUTIT J'USQU' AUJOURD'HUI .",
           "ils bloques les comptes lorsqu'on gagne beaucoup"
         ]
       },
       {
-        "label": "Bonus insuffisants ou non honorés",
-        "count": 3,
-        "share_pct": 6.0,
+        "label": "Bonus insuffisants et peu fiables",
+        "count": 4,
+        "share_pct": 8.0,
         "illustrative_quotes": [
           "Ils ne sont pas fidèle au bonus qu'ils donnent.",
           "Betclic ne fait pas assez de bonus"
@@ -74,48 +74,39 @@
     "n_total": 185,
     "themes": [
       {
-        "label": "Fiabilité & sécurité de la plateforme",
-        "count": 62,
-        "share_pct": 33.5,
+        "label": "Fiabilité et sécurité perçues",
+        "count": 55,
+        "share_pct": 29.7,
         "illustrative_quotes": [
           "JE TROUVE QUE BETCLIC EST FIABLE",
           "pour la sécurité et la fiabilité du site"
         ]
       },
       {
-        "label": "Rapidité des dépôts et retraits",
-        "count": 55,
-        "share_pct": 29.7,
+        "label": "Dépôts et retraits rapides/faciles",
+        "count": 54,
+        "share_pct": 29.2,
         "illustrative_quotes": [
           "LES DÉPÔTS ET RETRAIT FACILE",
-          "rapidité des retraits et la rapidité de la réception des gains"
+          "rapidité des retraits"
         ]
       },
       {
-        "label": "Qualité & fluidité de l'application",
-        "count": 28,
-        "share_pct": 15.1,
+        "label": "Qualité et fluidité de l'application",
+        "count": 30,
+        "share_pct": 16.2,
         "illustrative_quotes": [
           "LA QUALITÉ DE L'APPLICATION",
           "LA FLUIDITÉ DE L'APPLICATION"
         ]
       },
       {
-        "label": "Cash out et cotes élevées",
+        "label": "Cash out et cotes élevés",
         "count": 25,
         "share_pct": 13.5,
         "illustrative_quotes": [
           "CASH OUT ELEVES",
           "parce que betclic propose des cash out élévé et les cotes sont élévé"
-        ]
-      },
-      {
-        "label": "Facilité d'utilisation & inscription",
-        "count": 12,
-        "share_pct": 6.5,
-        "illustrative_quotes": [
-          "C'EST facile à s'inscrire",
-          "L'inscription est facile, les règles sont simples et claires, l'application est facile à utiliser"
         ]
       },
       {
@@ -128,48 +119,57 @@
         ]
       },
       {
-        "label": "Facilité à gagner de l'argent",
-        "count": 10,
-        "share_pct": 5.4,
+        "label": "Facilité d'inscription et d'utilisation",
+        "count": 8,
+        "share_pct": 4.3,
         "illustrative_quotes": [
-          "ça me permet davoir de l'argent rapidement",
-          "C'est une application qui permet de gagner de l'argent et d'aider beaucoup de personne. Elle diverti également"
+          "C'EST facile à s'inscrire",
+          "L'inscription est facile, les règles sont simples et claires, l'application est facile à utiliser"
+        ]
+      },
+      {
+        "label": "Protection des données personnelles",
+        "count": 3,
+        "share_pct": 1.6,
+        "illustrative_quotes": [
+          "parce que mes données personnelles sont très protégé.",
+          "c'est très fiable et parce que ça protège les informations"
         ]
       }
     ]
   },
   "casino_decouverte": {
-    "n_total": 514,
+    "n_total": 512,
     "themes": [
       {
         "label": "Bouche à oreille / amis et proches",
-        "count": 200,
-        "share_pct": 38.9,
+        "count": 180,
+        "share_pct": 35.2,
         "illustrative_quotes": [
           "un ami m'en a parlé",
-          "DE BOUCHE A OREILLE AVEC MES AMIS"
+          "J’AI ENTENDU PARLER DE BETCLIC CASINO POUR LA PREMIERE FOIS PAR MES PROCHES"
         ]
       },
       {
         "label": "Dans l'application Betclic",
         "count": 130,
-        "share_pct": 25.3,
+        "share_pct": 25.4,
         "illustrative_quotes": [
           "je l'ai découvert sur l'application",
-          "SUR L'APPLICATION"
+          "J’AI VU SUR MON APPLICATION BETCLIC"
         ]
       },
       {
         "label": "Publicité TV",
         "count": 70,
-        "share_pct": 13.6,
+        "share_pct": 13.7,
         "illustrative_quotes": [
           "À LA TÉLÉVISION",
           "J'AI VUE LA PUBLICITÉ À LA TÉLÉVISION"
         ]
       },
       {
-        "label": "Publicité générale / affichage",
+        "label": "Publicité (générique) et affichage",
         "count": 40,
         "share_pct": 7.8,
         "illustrative_quotes": [
@@ -178,30 +178,30 @@
         ]
       },
       {
+        "label": "Ne sait plus / sans précision",
+        "count": 37,
+        "share_pct": 7.2,
+        "illustrative_quotes": [
+          "c'est bon",
+          "elle est facile à gagner"
+        ]
+      },
+      {
         "label": "Réseaux sociaux",
         "count": 35,
         "share_pct": 6.8,
         "illustrative_quotes": [
-          "SUR LES RÉSEAUX SOCIAUX",
-          "J'AI VUE ÇA SUR FACEBOOK"
+          "SUR FACEBOOK",
+          "À TRAVERS UNE PUBLICITÉ SUR LES RÉSEAUX SOCIAUX"
         ]
       },
       {
-        "label": "Site internet et recherches",
-        "count": 25,
-        "share_pct": 4.9,
+        "label": "Recherches personnelles / internet",
+        "count": 20,
+        "share_pct": 3.9,
         "illustrative_quotes": [
-          "sur le site officiel",
-          "par mes propres recherches"
-        ]
-      },
-      {
-        "label": "Ne sait plus / sans précision",
-        "count": 14,
-        "share_pct": 2.7,
-        "illustrative_quotes": [
-          "c'est bon",
-          "elle est facile à gagner"
+          "par mes propres recherches",
+          "J’AI ENTENDU PARLER DE BETCLIC CASINO POUR LA PREMIER FOIS PAR MON MOTEUR DE RECHERCHE GOOGLE"
         ]
       }
     ]
