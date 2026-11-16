@@ -26,6 +26,8 @@ import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 
 from data.loader import vague_short, keep_brands
+
+V4_LABEL = vague_short("Vague 4")  # vague d'introduction du module Casino et des nouvelles marques
 from components.charts import brand_color
 from components.report_data import (
     build_report, fr, fmt_value, fmt_delta, DEFINITIONS,
@@ -246,7 +248,7 @@ def _line(slide, x, y, w, h, categories, series, fmt="0.0", font=10, min_val=Non
     order = sorted(lasts.items(), key=lambda kv: -kv[1][1])
     clusters, cur = [], []
     for i, (k, v) in order:
-        if cur and abs(lasts[cur[-1]][1] - v) < span * 0.05:
+        if cur and abs(lasts[cur[-1]][1] - v) < span * 0.08:
             cur.append(i)
         else:
             if cur:
@@ -329,22 +331,27 @@ def _kpi_tile(slide, x, y, w, h, label, value, delta_txt, direction, foot="", vs
     if delta_txt:
         bg, fg, arrow = {"up": ("good_bg", "good", "▲ "), "down": ("bad_bg", "bad", "▼ "),
                          "flat": ("flat_bg", "ink2", "")}[direction]
-        pill = _box(slide, x + pad, y + Inches(1.04), Inches(1.55), Inches(0.26), bg, rounded=True, radius=0.5)
+        txt = f"{arrow}{delta_txt} {vs}".strip()
+        # largeur ajustée au texte ("vs Vague Novembre 2026" est plus long que "vs V3")
+        pw = min(w - pad * 2, max(Inches(1.55), Inches(0.075 * len(txt) + 0.3)))
+        pill = _box(slide, x + pad, y + Inches(0.98), pw, Inches(0.26), bg, rounded=True, radius=0.5)
         tf = pill.text_frame
         tf.margin_left = tf.margin_right = Inches(0.05)
         tf.margin_top = tf.margin_bottom = 0
+        tf.word_wrap = False
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         r = p.add_run()
-        r.text = f"{arrow}{delta_txt} {vs}".strip()
+        r.text = txt
         r.font.size, r.font.bold, r.font.name = Pt(9), True, FONT
         r.font.color.rgb = _rgb(HEX[fg])
     if foot:
-        _tx(slide, x + pad, y + h - Inches(0.25), w - pad * 2, Inches(0.2), foot, 8, False, "muted")
+        # historique des vagues : deux lignes possibles avec les libellés "Vague Mois Année"
+        _tx(slide, x + pad, y + Inches(1.27), w - pad * 2, Inches(0.32), foot, 7.5, False, "muted")
 
 
 def _wave_series_txt(by_wave, unit, dec):
-    return "   ".join(f"{vague_short(v)} {fr(x, dec)}" for v, x in by_wave.items() if x is not None)
+    return "  ·  ".join(f"{vague_short(v)} : {fr(x, dec)}" for v, x in by_wave.items() if x is not None)
 
 
 def _sorted_brands(d: dict, brands, top=None):
@@ -468,7 +475,7 @@ def _pptx_funnel(ctx, R):
     for i in range(1, len(F["lv"])):
         a, b = F["lv"][i - 1], F["lv"][i]
         rows.append([F["labels"][i], f"{fr(b / a * 100 if a else 0, 0)} %"])
-    _table(s, x2, Y0 + Inches(0.5), Inches(3.6), ["Étape", f"{R['lv_s']}"], rows, [3, 1], font=10)
+    _table(s, x2, Y0 + Inches(0.5), Inches(3.6), ["Étape", f"{R['lv_s']}"], rows, [2.3, 1.7], font=10)
     _tx(s, x2, Y0 + Inches(2.35), Inches(3.6), Inches(1.2),
         "Lecture : part des répondants de l'étape précédente qui atteignent l'étape suivante.",
         9, False, "muted", italic=True)
@@ -609,7 +616,7 @@ def _pptx_casino(ctx, R):
              f"{fr(pdc.get('Betclic'))} %)" if cl[0] and cl[1] > (pdc.get("Betclic") or 0) else
              f"Casino en ligne : Betclic en tête de la part de marché ({fr(pdc.get('Betclic'))} %)")
     s = _slide(ctx, "Casino en ligne", t_cas,
-               f"Section introduite en V4 · base {C['n']} répondants dont {C['n_joueurs']} joueurs casino")
+               f"Section introduite en {V4_LABEL} · base {C['n']} répondants dont {C['n_joueurs']} joueurs casino")
     cols, gw = 3, Inches(0.18)
     tw = int((Inches(6.6) - gw * (cols - 1)) / cols)
     th = Inches(1.6)
@@ -737,16 +744,16 @@ def _pptx_geo(ctx, R):
 def _pptx_methodo(ctx, R):
     s = _slide(ctx, "Méthodologie", "Dispositif, bases et définitions",
                "Enquête en face-à-face (CAPI) · 7 villes de Côte d'Ivoire · OpinionWay Africa")
-    rows = [[m["vague"], m["mois"], m["dates"], str(m["n"]), str(m["parieurs"]), str(m["users"])]
+    rows = [[m["vague"], m["dates"], str(m["n"]), str(m["parieurs"]), str(m["users"])]
             for m in R["methodo"]]
-    _table(s, X0, Y0, Inches(6.4), ["Vague", "Mois", "Dates de terrain", "Base", "Parieurs", "Util. Betclic"],
-           rows, [0.8, 1.2, 2, 0.8, 0.9, 1], font=10)
+    _table(s, X0, Y0, Inches(6.4), ["Vague", "Dates de terrain", "Base", "Parieurs", "Util. Betclic"],
+           rows, [2, 2, 0.8, 0.9, 1.1], font=10)
     notes = [
         f"Périmètre de ce rapport : {R['filters']}.",
         "Les marques absentes du questionnaire d'une vague ne sont pas comptées à 0 : elles sont exclues des "
         "comparaisons de cette vague.",
-        "V4 : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino en ligne. Bet365, non déployé "
-        "en Côte d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
+        f"{V4_LABEL} : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino en ligne. Bet365, "
+        "non déployé en Côte d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
         "Thèmes de verbatims regroupés par IA sur l'ensemble de la vague (hors filtres).",
     ]
     if R["provisional"]:
@@ -873,8 +880,11 @@ class ReportPDF(FPDF):
         self.txt(x + 5, y + 12, w - 8, value, 22, "B", "ink", h=10)
         if delta:
             bg, fg = {"up": ("good_bg", "good"), "down": ("bad_bg", "bad"), "flat": ("flat_bg", "ink2")}[direction]
-            self.box(x + 5, y + 25, 38, 6.5, bg, r=3)
-            self.txt(x + 5, y + 26.2, 38, delta, 8.5, "B", fg, h=4, align="C")
+            # largeur ajustée au texte ("vs Vague Novembre 2026" est plus long que "vs V3")
+            self.set_font("Helvetica", "B", 8.5)
+            pw = min(w - 10, max(38, self.get_string_width(_lat(delta)) + 8))
+            self.box(x + 5, y + 25, pw, 6.5, bg, r=3)
+            self.txt(x + 5, y + 26.2, pw, delta, 8.5, "B", fg, h=4, align="C")
         if foot:
             self.txt(x + 5, y + h - 7, w - 8, foot, 7.5, "", "muted", h=3.5)
 
@@ -1091,7 +1101,7 @@ def generate_pdf(df, vagues_list=None, filters_desc: str = "") -> bytes:
     C = R["casino"]
     if C:
         y = pdf.page_title("Casino en ligne", "Chiffres clés et entonnoir casino",
-                           f"Section introduite en V4 · base {C['n']} répondants dont {C['n_joueurs']} joueurs casino")
+                           f"Section introduite en {V4_LABEL} · base {C['n']} répondants dont {C['n_joueurs']} joueurs casino")
         tw, th = (150 - 2 * 4) / 3, 44
         for i, t in enumerate(C["tiles"]):
             r_, c_ = divmod(i, 3)
@@ -1153,13 +1163,13 @@ def generate_pdf(df, vagues_list=None, filters_desc: str = "") -> bytes:
     # ── Méthodologie ──
     y = pdf.page_title("Méthodologie", "Dispositif, bases et définitions",
                        "Enquête en face-à-face (CAPI) · 7 villes de Côte d'Ivoire · OpinionWay Africa")
-    rows = [[m["vague"], m["mois"], m["dates"], str(m["n"]), str(m["parieurs"]), str(m["users"])] for m in R["methodo"]]
-    y2 = pdf.table(M, y, [16, 26, 42, 16, 18, 22], ["Vague", "Mois", "Dates de terrain", "Base", "Parieurs",
-                                                    "Util. Betclic"], rows)
+    rows = [[m["vague"], m["dates"], str(m["n"]), str(m["parieurs"]), str(m["users"])] for m in R["methodo"]]
+    y2 = pdf.table(M, y, [40, 44, 16, 18, 22], ["Vague", "Dates de terrain", "Base", "Parieurs",
+                                                "Util. Betclic"], rows)
     notes = [f"Périmètre : {R['filters']}.",
              "Marques absentes du questionnaire d'une vague : exclues des comparaisons de cette vague (pas de 0).",
-             "V4 : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino. Bet365, non déployé en Côte "
-             "d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
+             f"{V4_LABEL} : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino. Bet365, non "
+             "déployé en Côte d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
              "Thèmes de verbatims regroupés par IA sur l'ensemble de la vague (hors filtres)."]
     if R["provisional"]:
         notes.insert(0, f"Terrain {R['lv_s']} en cours : résultats provisoires.")
@@ -1421,7 +1431,7 @@ def generate_excel(df, vagues_list=None, filters_desc: str = "") -> bytes:
     # ── 6. Casino ──
     C = R["casino"]
     if C:
-        ws = sheet("Casino", "Casino en ligne (section introduite en V4)",
+        ws = sheet("Casino", f"Casino en ligne (section introduite en {V4_LABEL})",
                    f"Base {C['n']} répondants dont {C['n_joueurs']} joueurs casino")
         ws.set_column(1, 1, 38)
         ws.set_column(2, 6, 18)
@@ -1514,13 +1524,14 @@ def generate_excel(df, vagues_list=None, filters_desc: str = "") -> bytes:
     # ── 8. Méthodologie ──
     ws = sheet("Méthodologie", "Dispositif, bases et définitions",
                "Enquête en face-à-face (CAPI) · 7 villes de Côte d'Ivoire · OpinionWay Africa")
-    ws.set_column(1, 1, 22)
-    ws.set_column(2, 6, 16)
-    hdr = ["Vague", "Mois", "Dates de terrain", "Base", "Parieurs", "Util. Betclic"]
+    ws.set_column(1, 1, 24)
+    ws.set_column(2, 2, 22)
+    ws.set_column(3, 6, 16)
+    hdr = ["Vague", "Dates de terrain", "Base", "Parieurs", "Util. Betclic"]
     for j, h in enumerate(hdr):
         ws.write(4, 1 + j, h, f_head_l if j == 0 else f_head)
     for i, m in enumerate(R["methodo"]):
-        for j, k in enumerate(["vague", "mois", "dates", "n", "parieurs", "users"]):
+        for j, k in enumerate(["vague", "dates", "n", "parieurs", "users"]):
             ws.write(5 + i, 1 + j, m[k], f_int if k in ("n", "parieurs", "users") else f_lab)
     r = 7 + len(R["methodo"])
     ws.write(r, 1, "Définitions", f_sec)
@@ -1531,8 +1542,8 @@ def generate_excel(df, vagues_list=None, filters_desc: str = "") -> bytes:
     ws.write(r, 1, "Notes", f_sec)
     notes = [f"Périmètre : {R['filters']}.",
              "Marques absentes du questionnaire d'une vague : exclues des comparaisons de cette vague.",
-             "V4 : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino. Bet365, non déployé en Côte "
-             "d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
+             f"{V4_LABEL} : ajout de KifBet, Bet 360, Betwinner, 1WIN et d'une section Casino. Bet365, non "
+             "déployé en Côte d'Ivoire, a été retiré ; Bet 360 est une marque distincte.",
              "Les pourcentages sont stockés en valeurs numériques (réutilisables dans vos propres calculs)."]
     for i, n in enumerate(notes):
         ws.merge_range(r + 1 + i, 1, r + 1 + i, 6, n, f_wrap)

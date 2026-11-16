@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from data.loader import apply_filters, COMPETITORS, IMAGE_ATTRIBUTES
+from data.loader import apply_filters, sort_vagues, COMPETITORS, IMAGE_ATTRIBUTES, VAGUE_LABELS
 from components.styles import section_header, insight_box, styled_divider
 from components.charts import BETCLIC_RED, OPINIONWAY_PURPLE, SLATE, TEXT_MUTED
 
@@ -113,6 +113,13 @@ def _compute_pivot(df, row_dim, col_dim, measure_name):
     # Add base sizes
     base_sizes = df.groupby(row_col).size()
     pivot.insert(0, "Base (n)", base_sizes)
+
+    # Vagues : ordre chronologique et libellé client "Vague + Mois + Année"
+    if row_col == "Vague":
+        pivot = pivot.reindex(sort_vagues(pivot.index.tolist())).rename(index=VAGUE_LABELS)
+    if cross_col == "Vague":
+        cols = ["Base (n)"] + sort_vagues([c for c in pivot.columns if c != "Base (n)"])
+        pivot = pivot[cols].rename(columns=VAGUE_LABELS)
 
     return pivot
 

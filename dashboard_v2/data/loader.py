@@ -37,17 +37,16 @@ COMPETITORS = [
 MAIN_COMPETITORS = ["Betclic", "1XBET", "Sportcash", "Melbet", "BetMomo"]
 
 # Calendrier de collecte (préseedé pour respecter le cycle réel, qui saute Juillet)
-VAGUE_LABELS = {
-    "Vague 1": "V1 (Mai 2026)",
-    "Vague 2": "V2 (Juin 2026)",
-    "Vague 3": "V3 (Août 2026)",
-    "Vague 4": "V4 (Novembre 2026)",
-}
-VAGUE_SHORT = {"Vague 1": "V1", "Vague 2": "V2", "Vague 3": "V3", "Vague 4": "V4"}
+# Les clés internes restent "Vague N" (fichiers de données, thèmes, photos) ;
+# l'affichage client suit la norme "Vague + Mois + Année" (demande client nov. 2026).
 VAGUE_MONTHS = {
     "Vague 1": "Mai 2026", "Vague 2": "Juin 2026",
     "Vague 3": "Août 2026", "Vague 4": "Novembre 2026",
 }
+VAGUE_LABELS = {k: f"Vague {m}" for k, m in VAGUE_MONTHS.items()}
+VAGUE_SHORT = VAGUE_LABELS  # même libellé partout (graphiques, textes, exports)
+MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+             "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 
 
 def vague_num(v) -> int:
@@ -63,29 +62,36 @@ def sort_vagues(vagues) -> list:
 
 
 def vague_short(v) -> str:
-    """'Vague 4' -> 'V4'."""
-    return VAGUE_SHORT.get(v, f"V{vague_num(v)}" if vague_num(v) != 999 else str(v))
+    """Libellé d'affichage d'une vague : 'Vague 4' -> 'Vague Novembre 2026'."""
+    return VAGUE_LABELS.get(v, str(v))
 
 
-def _build_dynamic_vague_labels(vagues_list):
-    """Build VAGUE_SHORT and VAGUE_MONTHS for any wave number (future-proof)."""
-    months_fr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                 "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-    for v_name in vagues_list:
-        if v_name in VAGUE_SHORT:
+def vague_label(v) -> str:
+    """Alias explicite de vague_short (norme client 'Vague + Mois + Année')."""
+    return vague_short(v)
+
+
+def vague_file_tag(v) -> str:
+    """Version sans espaces ni accents pour les noms de fichiers : 'Vague_Aout_2026'."""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", vague_short(v)).encode("ascii", "ignore").decode()
+    return re.sub(r"[^A-Za-z0-9]+", "_", s).strip("_")
+
+
+def _register_wave_months(df: pd.DataFrame) -> None:
+    """Nouvelle vague absente de VAGUE_MONTHS : mois et année déduits des dates
+    d'interview (mois le plus fréquent), pour que le libellé suive la norme
+    'Vague + Mois + Année' sans modification du code."""
+    if df is None or "Vague" not in df.columns or "Date_Interview" not in df.columns:
+        return
+    for v in df["Vague"].dropna().unique().tolist():
+        if v in VAGUE_MONTHS:
             continue
-        try:
-            num = int(v_name.replace("Vague ", ""))
-            VAGUE_SHORT[v_name] = f"V{num}"
-            # V1 starts in May 2026 ; next waves every ~1-2 months
-            month_idx = (4 + (num - 1)) % 12
-            year = 2026 + (4 + (num - 1)) // 12
-            VAGUE_MONTHS[v_name] = f"{months_fr[month_idx]} {year}"
-            VAGUE_LABELS[v_name] = f"V{num} · {months_fr[month_idx][:3]} {year}"
-        except (ValueError, TypeError):
-            VAGUE_SHORT[v_name] = v_name
-            VAGUE_MONTHS[v_name] = ""
-            VAGUE_LABELS[v_name] = v_name
+        d = pd.to_datetime(df.loc[df["Vague"] == v, "Date_Interview"], errors="coerce").dropna()
+        if len(d):
+            ym = d.dt.to_period("M").mode().iloc[0]
+            VAGUE_MONTHS[v] = f"{MONTHS_FR[ym.month - 1]} {ym.year}"
+            VAGUE_LABELS[v] = f"Vague {VAGUE_MONTHS[v]}"
 
 
 # 13 image attributes (Q12) · matches the real questionnaire
@@ -663,10 +669,12 @@ def _data_signature() -> tuple:
 
 def load_raw_data() -> pd.DataFrame:
     """Load and concatenate all available tracker bases (auto-detects format)."""
-    return _load_raw_data_cached(_data_signature())
+    data = _load_raw_data_cached(_data_signature())
+    _register_wave_months(data)  # hors cache : les libellés vivent dans le module
+    return data
 
 
-@st.cache_data(ttl=3600, max_entries=3)
+@st.cache_data(ttl=3600, max_entries=3, show_spinner="Chargement des données de l'enquête...")
 def _load_raw_data_cached(data_sig: tuple) -> pd.DataFrame:
     """Version mise en cache, indexée par la signature des fichiers (data_sig)."""
     wave_files = detect_available_waves()
@@ -1330,7 +1338,6 @@ def calc_kpi_by_vague(df: pd.DataFrame, calc_func, **kwargs) -> dict:
     """Calculate a KPI for each vague separately."""
     result = {}
     all_vagues = sort_vagues(df["Vague"].dropna().unique().tolist())
-    _build_dynamic_vague_labels(all_vagues)
     for vague in all_vagues:
         sub = df[df["Vague"] == vague]
         result[vague] = calc_func(sub, **kwargs) if len(sub) > 0 else None

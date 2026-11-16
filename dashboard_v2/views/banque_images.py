@@ -150,8 +150,8 @@ def _render_wave_gallery(vague: str):
     with col1:
         st.markdown(f"""
         <div class="wave-header" style="border-left:4px solid {vague_color};">
-            <div class="wave-title" style="color:{vague_color};">{vague}</div>
-            <div class="wave-subtitle">{meta['mois']} · Collecte CAPI face-à-face</div>
+            <div class="wave-title" style="color:{vague_color};">Vague {meta['mois']}</div>
+            <div class="wave-subtitle">Collecte CAPI face-à-face</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
@@ -350,7 +350,7 @@ def render():
 
     # Sub-tabs per vague (vague la plus récente en premier)
     waves = list(VAGUE_META.keys())[::-1]
-    tabs = st.tabs([f"{v} ({VAGUE_META[v]['mois']})" for v in waves])
+    tabs = st.tabs([f"Vague {VAGUE_META[v]['mois']}" for v in waves])
     for tab, v in zip(tabs, waves):
         with tab:
             _render_wave_gallery(v)

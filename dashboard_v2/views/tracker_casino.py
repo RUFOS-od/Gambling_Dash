@@ -122,13 +122,13 @@ def render():
 
     st.markdown(section_header(
         "Casino en ligne",
-        "Notoriété de l'offre casino, pratique et marques utilisées | Module introduit en V4"
+        f"Notoriété de l'offre casino, pratique et marques utilisées | Module introduit en {vague_short('Vague 4')}"
     ), unsafe_allow_html=True)
 
     if not casino_waves:
         st.info(
-            "Le module Casino en ligne a été ajouté au questionnaire à partir de la Vague 4 "
-            "(Novembre 2026). Sélectionnez la Vague 4 dans les filtres pour afficher ces résultats."
+            f"Le module Casino en ligne a été ajouté au questionnaire à partir de la {vague_short('Vague 4')}. "
+            f"Sélectionnez la {vague_short('Vague 4')} dans les filtres pour afficher ces résultats."
         )
         return
 
@@ -140,7 +140,7 @@ def render():
     casino_brands = get_casino_main_brands(df_lv)  # recalculées sur les données
 
     st.caption(
-        f"Vague {vague_short(lv)} ({VAGUE_MONTHS.get(lv, '')}) · base échantillon total : n = {n_base} · "
+        f"{vague_short(lv)} · base échantillon total : n = {n_base} · "
         f"joueurs casino (ont déjà joué en ligne) : n = {n_joueurs}"
     )
 

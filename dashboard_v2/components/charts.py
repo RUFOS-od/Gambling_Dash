@@ -18,9 +18,9 @@ COLORS_VAGUES = {"Vague 1": "#E74C3C", "Vague 2": "#F39C12", "Vague 3": "#27AE60
 
 
 def _wave_label(v) -> str:
-    """'Vague 4' -> 'V4' (laisse les autres libellés intacts)."""
-    s = str(v)
-    return "V" + s.replace("Vague ", "") if s.startswith("Vague ") else s
+    """'Vague 4' -> 'Vague Novembre 2026' (laisse les autres libellés intacts)."""
+    from data.loader import VAGUE_LABELS
+    return VAGUE_LABELS.get(v, str(v))
 COLORS_SEQ = ["#C0392B", "#6C3483", "#2980B9", "#27AE60", "#F39C12", "#E67E22", "#1ABC9C", "#8E44AD", "#34495E"]
 BAR_INACTIVE = "#CBD5E0"
 
@@ -238,7 +238,7 @@ def radar_chart(data_by_vague: dict, title: str = "", height=500):
         fig.add_trace(go.Scatterpolar(
             r=values, theta=categories,
             fill="toself",
-            name=vague,
+            name=_wave_label(vague),
             line_color=COLORS_VAGUES.get(vague, SLATE),
             fillcolor=f"rgba({','.join(str(int(COLORS_VAGUES.get(vague, '#2C3E50').lstrip('#')[i:i+2], 16)) for i in (0,2,4))},0.08)",
         ))

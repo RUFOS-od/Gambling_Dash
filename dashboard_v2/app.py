@@ -20,7 +20,7 @@ for _key in ("ANTHROPIC_API_KEY", "YOUTUBE_API_KEY", "META_ACCESS_TOKEN"):
         os.environ[_key] = st.secrets[_key]
 
 from components.styles import inject_css
-from data.loader import load_raw_data, apply_filters, sort_vagues, vague_short, VAGUE_LABELS, CITIES, COMPETITORS
+from data.loader import load_raw_data, apply_filters, sort_vagues, vague_short, vague_file_tag, VAGUE_LABELS, CITIES, COMPETITORS
 
 
 def _load_image_b64(path: Path) -> str:
@@ -92,7 +92,7 @@ with st.sidebar:
         st.markdown("**FILTRES GLOBAUX**")
 
         selected_vagues = st.multiselect(
-            "Vagues", all_vagues, default=all_vagues,
+            "Vagues", all_vagues, default=all_vagues, format_func=vague_short,
             help="Sélectionnez les vagues à analyser"
         )
 
@@ -151,7 +151,7 @@ with st.sidebar:
         # Description du périmètre (reprise en couverture des rapports)
         _parts = []
         if selected_vagues and len(selected_vagues) < len(all_vagues):
-            _parts.append("Vagues " + ", ".join(vague_short(v) for v in sort_vagues(selected_vagues)))
+            _parts.append(", ".join(vague_short(v) for v in sort_vagues(selected_vagues)))
         for _lbl, _sel in [("Villes", selected_villes), ("Genre", selected_genres),
                            ("Âge", selected_ages), ("Segment", selected_segments),
                            ("Marque utilisée", selected_marques)]:
@@ -169,7 +169,8 @@ with st.sidebar:
                      help="PowerPoint, PDF et Excel sur le périmètre filtré (environ 10 secondes)"):
             from components.export_engine import generate_pptx, generate_pdf, generate_excel
             with st.spinner("Génération des rapports..."):
-                _lv = vague_short(sort_vagues(_df_export["Vague"].dropna().unique().tolist())[-1])                     if len(_df_export) else "V"
+                _lv = vague_file_tag(sort_vagues(_df_export["Vague"].dropna().unique().tolist())[-1]) \
+                    if len(_df_export) else "Vague"
                 st.session_state["_export_files"] = {
                     "pptx": (generate_pptx(_df_export, _vagues, _filters_desc), f"Betclic_BrandPulse_{_lv}.pptx"),
                     "pdf": (generate_pdf(_df_export, _vagues, _filters_desc), f"Betclic_BrandPulse_{_lv}.pdf"),

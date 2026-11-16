@@ -2,7 +2,7 @@
 
 import streamlit as st
 from data.loader import (
-    sort_vagues, get_main_competitors, keep_brands,
+    sort_vagues, vague_short, get_main_competitors, keep_brands,
     apply_filters, calc_tom, calc_tom_all_brands, calc_notoriete_totale,
     calc_notoriete_all_brands, calc_notoriete_aidee, calc_rappel_campagne,
     calc_ambassadeur_distribution, calc_canal_decouverte,
@@ -66,7 +66,7 @@ def render():
         else:
             df_latest = df
         tom_all = keep_brands(calc_tom_all_brands(df_latest), main_brands)
-        fig = bar_chart_brands(tom_all, f"Top-of-Mind · principaux concurrents ({latest_vague[0] if latest_vague else 'Total'})",
+        fig = bar_chart_brands(tom_all, f"Top-of-Mind · principaux concurrents ({vague_short(latest_vague[0]) if latest_vague else 'Total'})",
                                height=400)
         st.plotly_chart(fig, width='stretch')
 
