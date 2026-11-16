@@ -1,148 +1,118 @@
-"""AI Market Radar · Vue d'ensemble (donnees reelles issues des collecteurs)."""
+"""AI Market Radar · Vue d'ensemble (données réelles issues des collecteurs)."""
 
-from datetime import datetime
-import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
-from data.collectors import Storage
-from data.collectors.base import COMPETITORS
 from components.styles import section_header, insight_box, styled_divider, kpi_card
-from components.charts import BETCLIC_RED, OPINIONWAY_PURPLE, COLORS_SEQ, bar_chart_brands
-from components.llm_analyst import classify_sentiment, detect_weak_signals
+from components.charts import bar_chart_brands
+from components.llm_analyst import detect_weak_signals
+from components.radar_common import (load_radar, collected_caption, news_sentiment,
+                                     share_of_voice, share_of_search)
 
 
 def _empty_state():
     st.warning(
         "Aucune donnée de veille disponible. Cliquez sur **Rafraîchir la veille** "
-        "dans le menu latéral pour lancer la première collecte."
+        "dans le menu latéral pour lancer la collecte."
     )
 
 
 def render():
     st.markdown(section_header(
         "AI Market Radar · Vue d'ensemble",
-        "Veille concurrentielle multi-sources : tendances de recherche, actualités, médias sociaux et publicités"
+        "Veille concurrentielle du marché ivoirien des paris sportifs : présence médiatique, "
+        "recherches Google et tonalité"
     ), unsafe_allow_html=True)
 
-    storage = Storage()
-    news_df = storage.latest("news")
-    trends_df = storage.latest("trends")
-    ads_df = storage.latest("ads")
-    yt_df = storage.latest("youtube_videos")
-
-    if all(len(x) == 0 for x in [news_df, trends_df, ads_df, yt_df]):
+    R = load_radar()
+    if R["empty"]:
         _empty_state()
         return
+    st.caption(collected_caption(R))
 
-    # ── Share of Voice : basee sur la volumetrie news + videos YouTube ──
-    sov_counts = {b: 0 for b in COMPETITORS}
-    if len(news_df) > 0:
-        for b, n in news_df["brand"].value_counts().items():
-            sov_counts[b] = sov_counts.get(b, 0) + int(n)
-    if len(yt_df) > 0:
-        for b, n in yt_df["brand"].value_counts().items():
-            sov_counts[b] = sov_counts.get(b, 0) + int(n)
-    total_sov = sum(sov_counts.values()) or 1
-    sov_pct = {b: round(v / total_sov * 100, 1) for b, v in sov_counts.items()}
-
-    # ── Sentiment via LLM sur les 100 dernieres news ──
-    sentiment_summary = {"positif": 0, "neutre": 0, "negatif": 0}
-    sentiment_by_brand = {b: {"positif": 0, "neutre": 0, "negatif": 0} for b in COMPETITORS}
-    if len(news_df) > 0:
-        sample = news_df.head(100)
-        sent_df = classify_sentiment(sample["title"].fillna("").tolist())
-        sent_df["brand"] = sample["brand"].values[:len(sent_df)]
-        for _, row in sent_df.iterrows():
-            s = row["sentiment"]
-            sentiment_summary[s] = sentiment_summary.get(s, 0) + 1
-            if row["brand"] in sentiment_by_brand:
-                sentiment_by_brand[row["brand"]][s] += 1
+    sov, counts, n_sov = share_of_voice(R)
+    sos = share_of_search(R)
+    with st.spinner("Analyse de la tonalité des articles..."):
+        sent = news_sentiment(R["news"])
+    signals = detect_weak_signals(news_df=R["news"], trends_df=R["trends"])
+    n_high = sum(1 for s in signals if s["severity"] == "high")
 
     # ── KPIs ──
     c1, c2, c3, c4 = st.columns(4)
     with c1:
+        lead = max(sov.items(), key=lambda x: x[1])[0] if sov else None
         st.markdown(kpi_card(
-            "Share of Voice Betclic",
-            f"{sov_pct.get('Betclic', 0)}%",
-            f"{sov_counts.get('Betclic', 0)} mentions",
-            "up" if sov_pct.get("Betclic", 0) > 11 else "neutral",
+            "Part de voix Betclic", f"{sov.get('Betclic', 0):.1f} %".replace(".", ","),
+            f"{counts.get('Betclic', 0)} contenus sur {n_sov}" if lead == "Betclic" or not lead
+            else f"{lead} en tête ({sov[lead]:.1f} %)".replace(".", ","), "neutral",
         ), unsafe_allow_html=True)
     with c2:
-        total_sent = max(sum(sentiment_summary.values()), 1)
-        pos_pct = round(sentiment_summary["positif"] / total_sent * 100, 1)
+        lead_s = max(sos.items(), key=lambda x: x[1])[0] if sos else None
         st.markdown(kpi_card(
-            "Sentiment Positif",
-            f"{pos_pct}%",
-            f"{sentiment_summary['positif']} articles",
-            "up" if pos_pct > 40 else "down",
+            "Part de recherche Betclic", f"{sos.get('Betclic', 0):.1f} %".replace(".", ",") if sos else "n.d.",
+            "Google, 12 dernières semaines" if lead_s in (None, "Betclic")
+            else f"{lead_s} en tête ({sos[lead_s]:.1f} %)".replace(".", ","), "neutral",
         ), unsafe_allow_html=True)
     with c3:
-        signals = detect_weak_signals(news_df=news_df, trends_df=trends_df)
-        n_high = sum(1 for s in signals if s["severity"] == "high")
+        b = sent[sent["brand"] == "Betclic"]
+        pos = round((b["sentiment"] == "positif").mean() * 100) if len(b) else None
+        neg = int((b["sentiment"] == "negatif").sum()) if len(b) else 0
         st.markdown(kpi_card(
-            "Alertes critiques",
-            str(n_high),
-            f"{len(signals)} signaux au total",
-            "down" if n_high > 0 else "up",
+            "Tonalité positive Betclic", f"{pos} %" if pos is not None else "n.d.",
+            f"{len(b)} articles, " + ("aucun négatif" if neg == 0 else f"dont {neg} négatif{'s' if neg > 1 else ''}"),
+            "up" if neg == 0 else "down",
         ), unsafe_allow_html=True)
     with c4:
         st.markdown(kpi_card(
-            "Volume news (7j)",
-            str(len(news_df)),
-            "articles collectes",
-            "neutral",
+            "Signaux prioritaires", str(n_high), f"{len(signals)} signaux au total",
+            "down" if n_high else "up",
         ), unsafe_allow_html=True)
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Share of Voice bar chart ──
     col_a, col_b = st.columns(2)
     with col_a:
-        fig = bar_chart_brands(sov_pct, "Share of Voice (%)", height=400)
-        st.plotly_chart(fig, width='stretch')
-
-    with col_b:
-        # Intensite publicitaire basee sur le nombre d'ads Meta
-        ads_counts = {b: 0 for b in COMPETITORS}
-        if len(ads_df) > 0:
-            for b, n in ads_df["brand"].value_counts().items():
-                ads_counts[b] = int(n)
-        if sum(ads_counts.values()) == 0:
-            st.info(
-                "Veille publicitaire Meta : source non encore activée. "
-                "Cette donnée sera disponible prochainement."
-            )
+        if sov:
+            st.plotly_chart(bar_chart_brands(sov, f"Part de voix (%) · n = {n_sov} contenus",
+                                             height=420), width='stretch')
+            st.caption("Part de voix : part de chaque marque dans les articles de presse ivoirienne "
+                       "et les vidéos YouTube retenus sur 12 mois, chaînes officielles des marques comprises.")
         else:
-            fig = bar_chart_brands(ads_counts, "Intensite Publicitaire (nb pubs actives)", height=400)
-            st.plotly_chart(fig, width='stretch')
+            st.info("Aucun article ni vidéo retenu sur la période.")
+    with col_b:
+        if sos:
+            st.plotly_chart(bar_chart_brands(sos, "Part de recherche Google (%)", height=420), width='stretch')
+            st.caption("Part de recherche : poids de chaque marque dans les recherches Google en "
+                       "Côte d'Ivoire sur les 12 dernières semaines (indice relatif Google Trends).")
+        else:
+            st.info("Recherches Google : aucune donnée sur la dernière collecte.")
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Sentiment empile ──
-    if sum(sum(v.values()) for v in sentiment_by_brand.values()) > 0:
-        brands_sorted = sorted(COMPETITORS, key=lambda b: sentiment_by_brand[b]["positif"], reverse=True)
+    # ── Tonalité par marque ──
+    if len(sent):
+        brands = sent["brand"].value_counts().index.tolist()
         fig = go.Figure()
-        for label, color in [("positif", "#1D8348"), ("neutre", "#94A3B8"), ("negatif", "#C0392B")]:
-            fig.add_trace(go.Bar(
-                name=label.capitalize(),
-                x=brands_sorted,
-                y=[sentiment_by_brand[b][label] for b in brands_sorted],
-                marker_color=color,
-            ))
-        fig.update_layout(
-            barmode="stack",
-            title="Sentiment par marque (articles classifies)",
-            height=400,
-            paper_bgcolor="white", plot_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=40),
-        )
+        for label, name, color in [("positif", "Positif", "#1D8348"), ("neutre", "Neutre", "#94A3B8"),
+                                   ("negatif", "Négatif", "#C0392B")]:
+            fig.add_trace(go.Bar(name=name, x=brands,
+                                 y=[int(((sent["brand"] == b) & (sent["sentiment"] == label)).sum()) for b in brands],
+                                 marker_color=color))
+        fig.update_layout(barmode="stack", title="Tonalité des articles de presse envers chaque marque (nombre)",
+                          height=400, paper_bgcolor="white", plot_bgcolor="white",
+                          margin=dict(l=20, r=20, t=50, b=40), legend=dict(orientation="h", y=-0.15))
         st.plotly_chart(fig, width='stretch')
 
-    # ── Insight synthetique ──
-    leaders = sorted(sov_pct.items(), key=lambda x: x[1], reverse=True)[:3]
-    leaders_txt = ", ".join(f"<strong>{b}</strong> ({v}%)" for b, v in leaders)
-    st.markdown(insight_box(
-        f"Classement Share of Voice : {leaders_txt}. "
-        f"Alertes critiques detectees cette vague : <strong>{n_high}</strong>."
-    ), unsafe_allow_html=True)
+    # ── Lecture ──
+    parts = []
+    if sov:
+        top = sorted(sov.items(), key=lambda x: x[1], reverse=True)[:3]
+        parts.append("Présence médiatique : " + ", ".join(f"<strong>{b}</strong> ({v:.0f} %)" for b, v in top) + ".")
+    if sos:
+        tops = sorted(sos.items(), key=lambda x: x[1], reverse=True)[:2]
+        parts.append(f"Recherches Google : <strong>{tops[0][0]}</strong> concentre {tops[0][1]:.0f} % "
+                     f"de l'intérêt" + (f", devant {tops[1][0]} ({tops[1][1]:.0f} %)." if len(tops) > 1 else "."))
+    parts.append(("Aucun signal prioritaire" if n_high == 0 else
+                  f"<strong>{n_high}</strong> signal{'aux' if n_high > 1 else ''} prioritaire{'s' if n_high > 1 else ''}")
+                 + " sur la dernière collecte (détail dans l'onglet Alertes & Signaux).")
+    st.markdown(insight_box(" ".join(parts)), unsafe_allow_html=True)

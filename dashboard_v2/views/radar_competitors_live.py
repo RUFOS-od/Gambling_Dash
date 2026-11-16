@@ -1,102 +1,91 @@
-"""AI Market Radar · Fiches concurrents (donnees reelles)."""
+"""AI Market Radar · Fiches concurrents (données réelles)."""
 
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
-from data.collectors import Storage
 from data.collectors.base import COMPETITORS
 from components.styles import section_header, styled_divider
-from components.charts import BETCLIC_RED, OPINIONWAY_PURPLE, SLATE
+from components.charts import brand_color
+from components.radar_common import load_radar, collected_caption
 
 
 def render():
     st.markdown(section_header(
         "Fiches Concurrents",
-        "Détail par marque : actualités, tendances de recherche, publicités et présence vidéo"
+        "Détail par marque : actualités, recherches Google et vidéos YouTube en Côte d'Ivoire"
     ), unsafe_allow_html=True)
 
-    storage = Storage()
-    news_df = storage.latest("news")
-    trends_df = storage.latest("trends")
-    ads_df = storage.latest("ads")
-    yt_df = storage.latest("youtube_videos")
+    R = load_radar()
+    if R["empty"]:
+        st.warning("Aucune donnée de veille. Lancez une collecte depuis le menu latéral.")
+        return
+    st.caption(collected_caption(R))
+    news, trends, yt = R["news"], R["trends"], R["yt"]
 
-    brand = st.selectbox("Selectionner un concurrent", COMPETITORS, index=0)
-
+    brand = st.selectbox("Sélectionner une marque", COMPETITORS, index=0)
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Stats de base ──
-    n_news = len(news_df[news_df["brand"] == brand]) if len(news_df) else 0
-    n_ads = len(ads_df[ads_df["brand"] == brand]) if len(ads_df) else 0
-    n_yt = len(yt_df[yt_df["brand"] == brand]) if len(yt_df) else 0
-    yt_views = int(yt_df[yt_df["brand"] == brand]["views"].sum()) if len(yt_df) else 0
-
+    n_news = int((news["brand"] == brand).sum()) if len(news) else 0
+    yt_b = yt[yt["brand"] == brand] if len(yt) else yt
+    t_b = trends[trends["keyword"] == brand] if len(trends) else trends
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Articles de presse", n_news)
-    c2.metric("Publicites Meta actives", n_ads)
-    c3.metric("Videos YouTube", n_yt)
-    c4.metric("Vues YouTube cumulees", f"{yt_views:,}")
+    c1.metric("Articles de presse (12 mois)", n_news)
+    c2.metric("Vidéos YouTube (12 mois)", len(yt_b))
+    c3.metric("Vues YouTube cumulées", f"{int(yt_b['views'].sum()):,}".replace(",", " ") if len(yt_b) else "0")
+    c4.metric("Indice de recherche Google moyen", f"{t_b['interest'].mean():.0f}" if len(t_b) else "n.d.",
+              help="Indice Google Trends sur 12 mois en Côte d'Ivoire (100 = semaine la plus recherchée "
+                   "toutes marques confondues).")
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Tendance Google sur 12 mois ──
-    if len(trends_df) > 0 and brand in trends_df["keyword"].unique():
-        df_b = trends_df[trends_df["keyword"] == brand].copy()
-        df_b["date"] = pd.to_datetime(df_b["date"])
-        df_b = df_b.sort_values("date")
+    if len(t_b):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=df_b["date"], y=df_b["interest"],
-            mode="lines+markers",
-            line=dict(color=BETCLIC_RED if brand == "Betclic" else OPINIONWAY_PURPLE, width=3),
-            marker=dict(size=6),
-            name=brand,
-        ))
+        comp = ["Betclic"] if brand != "Betclic" else []
+        for b in [brand] + comp:
+            d = trends[trends["keyword"] == b].sort_values("date")
+            fig.add_trace(go.Scatter(x=d["date"], y=d["interest"], mode="lines", name=b,
+                                     line=dict(color=brand_color(b), width=3 if b == brand else 2,
+                                               dash="solid" if b == brand else "dot")))
         fig.update_layout(
-            title=f"Interet Google pour {brand} (12 derniers mois, Cote d'Ivoire)",
+            title=f"Recherches Google en Côte d'Ivoire · {brand}" + (" vs Betclic" if comp else "") +
+                  " (12 derniers mois)",
             height=360, paper_bgcolor="white", plot_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=40),
-            yaxis=dict(title="Interet (0-100)", gridcolor="#F0F0F0"),
-            xaxis=dict(gridcolor="#F0F0F0"),
+            margin=dict(l=20, r=20, t=50, b=40), legend=dict(orientation="h", y=-0.2),
+            yaxis=dict(title="Indice (0 à 100)", gridcolor="#F0F0F0"), xaxis=dict(gridcolor="#F0F0F0"),
         )
         st.plotly_chart(fig, width='stretch')
     else:
-        st.info("Aucune donnee Google Trends pour cette marque.")
+        st.info(f"Recherches Google : volume trop faible pour {brand} en Côte d'Ivoire.")
 
     st.markdown(styled_divider(), unsafe_allow_html=True)
 
-    # ── Dernieres news ──
     col_n, col_v = st.columns(2)
     with col_n:
-        st.markdown("**Dernieres actualites**")
-        if len(news_df) > 0:
-            news_b = news_df[news_df["brand"] == brand].head(10)
-            if len(news_b) > 0:
-                for _, row in news_b.iterrows():
-                    st.markdown(
-                        f"- [{row['title']}]({row['link']})  \n"
-                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('source','')} · {row.get('published','')[:10]}</span>",
-                        unsafe_allow_html=True,
-                    )
-            else:
-                st.caption("Aucune actualite pour cette marque.")
+        st.markdown("**Dernières actualités**")
+        nb = news[news["brand"] == brand].sort_values("published", ascending=False).head(10) if len(news) else news
+        if len(nb):
+            for _, row in nb.iterrows():
+                d = pd.to_datetime(row["published"], errors="coerce")
+                st.markdown(
+                    f"- [{row['title']}]({row['link']})  \n"
+                    f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('source', '')} · "
+                    f"{d:%d/%m/%Y}</span>" if pd.notna(d) else f"- [{row['title']}]({row['link']})",
+                    unsafe_allow_html=True,
+                )
         else:
-            st.caption("Base de news vide.")
+            st.caption("Aucun article de presse ivoirienne sur cette marque au cours des 12 derniers mois.")
 
     with col_v:
-        st.markdown("**Videos YouTube les plus vues**")
-        if len(yt_df) > 0:
-            yt_b = yt_df[yt_df["brand"] == brand].sort_values("views", ascending=False).head(10)
-            if len(yt_b) > 0:
-                for _, row in yt_b.iterrows():
-                    url = f"https://youtube.com/watch?v={row['video_id']}"
-                    st.markdown(
-                        f"- [{row['title']}]({url})  \n"
-                        f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('channel','')} · {int(row.get('views',0)):,} vues</span>",
-                        unsafe_allow_html=True,
-                    )
-            else:
-                st.caption("Aucune video pour cette marque.")
+        st.markdown("**Vidéos YouTube les plus vues**")
+        if len(yt_b):
+            for _, row in yt_b.sort_values("views", ascending=False).head(10).iterrows():
+                url = f"https://youtube.com/watch?v={row['video_id']}"
+                vues = f"{int(row['views']):,}".replace(",", " ")
+                st.markdown(
+                    f"- [{row['title']}]({url})  \n"
+                    f"  <span style='color:#7B8794;font-size:0.8rem'>{row.get('channel', '')} · {vues} vues</span>",
+                    unsafe_allow_html=True,
+                )
         else:
-            st.caption("Veille vidéo : aucune donnée disponible pour le moment.")
+            st.caption("Aucune vidéo YouTube retenue pour cette marque sur 12 mois.")

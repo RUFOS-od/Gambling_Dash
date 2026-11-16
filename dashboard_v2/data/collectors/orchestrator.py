@@ -12,10 +12,12 @@ from .google_news import GoogleNewsCollector
 from .youtube import YouTubeCollector
 
 
+# Meta Ad Library : hors Union europeenne, l'API ne renvoie que les publicites politiques
+# ou sociales. Les publicites des operateurs de paris en Cote d'Ivoire n'y sont donc pas
+# accessibles : collecteur conserve (meta_ads.py) mais retire de la veille.
 DEFAULT_COLLECTORS: List[Collector] = [
     GoogleTrendsCollector(),
     GoogleNewsCollector(),
-    MetaAdsCollector(),
     YouTubeCollector(),
 ]
 

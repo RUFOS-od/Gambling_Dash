@@ -47,7 +47,7 @@ def render_sidebar_block():
 
     # ── Bouton principal ──
     if st.button("Rafraîchir la veille", width='stretch', key="refresh_intel"):
-        with st.spinner("Collecte en cours sur toutes les sources..."):
+        with st.spinner("Collecte en cours sur toutes les sources (environ 1 minute)..."):
             results = run_all(storage=storage)
         st.session_state["last_intel_run"] = {
             "at": datetime.now().isoformat(),
@@ -57,9 +57,8 @@ def render_sidebar_block():
 
     # ── Etat des collecteurs ──
     labels = {
-        "google_trends": "Google Trends",
-        "google_news": "Google News",
-        "meta_ads": "Meta Ads",
+        "google_news": "Presse (Google Actualités)",
+        "google_trends": "Recherches Google",
         "youtube": "YouTube",
     }
     for key, lbl in labels.items():
@@ -97,4 +96,4 @@ def render_sidebar_block():
         n_ok = sum(1 for r in last["results"] if r["ok"])
         n_total = len(last["results"])
         n_rows = sum(r["n_rows"] for r in last["results"])
-        st.caption(f"Dernière collecte : {n_ok}/{n_total} sources, {n_rows} signaux récoltés")
+        st.caption(f"Dernière collecte : {n_ok}/{n_total} sources, {n_rows} éléments retenus")

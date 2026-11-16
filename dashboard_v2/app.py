@@ -217,7 +217,7 @@ with st.sidebar:
         st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
         st.caption(
             "ℹ️ Les filtres globaux Tracker ne s'appliquent pas au module AI Market Radar : "
-            "la veille agrège des données externes (web, social, ads)."
+            "la veille agrège des données externes (presse, YouTube, recherches Google)."
         )
 
     st.markdown('<div class="styled-divider"></div>', unsafe_allow_html=True)
