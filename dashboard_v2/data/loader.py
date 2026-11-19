@@ -157,7 +157,8 @@ CASINO_GAMES = {
     7: "Jeux virtuels",
     8: "Autres",
 }
-CASINO_STATUTS = ["Joueur actif (6 derniers mois)", "Ancien joueur (+6 mois)", "Non-joueur"]
+CASINO_STATUTS = ["Joueur actif (6 derniers mois)", "Ancien joueur (+6 mois)", "Non-joueur",
+                  "Non interrogé (aucune offre casino connue)"]
 
 SPORT_MAP = {
     "A_Q11_1": "Football",
@@ -586,11 +587,13 @@ def _transform_raw_to_normalized(df_raw: pd.DataFrame, wave_name: str = "Vague 1
     # Colonnes absentes des vagues antérieures -> NaN après concaténation,
     # ce qui permet à la vue Casino de ne retenir que les vagues concernées.
     if "QC3" in df_raw.columns:
-        qc3 = df_raw["QC3"].astype(str).str.strip()
+        qc3 = df_raw["QC3"].fillna("").astype(str).str.strip()
+        # QC3 vide = question non posée (le répondant ne connaît aucune offre casino en QC1) :
+        # il reste dans la base échantillon total, compté comme n'ayant pas joué.
         df["Casino_Statut"] = np.where(
             qc3.str.contains("6 derniers mois"), CASINO_STATUTS[0],
             np.where(qc3.str.startswith("Oui"), CASINO_STATUTS[1],
-                     np.where(qc3.str.startswith("Non"), CASINO_STATUTS[2], None)),
+                     np.where(qc3.str.startswith("Non"), CASINO_STATUTS[2], CASINO_STATUTS[3])),
         )
         df["Casino_Joueur"] = qc3.str.startswith("Oui").astype(int).values
         df["Casino_Joueur_Actif"] = qc3.str.contains("6 derniers mois").astype(int).values
